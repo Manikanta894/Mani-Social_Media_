@@ -42,6 +42,48 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+-- Blog Automation Engine — independent queue
+CREATE TABLE IF NOT EXISTS blog_queue (
+  file_id TEXT PRIMARY KEY,
+  file_name TEXT NOT NULL,
+  mime_type TEXT,
+  upload_date TIMESTAMPTZ,
+  queue_position INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'queued',
+  article_data JSONB,
+  ai_provider_used TEXT,
+  generation_time TIMESTAMPTZ,
+  published_url TEXT,
+  published_date TIMESTAMPTZ,
+  archive_date TIMESTAMPTZ,
+  approved_at TIMESTAMPTZ,
+  error TEXT,
+  retry_count INTEGER DEFAULT 0,
+  max_retries INTEGER DEFAULT 3,
+  discovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_blog_queue_status ON blog_queue(status);
+ALTER TABLE blog_queue ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON blog_queue FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Blog activity log
+CREATE TABLE IF NOT EXISTS blog_activity (
+  id BIGSERIAL PRIMARY KEY,
+  action TEXT NOT NULL,
+  file_id TEXT REFERENCES blog_queue(file_id) ON DELETE SET NULL,
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE blog_activity ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON blog_activity FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 -- Automation Engine — enhanced drive_queue columns
 ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS folder_prefix TEXT DEFAULT 'social';
 ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS ai_analysis JSONB;

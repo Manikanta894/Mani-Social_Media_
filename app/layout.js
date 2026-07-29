@@ -11,17 +11,18 @@ import { api } from '@/components/shared'
 import './globals.css'
 
 const NAV_ITEMS = [
-  { key: '/',          label: 'Dashboard', icon: ImageIcon },
-  { key: '/compose',   label: 'Compose',   icon: Sparkles },
-  { key: '/calendar',  label: 'Schedule',  icon: CalendarIcon },
-  { key: '/automation',label: 'Automation',icon: Wand2 },
-  { key: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { key: '/bulk',      label: 'Bulk Posts',icon: List },
-  { key: '/comments',  label: 'Inbox',     icon: MessageSquare },
-  { key: '/news',      label: 'News Radar',icon: Radio },
-  { key: '/blog',      label: 'Blog',      icon: Globe },
-  { key: '/seasonal',  label: 'Seasonal',  icon: Sun },
-  { key: '/hashtags',  label: 'Hashtags',  icon: Hash },
+  { key: '/',                label: 'Dashboard',    icon: ImageIcon },
+  { key: '/compose',         label: 'Compose',      icon: Sparkles },
+  { key: '/calendar',        label: 'Schedule',     icon: CalendarIcon },
+  { key: '/automation',      label: 'Automation',   icon: Wand2 },
+  { key: '/blog-automation', label: 'Blog Engine',  icon: FileText },
+  { key: '/analytics',       label: 'Analytics',    icon: BarChart3 },
+  { key: '/bulk',            label: 'Bulk Posts',   icon: List },
+  { key: '/comments',        label: 'Inbox',        icon: MessageSquare },
+  { key: '/news',            label: 'News Radar',   icon: Radio },
+  { key: '/blog',            label: 'Blog Manual',  icon: Globe },
+  { key: '/seasonal',        label: 'Seasonal',     icon: Sun },
+  { key: '/hashtags',        label: 'Hashtags',     icon: Hash },
 ]
 
 export default function RootLayout({ children }) {

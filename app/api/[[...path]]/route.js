@@ -949,6 +949,68 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       }
     }
 
+    // --- Blog Automation Engine (independent from social) ---
+    if (resource === 'blog') {
+      if (id === 'tick' && method === 'POST') {
+        const { blogAutomation, runBlogTick } = await import('@/lib/blog/automation')
+        const s = await blogAutomation.get()
+        const provided = request.headers.get('x-automation-secret')
+        if (s.tick_secret && provided !== s.tick_secret) return err('Forbidden', 403)
+        return ok(await runBlogTick())
+      }
+      if (id === 'settings' && method === 'GET') {
+        const { blogAutomation } = await import('@/lib/blog/automation')
+        return ok(await blogAutomation.get())
+      }
+      if (id === 'settings' && method === 'PUT') {
+        const { blogAutomation } = await import('@/lib/blog/automation')
+        const body = await request.json()
+        delete body.tick_secret
+        return ok(await blogAutomation.patch(body))
+      }
+      if (id === 'sync' && method === 'POST') {
+        const { syncBlogToQueue } = await import('@/lib/blog/intake')
+        return ok(await syncBlogToQueue())
+      }
+      if (id === 'upload' && method === 'POST') {
+        const body = await request.json()
+        if (!body.base64) return err('Missing base64')
+        const { uploadBlogImage } = await import('@/lib/blog/intake')
+        return ok(await uploadBlogImage(body.base64, body.mime_type || 'image/jpeg', body.file_name))
+      }
+      if (id === 'queue' && method === 'GET') {
+        const status = url.searchParams.get('status')
+        const { listBlogQueue } = await import('@/lib/blog/intake')
+        return ok(await listBlogQueue(status))
+      }
+      if (id === 'stats' && method === 'GET') {
+        const { blogQueueStats } = await import('@/lib/blog/intake')
+        return ok(await blogQueueStats())
+      }
+      if (id === 'signed-url' && method === 'GET') {
+        const path = url.searchParams.get('path')
+        if (!path) return err('Missing path')
+        const { getSignedBlogUrl } = await import('@/lib/blog/intake')
+        const signedUrl = await getSignedBlogUrl(path, 60 * 60)
+        return ok({ url: signedUrl })
+      }
+      if (id === 'activity' && method === 'GET') {
+        const { getBlogActivity } = await import('@/lib/blog/automation')
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+        return ok(await getBlogActivity(limit))
+      }
+      if (id === 'bulk' && method === 'POST') {
+        const { blogBulkAction } = await import('@/lib/blog/automation')
+        const body = await request.json()
+        return ok(await blogBulkAction(body.fileIds || [], body.action))
+      }
+      if (id === 'reorder' && method === 'POST') {
+        const { blogReorderQueue } = await import('@/lib/blog/automation')
+        const body = await request.json()
+        return ok(await blogReorderQueue(body.fileIds || []))
+      }
+    }
+
     // --- Backup export -----------------------------------------
     if (resource === 'backup') {
       if (id === 'export' && method === 'GET') {
