@@ -11,7 +11,7 @@ import { fetchAllComments, replyToComment } from '@/lib/comments/fetchers'
 import { uploadBase64Image } from '@/lib/media'
 import { modules as aiModules, runModule, platformPrompts, DEFAULT_PLATFORM_PROMPTS } from '@/lib/ai/modules'
 
-import { automation, runTick } from '@/lib/automation'
+import { automation, runTick, retryFailed, bulkAction, reorderQueue, getActivityFeed } from '@/lib/automation'
 import { syncIntakeToQueue, uploadIntakeImage, listIntakeFiles, listQueue, queueStats } from '@/lib/intake'
 import { runNewsCheck, generateAndSave, detectConflicts, findNextSlot } from '@/lib/news'
 
@@ -618,6 +618,35 @@ async function route(request, method) {
         }
         const r = await runTick()
         return ok(r)
+      }
+      // Queue management endpoints
+      if (id === 'queue' && method === 'GET') {
+        const status = url.searchParams.get('status')
+        const { listQueue } = await import('@/lib/intake')
+        return ok(await listQueue(status))
+      }
+      if (id === 'retry' && action && method === 'POST') {
+        return ok(await retryFailed(action))
+      }
+      if (id === 'bulk' && method === 'POST') {
+        const body = await request.json()
+        return ok(await bulkAction(body.fileIds || [], body.action))
+      }
+      if (id === 'reorder' && method === 'POST') {
+        const body = await request.json()
+        return ok(await reorderQueue(body.fileIds || []))
+      }
+      if (id === 'activity' && method === 'GET') {
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+        return ok(await getActivityFeed(limit))
+      }
+      if (id === 'queue-settings' && method === 'PUT') {
+        const body = await request.json()
+        return ok(await automation.patch(body))
+      }
+      if (id === 'sync' && method === 'POST') {
+        const { syncIntakeToQueue } = await import('@/lib/intake')
+        return ok(await syncIntakeToQueue())
       }
     }
 

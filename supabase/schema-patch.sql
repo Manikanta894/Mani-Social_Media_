@@ -41,3 +41,50 @@ DO $$ BEGIN
   CREATE POLICY "service_role_only" ON mentions FOR ALL TO service_role USING (true) WITH CHECK (true);
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Automation Engine — enhanced drive_queue columns
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS folder_prefix TEXT DEFAULT 'social';
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS ai_analysis JSONB;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS platform_content JSONB;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS ai_provider_used TEXT;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS ai_confidence REAL;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS generation_time TIMESTAMPTZ;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS max_retries INTEGER DEFAULT 3;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS scheduled_slot_index INTEGER;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS scheduled_time TEXT;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS published_platforms TEXT[] DEFAULT '{}';
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS failed_platforms TEXT[] DEFAULT '{}';
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS paused BOOLEAN DEFAULT false;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS tg_message_id BIGINT;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS tg_chat_id TEXT;
+ALTER TABLE drive_queue ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
+
+-- Activity log for automation dashboard
+CREATE TABLE IF NOT EXISTS automation_activity (
+  id BIGSERIAL PRIMARY KEY,
+  action TEXT NOT NULL,          -- ai_generated | approved | published | failed | skipped | archived | edited | regenerated
+  file_id TEXT REFERENCES drive_queue(file_id) ON DELETE SET NULL,
+  job_id TEXT REFERENCES content_jobs(id) ON DELETE SET NULL,
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE automation_activity ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON automation_activity FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Automation settings (replaces single app_settings row)
+CREATE TABLE IF NOT EXISTS automation_settings (
+  id BIGSERIAL PRIMARY KEY,
+  key TEXT UNIQUE NOT NULL,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE automation_settings ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON automation_settings FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
