@@ -40,11 +40,12 @@ export default function RootLayout({ children }) {
   }, [])
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabaseBrowser().auth.getSession()
-      if (!data?.session) { router.replace('/login'); return }
-      setUser(data.session.user)
+    const timer = setTimeout(() => { setLoading(false) }, 5000)
+    ;(async () => {
       try {
+        const { data } = await supabaseBrowser().auth.getSession()
+        if (!data?.session) { router.replace('/login'); return }
+        setUser(data.session.user)
         const [providers, styles] = await Promise.all([
           api('/providers'), api('/prompt-styles'),
         ])
@@ -52,8 +53,8 @@ export default function RootLayout({ children }) {
         const tp = providers.find(p => p.active_for_text)
         setTextProvider(tp)
         setProvidersConfigured(providers.length > 0 && !!tp)
-      } catch (e) { toast.error(e.message) }
-      finally { setLoading(false) }
+      } catch (e) { if (e?.message) toast.error(e.message) }
+      finally { clearTimeout(timer); setLoading(false) }
     })()
   }, [])
 
