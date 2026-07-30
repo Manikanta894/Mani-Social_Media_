@@ -562,14 +562,14 @@ async function route(request, method) {
       if (id === 'posts' && !action && method === 'POST') {
         return ok(await storage.blogPosts.create(await request.json()))
       }
-      if (action === 'posts' && method === 'GET') {
-        return ok(await storage.blogPosts.get(id))
+      if (id === 'posts' && action && method === 'GET') {
+        return ok(await storage.blogPosts.get(action))
       }
-      if (action === 'posts' && method === 'PUT') {
-        return ok(await storage.blogPosts.update(id, await request.json()))
+      if (id === 'posts' && action && method === 'PUT') {
+        return ok(await storage.blogPosts.update(action, await request.json()))
       }
-      if (action === 'posts' && method === 'DELETE') {
-        await storage.blogPosts.remove(id); return ok({})
+      if (id === 'posts' && action && method === 'DELETE') {
+        await storage.blogPosts.remove(action); return ok({})
       }
       if (id === 'publish' && action && method === 'POST') {
         const body = await request.json()
