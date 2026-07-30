@@ -271,9 +271,24 @@ function BlogPage() {
                             })}
                           </div>
                           {dripResult && (
-                            <div className="bg-primary/5 border border-primary/20 rounded-sm p-3 text-xs">
-                              <div className="font-medium text-primary mb-1">Scheduled!</div>
-                              {dripResult.posts?.map(p => <div key={p.id} className="text-muted-foreground">#{p.index} — {p.platform} — {new Date(p.scheduled_for).toLocaleDateString()}</div>)}
+                            <div className="space-y-2">
+                              <div className="font-medium text-primary text-sm">Scheduled! 🎉</div>
+                              <div className="grid gap-2">
+                                {dripResult.posts?.map(p => {
+                                  const icons = { linkedin: '💼', instagram: '📷', facebook: '👥', threads: '🧵', twitter: '🐦' }
+                                  return (
+                                    <div key={p.id} className="border border-border rounded-sm p-2.5 bg-card text-xs space-y-1">
+                                      <div className="flex items-center gap-1.5 font-medium">
+                                        <span>{icons[p.platform] || '🌐'}</span>
+                                        <span className="capitalize">{p.platform}</span>
+                                        <span className="ml-auto text-muted-foreground font-normal">{new Date(p.scheduled_for).toLocaleDateString()} {new Date(p.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                      </div>
+                                      <div className="text-muted-foreground line-clamp-2">{p.caption}</div>
+                                      <div className="text-[0.45rem] text-muted-foreground">#{p.index} of {dripCount}</div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
                             </div>
                           )}
                           <Button onClick={runDrip} disabled={dripRunning} className="w-full studio-btn-gradient">
