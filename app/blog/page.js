@@ -78,7 +78,7 @@ function BlogPage() {
         toast.success('Published to Hashnode!')
         setActivePost(prev => ({ ...prev, status: 'published', published_url: pubResult.url }))
       } catch (pubErr) {
-        toast.error('Generated but publish failed: ' + pubErr.message + '. Set HASHNODE_API_KEY in .env')
+        toast.error('Generated but publish failed: ' + pubErr.message + '. Set INSIGHTS_API_SECRET in .env')
       }
       setContext('')
       setImageFile(null)
