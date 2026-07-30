@@ -5,7 +5,7 @@ import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { api, StatusPill } from '@/components/shared'
+import { api, StatusPill, PLATFORMS } from '@/components/shared'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
@@ -245,15 +245,30 @@ function BlogPage() {
                         <Button size="sm" variant="outline" className="border-border h-7 text-xs"><Dribbble className="h-3 w-3 mr-1" /> Drip to Social</Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
-                        <DialogHeader><DialogTitle>Drip to Social</DialogTitle><DialogDescription>Break into {dripCount} posts across {dripSpread} days.</DialogDescription></DialogHeader>
+                        <DialogHeader><DialogTitle>Drip to Social</DialogTitle><DialogDescription>Break into {dripCount} posts across {dripSpread} days, each posted to all platforms.</DialogDescription></DialogHeader>
                         <div className="space-y-5 py-4">
                           <div className="space-y-2">
-                            <div className="flex justify-between text-sm"><Label>Posts</Label><span>{dripCount}</span></div>
+                            <div className="flex justify-between text-sm"><Label>Number of posts</Label><span className="font-medium">{dripCount}</span></div>
                             <Slider min={3} max={5} step={1} value={[dripCount]} onValueChange={v => setDripCount(v[0])} />
+                            <div className="flex justify-between text-xs text-muted-foreground"><span>3</span><span>5</span></div>
                           </div>
                           <div className="space-y-2">
-                            <div className="flex justify-between text-sm"><Label>Spread (days)</Label><span>{dripSpread}</span></div>
+                            <div className="flex justify-between text-sm"><Label>Spread across (days)</Label><span className="font-medium">{dripSpread}</span></div>
                             <Slider min={3} max={7} step={1} value={[dripSpread]} onValueChange={v => setDripSpread(v[0])} />
+                            <div className="flex justify-between text-xs text-muted-foreground"><span>3</span><span>7</span></div>
+                          </div>
+                          <div className="bg-secondary/50 rounded-sm p-3 text-xs space-y-1.5 border border-border">
+                            <div className="font-semibold text-foreground/80 mb-1">Schedule preview</div>
+                            {Array.from({ length: dripCount }, (_, i) => {
+                              const d = new Date(); d.setDate(d.getDate() + Math.floor((dripSpread / dripCount) * i) + 1); d.setHours(10 + (i % 8), 0, 0, 0)
+                              return (
+                                <div key={i} className="flex items-center gap-2 text-muted-foreground">
+                                  <span className="w-5 text-right font-medium text-foreground/60">#{i + 1}</span>
+                                  <span>{d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                  <span className="ml-auto flex gap-0.5">{PLATFORMS.slice(0, 4).map(p => <span key={p.key} className="text-[0.45rem] bg-secondary border border-border rounded-sm px-1">{p.letter}</span>)}</span>
+                                </div>
+                              )
+                            })}
                           </div>
                           {dripResult && (
                             <div className="bg-primary/5 border border-primary/20 rounded-sm p-3 text-xs">
@@ -298,6 +313,18 @@ function BlogPage() {
                     {activePost.publish_error && (
                       <div className="mt-4 text-sm text-flag bg-flag/5 p-3 rounded-sm border border-flag/30">Error: {activePost.publish_error}</div>
                     )}
+                    <div className="mt-6 pt-4 border-t border-border">
+                      <div className="studio-eyebrow mb-3">Platform Previews</div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {PLATFORMS.slice(0, 4).map(p => (
+                          <div key={p.key} className="border border-border rounded-sm p-3 bg-secondary/20 text-xs space-y-1">
+                            <div className="font-semibold text-foreground/80 uppercase tracking-wider">{p.label}</div>
+                            <div className="text-muted-foreground line-clamp-3">{activePost.seo_description || activePost.title}</div>
+                            <div className="text-[0.5rem] text-muted-foreground">Max {p.limit} chars</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
