@@ -1176,6 +1176,17 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       return ok({ saved: true })
     }
 
+    // --- CSV Topics ---
+    if (resource === 'csv-topics') {
+      if (method === 'GET') return ok(await storage.csvTopics.list())
+      if (method === 'POST' && id === 'bulk') { const body = await request.json(); return ok(await storage.csvTopics.bulkCreate(body.rows)) }
+      if (method === 'POST') return ok(await storage.csvTopics.create(await request.json()))
+      if (method === 'PUT' && id) return ok(await storage.csvTopics.update(parseInt(id), await request.json()))
+      if (method === 'DELETE' && id) { await storage.csvTopics.remove(parseInt(id)); return ok({}) }
+      if (id === 'next-unused' && method === 'GET') return ok(await storage.csvTopics.nextUnused())
+      if (id === 'count' && method === 'GET') return ok({ count: await storage.csvTopics.countPending() })
+    }
+
     // --- Unscheduled jobs (for calendar sidebar) ---
     if (resource === 'unscheduled-jobs' && method === 'GET') {
       const all = await storage.jobs.list({})
