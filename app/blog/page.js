@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Dribbble, Clock, RotateCcw } from 'lucide-react'
+import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Dribbble, Clock, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -328,6 +328,8 @@ function BlogPage() {
                     {activePost.publish_error && (
                       <div className="mt-4 text-sm text-flag bg-flag/5 p-3 rounded-sm border border-flag/30">Error: {activePost.publish_error}</div>
                     )}
+                    {activePost.status === 'published' && <DripManagement blogId={activePost.id} />}
+
                     <div className="mt-6 pt-4 border-t border-border">
                       <div className="studio-eyebrow mb-3">Platform Previews</div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -346,6 +348,121 @@ function BlogPage() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function DripManagement({ blogId }) {
+  const [dripJobs, setDripJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [expandedPost, setExpandedPost] = useState(null)
+  const [expandedPlatform, setExpandedPlatform] = useState(null)
+  const [editValues, setEditValues] = useState({})
+  const [regenerating, setRegenerating] = useState(null)
+
+  const loadDrips = async () => {
+    setLoading(true)
+    try {
+      const jobs = await api('/jobs')
+      const drips = jobs.filter(j => j.campaign_id === `drip_${blogId}`)
+      setDripJobs(drips)
+    } catch (e) { toast.error(e.message) } finally { setLoading(false) }
+  }
+  useEffect(() => { if (blogId) loadDrips() }, [blogId])
+
+  const savePlatform = async (jobId, platform) => {
+    try {
+      const job = dripJobs.find(j => j.id === jobId)
+      const posts = { ...(job.platform_posts || {}) }
+      posts[platform] = { ...(posts[platform] || {}), caption: editValues[`${jobId}_${platform}`] || posts[platform]?.caption, hashtags: editValues[`${jobId}_${platform}_tags`]?.split(',').map(t => t.trim()).filter(Boolean) || posts[platform]?.hashtags }
+      await api('/jobs/' + jobId, { method: 'PUT', body: { platform_posts: posts } })
+      toast.success('Saved')
+      setExpandedPlatform(null)
+      await loadDrips()
+    } catch (e) { toast.error(e.message) }
+  }
+
+  const regeneratePlatform = async (jobId, platform) => {
+    setRegenerating(`${jobId}_${platform}`)
+    try {
+      const job = dripJobs.find(j => j.id === jobId)
+      const result = await api('/regenerate/' + jobId, { method: 'POST', body: { platform, styleId: '' } })
+      const posts = { ...(job.platform_posts || {}) }
+      posts[platform] = { ...result, hashtags: result.hashtags || [] }
+      await api('/jobs/' + jobId, { method: 'PUT', body: { platform_posts: posts } })
+      toast.success('Regenerated ' + platform)
+      await loadDrips()
+    } catch (e) { toast.error(e.message) } finally { setRegenerating(null) }
+  }
+
+  const platformMeta = { linkedin: { emoji: '💼', label: 'LinkedIn', color: '#0A66C2' }, instagram: { emoji: '📷', label: 'Instagram', color: '#E4405F' }, facebook: { emoji: '👥', label: 'Facebook', color: '#1877F2' }, threads: { emoji: '🧵', label: 'Threads', color: '#000000' }, twitter: { emoji: '🐦', label: 'X', color: '#000000' } }
+
+  if (loading) return <div className="mt-4 text-sm text-muted-foreground">Loading drip posts…</div>
+  if (dripJobs.length === 0) return null
+
+  return (
+    <div className="mt-6 pt-4 border-t border-border">
+      <div className="flex items-center gap-2 mb-3">
+        <Dribbble className="h-4 w-4 text-primary" />
+        <span className="studio-eyebrow">Social Drip ({dripJobs.length} posts)</span>
+      </div>
+      <div className="space-y-2">
+        {dripJobs.map((job, pi) => {
+          const platforms = Object.keys(job.platform_posts || {})
+          return (
+            <div key={job.id} className="border border-border rounded-sm bg-card overflow-hidden">
+              <button onClick={() => setExpandedPost(expandedPost === job.id ? null : job.id)} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-secondary/20 transition-colors">
+                <span className="font-medium text-muted-foreground">#{pi + 1}</span>
+                <span className="flex-1 text-left truncate">{job.topic?.replace(/^Drip \d+\/\d+: /, '') || 'Drip post'}</span>
+                <span className="studio-mono text-[0.5rem] text-muted-foreground">{job.scheduled_for ? new Date(job.scheduled_for).toLocaleDateString() : ''}</span>
+                <span className="flex gap-1">{platforms.map(p => {
+                  const m = platformMeta[p]
+                  return m ? <span key={p} style={{ color: m.color }} className="text-xs">{m.emoji}</span> : null
+                })}</span>
+                {expandedPost === job.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+              {expandedPost === job.id && (
+                <div className="px-3 pb-3 space-y-2 border-t border-border pt-2">
+                  {platforms.map(p => {
+                    const m = platformMeta[p]
+                    const post = job.platform_posts[p] || {}
+                    const isOpen = expandedPlatform === `${job.id}_${p}`
+                    return (
+                      <div key={p} className="border border-border rounded-sm bg-secondary/10">
+                        <button onClick={() => setExpandedPlatform(isOpen ? null : `${job.id}_${p}`)} className="w-full flex items-center gap-2 px-2.5 py-2 text-xs hover:bg-secondary/20 transition-colors">
+                          <span>{m?.emoji || '🌐'}</span>
+                          <span className="font-medium">{m?.label || p}</span>
+                          <span className="ml-auto text-muted-foreground">{post.caption?.length || 0} chars</span>
+                          {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+                        {isOpen && (
+                          <div className="p-2.5 border-t border-border space-y-2">
+                            <div>
+                              <div className="studio-eyebrow mb-1">Caption</div>
+                              <textarea value={editValues[`${job.id}_${p}`] ?? post.caption || ''} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}`]: e.target.value }))} rows={3} className="w-full text-xs bg-secondary/50 border border-border rounded-sm p-2 resize-none" />
+                            </div>
+                            <div>
+                              <div className="studio-eyebrow mb-1">Hashtags (comma separated)</div>
+                              <input value={editValues[`${job.id}_${p}_tags`] ?? (post.hashtags || []).join(', ')} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}_tags`]: e.target.value }))} className="w-full text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1.5" />
+                            </div>
+                            <div className="flex gap-1.5">
+                              <Button size="sm" onClick={() => savePlatform(job.id, p)} className="studio-btn-gradient h-6 text-[0.6rem]"><Save className="h-2.5 w-2.5 mr-1" /> Save</Button>
+                              <Button size="sm" variant="outline" className="border-border h-6 text-[0.6rem]" onClick={() => regeneratePlatform(job.id, p)} disabled={regenerating === `${job.id}_${p}`}>
+                                {regenerating === `${job.id}_${p}` ? <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" /> : <RotateCcw className="h-2.5 w-2.5 mr-1" />}
+                                Regenerate
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
