@@ -53,7 +53,7 @@ function BlogPage() {
     try {
       const result = await api('/blog/generate', {
         method: 'POST',
-        body: { image_base64: imageBase64, mime_type: imageFile?.type || 'image/jpeg', context, style_id: styleId || undefined },
+        body: { context, style_id: styleId || undefined },
       })
       const bp = await api('/blog/posts', {
         method: 'POST',
