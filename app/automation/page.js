@@ -197,151 +197,181 @@ function Dashboard() {
 }
 
 function QueueManager() {
-  const [stats, setStats] = useState(null)
-  const [queue, setQueue] = useState([])
+  const [queueType, setQueueType] = useState('social')
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [statusFilter, setStatusFilter] = useState('')
+  const [socialQueue, setSocialQueue] = useState([])
+  const [socialStats, setSocialStats] = useState(null)
+  const [blogStats, setBlogStats] = useState(null)
+  const [blogQueue, setBlogQueue] = useState([])
+  const [manualJobs, setManualJobs] = useState([])
+  const [newsItems, setNewsItems] = useState([])
   const [selected, setSelected] = useState(new Set())
+  const [statusFilter, setStatusFilter] = useState('')
   const [paused, setPaused] = useState(false)
   const fileRef = useRef(null)
 
   const refresh = async () => {
     setLoading(true)
     try {
-      const path = statusFilter ? `/intake/queue?status=${statusFilter}` : '/intake/queue'
-      const [st, q, s] = await Promise.all([
-        api('/intake/stats'),
-        api(path),
-        api('/automation/settings').catch(() => ({})),
+      const [sq, ss, bq, bs, mj, ni] = await Promise.all([
+        api('/intake/queue').catch(() => []),
+        api('/intake/stats').catch(() => ({})),
+        api('/blog/queue').catch(() => []),
+        api('/blog/stats').catch(() => ({})),
+        api('/jobs').catch(() => []),
+        api('/news/posts').catch(() => []),
       ])
-      setStats(st); setQueue(q); setPaused(s.pause_queue)
+      setSocialQueue(sq); setSocialStats(ss); setBlogQueue(bq); setBlogStats(bs)
+      setManualJobs(mj.filter(j => j.source === 'ai_manual' || j.source === 'compose'))
+      setNewsItems(ni.filter(n => n.status === 'pending_approval'))
     } catch (e) { toast.error(e.message) }
     finally { setLoading(false) }
   }
 
-  useEffect(() => { refresh() }, [statusFilter])
+  useEffect(() => { refresh() }, [])
 
   const sync = async () => {
     setSyncing(true)
     try {
-      const r = await api('/intake/sync', { method: 'POST' })
-      toast.success(`Indexed ${r.indexed} new file(s)`)
+      if (queueType === 'social') { const r = await api('/intake/sync', { method: 'POST' }); toast.success(`Indexed ${r.indexed} new`) }
+      if (queueType === 'blog') { const r = await api('/blog/sync', { method: 'POST' }); toast.success(`Indexed ${r.indexed} new`) }
       await refresh()
-    } catch (e) { toast.error(e.message) }
-    finally { setSyncing(false) }
+    } catch (e) { toast.error(e.message) } finally { setSyncing(false) }
   }
 
   const handleFiles = async (files) => {
     if (!files || files.length === 0) return
     setUploading(true)
     let done = 0, failed = 0
+    const endpoint = queueType === 'blog' ? '/blog/upload' : '/intake/upload'
     for (const file of files) {
       if (!file.type.startsWith('image/')) { failed++; continue }
       try {
         const resized = await resizeImageToBase64(file, 2000, 0.9)
-        await api('/intake/upload', { method: 'POST', body: { base64: resized.base64, mime_type: resized.mimeType, file_name: file.name } })
+        await api(endpoint, { method: 'POST', body: { base64: resized.base64, mime_type: resized.mimeType, file_name: file.name } })
         done++
       } catch (e) { failed++ }
     }
     toast.success(`Uploaded ${done}${failed ? ` · ${failed} failed` : ''}`)
-    setUploading(false)
-    await sync()
-  }
-
-  const toggleSelect = (fileId) => {
-    const next = new Set(selected)
-    if (next.has(fileId)) next.delete(fileId); else next.add(fileId)
-    setSelected(next)
-  }
-
-  const toggleAll = () => {
-    if (selected.size === queue.length) setSelected(new Set())
-    else setSelected(new Set(queue.map(r => r.file_id)))
+    setUploading(false); await sync()
   }
 
   const doBulk = async (action) => {
-    if (selected.size === 0) { toast.error('Select items first'); return }
+    if (selected.size === 0) return
+    const endpoint = queueType === 'blog' ? '/blog/bulk' : '/automation/bulk'
     try {
-      const r = await api('/automation/bulk', { method: 'POST', body: { fileIds: [...selected], action } })
-      const ok = r.filter(x => x.ok).length
-      toast.success(`${action}: ${ok}/${selected.size} done`)
-      setSelected(new Set())
-      await refresh()
+      const r = await api(endpoint, { method: 'POST', body: { fileIds: [...selected], action } })
+      toast.success(`${action}: ${r.filter(x => x.ok).length}/${selected.size}`)
+      setSelected(new Set()); await refresh()
     } catch (e) { toast.error(e.message) }
   }
 
-  const togglePause = async () => {
-    try {
-      const s = await api('/automation/queue-settings', { method: 'PUT', body: { pause_queue: !paused } })
-      setPaused(s.pause_queue)
-      toast.success(s.pause_queue ? 'Queue paused' : 'Queue resumed')
-    } catch (e) { toast.error(e.message) }
-  }
+  const currentQueue = queueType === 'blog' ? blogQueue : socialQueue
+  const currentStats = queueType === 'blog' ? blogStats : socialStats
 
-  const statuses = [
-    ['', 'All'],
-    ['queued', 'Queued'],
-    ['processing', 'Processing'],
-    ['pending_approval', 'Pending'],
-    ['approved', 'Approved'],
-    ['scheduled', 'Scheduled'],
-    ['published', 'Published'],
-    ['failed', 'Failed'],
-    ['archived', 'Archived'],
-    ['skipped', 'Skipped'],
+  const queues = [
+    { key: 'social', label: 'Social Auto', icon: '📸', desc: 'Photos → AI → Telegram → Publish to LinkedIn/IG/FB/Threads' },
+    { key: 'blog', label: 'Blog Engine', icon: '📝', desc: 'Photos → AI Article → INSIGHTS blog' },
+    { key: 'manual', label: 'Manual Posts', icon: '✍️', desc: 'Posts created from Compose page — draft/approved/scheduled' },
+    { key: 'news', label: 'News Radar', icon: '📡', desc: 'AI-generated posts from RSS feeds — pending approval' },
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-serif font-semibold text-lg">Queue Manager</h3>
-          <p className="text-sm text-muted-foreground">Upload photos, manage queue, and control automation flow.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={togglePause} variant={paused ? 'default' : 'outline'} size="sm" className={paused ? '' : 'border-border'}>
-            {paused ? <Play className="h-3.5 w-3.5 mr-1.5" /> : <Pause className="h-3.5 w-3.5 mr-1.5" />}
-            {paused ? 'Resume' : 'Pause'}
-          </Button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 flex-wrap border-b border-border pb-3">
+        {queues.map(q => (
+          <button key={q.key} onClick={() => { setQueueType(q.key); setSelected(new Set()) }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${queueType === q.key ? 'bg-gradient-to-r from-[#7C3AED]/10 to-[#EC4899]/10 text-[#7C3AED] border border-[#7C3AED]/20 shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
+          ><span>{q.icon}</span> {q.label}</button>
+        ))}
       </div>
 
+      {queueType === 'social' && (
+        <>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div onClick={() => fileRef.current?.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
+              className="border-2 border-dashed border-border hover:border-primary/40 rounded-sm cursor-pointer p-4 text-center bg-secondary/30 transition-colors flex-1">
+              {uploading ? <div className="flex items-center justify-center gap-2 text-primary"><Loader2 className="h-5 w-5 animate-spin" /> Uploading…</div>
+              : <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm"><Upload className="h-4 w-4" /> Drop social photos here</div>}
+              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
+            </div>
+          </div>
+          <QueueList items={socialQueue} stats={socialStats} queueType="social" selected={selected} setSelected={setSelected} doBulk={doBulk} loading={loading} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
+        </>
+      )}
+
+      {queueType === 'blog' && (
+        <>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div onClick={() => fileRef.current?.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
+              className="border-2 border-dashed border-border hover:border-primary/40 rounded-sm cursor-pointer p-4 text-center bg-secondary/30 transition-colors flex-1">
+              {uploading ? <div className="flex items-center justify-center gap-2 text-primary"><Loader2 className="h-5 w-5 animate-spin" /> Uploading…</div>
+              : <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm"><Upload className="h-4 w-4" /> Drop blog photos here</div>}
+            </div>
+            <Button onClick={sync} disabled={syncing} variant="outline" size="sm" className="border-border"><RefreshCw className="h-4 w-4 mr-2" /> Sync</Button>
+          </div>
+          <QueueList items={blogQueue} stats={blogStats} queueType="blog" selected={selected} setSelected={setSelected} doBulk={doBulk} loading={loading} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
+        </>
+      )}
+
+      {queueType === 'manual' && (
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground mb-2">Posts created from Compose page. Use /queue-manual in Telegram.</div>
+          {loading ? <div className="text-sm text-muted-foreground">Loading…</div> : manualJobs.length === 0 ? <div className="text-sm text-muted-foreground py-4">No manual posts yet. Create one in Compose.</div> : (
+            <div className="divide-y divide-border max-h-96 overflow-y-auto bg-card border border-border rounded-sm">
+              {manualJobs.slice(0, 50).map((j, i) => (
+                <div key={j.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/20 text-sm">
+                  <span className="text-muted-foreground text-xs w-6">#{i + 1}</span>
+                  <StatusPill status={j.status} />
+                  <span className="flex-1 truncate">{j.topic || 'Untitled'}</span>
+                  <span className="text-xs text-muted-foreground">{j.created_at ? new Date(j.created_at).toLocaleDateString() : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {queueType === 'news' && (
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground mb-2">AI-generated news posts pending approval. Use /queue-news in Telegram.</div>
+          {loading ? <div className="text-sm text-muted-foreground">Loading…</div> : newsItems.length === 0 ? <div className="text-sm text-muted-foreground py-4">No news items pending.</div> : (
+            <div className="divide-y divide-border max-h-96 overflow-y-auto bg-card border border-border rounded-sm">
+              {newsItems.slice(0, 50).map((n, i) => (
+                <div key={n.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/20 text-sm">
+                  <span className="text-muted-foreground text-xs w-6">#{i + 1}</span>
+                  <StatusPill status={n.status || 'pending'} />
+                  <span className="flex-1 truncate">{n.title || 'Untitled'}</span>
+                  <span className="text-xs text-muted-foreground">{n.created_at ? new Date(n.created_at).toLocaleDateString() : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function QueueList({ items, stats, queueType, selected, setSelected, doBulk, loading, statusFilter, setStatusFilter }) {
+  const fileRef = useRef(null)
+  const toggleSelect = (id) => { const n = new Set(selected); if (n.has(id)) n.delete(id); else n.add(id); setSelected(n) }
+  const toggleAll = () => { if (selected.size === items.length) setSelected(new Set()); else setSelected(new Set(items.map(r => r.file_id || r.id))) }
+
+  return (
+    <div className="space-y-3">
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
           {[['queued', 'Queued'], ['processing', 'Processing'], ['pending_approval', 'Pending'], ['published', 'Published'], ['failed', 'Failed'], ['archived', 'Archived'], ['skipped', 'Skipped']].map(([k, label]) => (
-            <div key={k} className="border border-border rounded-sm p-3 bg-card shadow-sm cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setStatusFilter(k === statusFilter ? '' : k)}>
-              <div className="editorial-eyebrow">{label}</div>
-              <div className={`text-xl font-semibold mt-1 ${(stats[k] || 0) > 0 ? '' : 'text-muted-foreground'}`}>{stats[k] || 0}</div>
+            <div key={k} className="border border-border rounded-sm p-3 bg-card shadow-sm cursor-pointer hover:border-primary/40" onClick={() => setStatusFilter(k === statusFilter ? '' : k)}>
+              <div className="studio-eyebrow">{label}</div>
+              <div className={`text-lg font-semibold mt-0.5 ${(stats[k] || 0) > 0 ? '' : 'text-muted-foreground'}`}>{stats[k] || 0}</div>
             </div>
           ))}
         </div>
       )}
-
-      <div className="flex items-center gap-2 flex-wrap">
-        <div
-          onClick={() => fileRef.current?.click()}
-          onDragOver={e => e.preventDefault()}
-          onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
-          className="border-2 border-dashed border-border hover:border-primary/40 rounded-sm cursor-pointer p-6 text-center bg-secondary/30 transition-colors flex-1"
-        >
-          {uploading ? (
-            <div className="flex items-center justify-center gap-2 text-primary"><Loader2 className="h-5 w-5 animate-spin" /> Uploading…</div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <Upload className="h-5 w-5" />
-              <span className="text-sm">Drop photos or click</span>
-            </div>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
-        </div>
-        <Button onClick={sync} disabled={syncing} variant="outline" className="border-border shrink-0">
-          {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Sync
-        </Button>
-      </div>
-
       {selected.size > 0 && (
         <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-sm border border-border">
           <span className="text-sm font-medium mr-2">{selected.size} selected</span>
@@ -352,25 +382,22 @@ function QueueManager() {
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
         </div>
       )}
-
       {loading ? (
-        <div className="text-muted-foreground flex items-center gap-2 py-10 justify-center"><Loader2 className="h-5 w-5 animate-spin" /> Loading queue…</div>
-      ) : queue.length === 0 ? (
-        <div className="border border-dashed border-border rounded-sm p-10 text-center bg-secondary/30">
-          <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <div className="text-foreground font-serif font-semibold">No items in queue</div>
-          <div className="text-sm text-muted-foreground mt-1">Drop photos above or upload to the intake bucket in Supabase.</div>
+        <div className="text-sm text-muted-foreground py-4 text-center"><Loader2 className="h-4 w-4 inline animate-spin mr-2" />Loading…</div>
+      ) : items.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-8 text-center border border-dashed border-border rounded-sm bg-secondary/30">
+          <ImageIcon className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+          No items in {queueType} queue
         </div>
       ) : (
         <div className="bg-card border border-border rounded-sm">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-secondary/20">
-            <input type="checkbox" checked={selected.size === queue.length && queue.length > 0} onChange={toggleAll} className="rounded border-border" />
-            <span className="text-xs text-muted-foreground">Select all ({queue.length})</span>
-            <span className="ml-auto editorial-mono text-[0.5rem] text-muted-foreground">{statusFilter ? `Filtered: ${statusFilter}` : 'All items'}</span>
+            <input type="checkbox" checked={selected.size === items.length && items.length > 0} onChange={toggleAll} className="rounded border-border" />
+            <span className="text-xs text-muted-foreground">{items.length} items</span>
           </div>
           <div className="divide-y divide-border max-h-96 overflow-y-auto">
-            {queue.map((row, i) => (
-              <QueueRow key={row.file_id} row={row} index={i} selected={selected.has(row.file_id)} onToggle={() => toggleSelect(row.file_id)} />
+            {items.map((row, i) => (
+              <QueueRow key={row.file_id || row.id} row={row} index={i} selected={selected.has(row.file_id || row.id)} onToggle={() => toggleSelect(row.file_id || row.id)} />
             ))}
           </div>
         </div>
