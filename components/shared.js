@@ -15,6 +15,9 @@ export const PROVIDER_TYPES = [
   { value: 'openai',    label: 'OpenAI',                  defaultModel: 'gpt-4o',                      supportsVision: true  },
   { value: 'anthropic', label: 'Anthropic Claude',        defaultModel: 'claude-sonnet-4-5-20250929',  supportsVision: true  },
   { value: 'groq',      label: 'Groq (OpenAI-compat.)',   defaultModel: 'llama-3.3-70b-versatile',     supportsVision: false },
+  { value: 'nvidia-llama', label: 'NVIDIA Llama 3.2 90B Vision', defaultModel: 'nvidia/llama-3.2-90b-vision', supportsVision: true  },
+  { value: 'nvidia-nemotron', label: 'NVIDIA Nemotron 3 Nano',    defaultModel: 'nvidia/nemotron-3-nano-omni', supportsVision: true  },
+  { value: 'nvidia-kimi', label: 'NVIDIA Kimi K2.6',             defaultModel: 'nvidia/kimi-k2-6',            supportsVision: true  },
   { value: 'openrouter', label: 'OpenRouter',              defaultModel: 'openai/gpt-4o',               supportsVision: true  },
   { value: 'custom',    label: 'Custom (OpenAI-compat.)', defaultModel: '',                            supportsVision: true  },
 ]
