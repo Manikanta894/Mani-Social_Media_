@@ -314,24 +314,37 @@ function BlogPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="prose prose-sm max-w-none">
-                    <h2 className="studio-title text-xl mb-2">{activePost.title}</h2>
-                    {activePost.seo_description && <p className="text-sm text-muted-foreground italic mb-4">{activePost.seo_description}</p>}
-                    <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap">{activePost.body_markdown}</div>
-                    {activePost.published_url && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <a href={activePost.published_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
-                          <ExternalLink className="h-3 w-3" /> Published at {activePost.published_url}
-                        </a>
-                      </div>
-                    )}
-                    {activePost.publish_error && (
-                      <div className="mt-4 text-sm text-flag bg-flag/5 p-3 rounded-sm border border-flag/30">Error: {activePost.publish_error}</div>
-                    )}
-                    {activePost.status === 'published' && <DripManagement blogId={activePost.id} />}
+                  <div className="space-y-4">
+                    <div className="bg-card border border-border rounded-sm p-4">
+                      <div className="studio-eyebrow mb-2">Article</div>
+                      <h2 className="studio-title text-lg mb-1">{activePost.title}</h2>
+                      <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-sm max-h-60 overflow-y-auto">{activePost.body_markdown}</div>
+                    </div>
 
-                    <div className="mt-6 pt-4 border-t border-border">
-                      <div className="studio-eyebrow mb-3">Platform Previews</div>
+                    <div className="bg-card border border-border rounded-sm p-4">
+                      <div className="studio-eyebrow mb-2">SEO</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Meta Description</div>
+                          <div className="text-foreground/80">{activePost.seo_description || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Keywords</div>
+                          <div className="text-foreground/80">{activePost.keywords || activePost.tags?.join(', ') || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Tags</div>
+                          <div className="flex flex-wrap gap-1 mt-0.5">{(activePost.tags || []).slice(0, 6).map((t, i) => <span key={i} className="text-[0.5rem] bg-secondary border border-border rounded-sm px-1.5 py-0.5">{t}</span>)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Slug</div>
+                          <div className="text-foreground/80 font-mono text-[0.6rem]">{activePost.slug || '—'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-card border border-border rounded-sm p-4">
+                      <div className="studio-eyebrow mb-2">Platform Previews</div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {PLATFORMS.slice(0, 4).map(p => (
                           <div key={p.key} className="border border-border rounded-sm p-3 bg-secondary/20 text-xs space-y-1">
@@ -342,6 +355,18 @@ function BlogPage() {
                         ))}
                       </div>
                     </div>
+
+                    {activePost.published_url && (
+                      <div className="bg-card border border-border rounded-sm p-4">
+                        <a href={activePost.published_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3" /> Published at {activePost.published_url}
+                        </a>
+                      </div>
+                    )}
+                    {activePost.publish_error && (
+                      <div className="text-sm text-flag bg-flag/5 p-3 rounded-sm border border-flag/30">Error: {activePost.publish_error}</div>
+                    )}
+                    {activePost.status === 'published' && <DripManagement blogId={activePost.id} />}
                   </div>
                 )}
               </div>
