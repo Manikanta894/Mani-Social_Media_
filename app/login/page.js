@@ -130,17 +130,17 @@ export default function LoginPage() {
 
   const enrollMfaLater = () => { window.location.href = '/' }
 
-  const inputClass = "w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm text-stone-900 bg-white placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500"
+  const inputClass = "w-full border border-[#E6E6EC] rounded-lg px-4 py-2.5 text-sm text-[#16161D] bg-white placeholder:text-[#6B6A78] focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/30 focus:border-[#7C3AED] transition-all"
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f5f0eb, #ece4d9)' }}>
-      <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFC]">
+      <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)] border border-[#E6E6EC] p-8 w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-violet-500/20">
-            <span className="text-white font-bold text-lg">SF</span>
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#7C3AED]/20">
+            <span className="text-white font-bold text-lg font-display">S</span>
           </div>
-          <h1 className="text-xl font-bold" style={{ color: '#1c1917' }}>SocialForge</h1>
-          <p className="text-sm mt-1" style={{ color: '#78716c' }}>Editorial Command Center</p>
+          <h1 className="text-xl font-bold text-[#16161D] font-display">Studio</h1>
+          <p className="text-sm mt-1 text-[#6B6A78]">creator command center</p>
         </div>
 
         {step === 'login' && (
@@ -148,7 +148,7 @@ export default function LoginPage() {
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required className={inputClass} />
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required className={inputClass} />
             <button type="submit" disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
+              className="w-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
@@ -159,7 +159,7 @@ export default function LoginPage() {
             <div style={{ color: '#57534e' }} className="text-sm mb-2">Enter the 6-digit code from your authenticator app.</div>
             <input type="text" value={totpCode} onChange={e => setTotpCode(e.target.value)} placeholder="000000" maxLength={6} required className={inputClass + " text-center text-lg tracking-widest"} />
             <button type="submit" disabled={loading || totpCode.length !== 6}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
+              className="w-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
               {loading ? 'Verifying…' : 'Verify'}
             </button>
           </form>
@@ -169,7 +169,7 @@ export default function LoginPage() {
           <div className="text-center space-y-4">
             <div style={{ color: '#57534e' }} className="text-sm">Secure your account with two-factor authentication.</div>
             <button onClick={handleEnroll} disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
+              className="w-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
               {loading ? 'Preparing…' : 'Set up TOTP Authenticator'}
             </button>
             <button onClick={enrollMfaLater} className="text-xs underline" style={{ color: '#a8a29e' }}>Skip for now</button>
@@ -183,14 +183,14 @@ export default function LoginPage() {
               <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }} />
             )}
             {enrollData.totp?.secret && (
-              <div className="bg-stone-50 rounded-lg p-3 text-center">
+              <div className="bg-[#F4F4F9] rounded-lg p-3 text-center">
                 <div className="text-[10px] uppercase mb-1" style={{ color: '#a8a29e' }}>Or enter this key manually</div>
                 <code className="text-xs font-mono break-all" style={{ color: '#44403c' }}>{enrollData.totp.secret}</code>
               </div>
             )}
             <input type="text" value={totpCode} onChange={e => setTotpCode(e.target.value)} placeholder="000000" maxLength={6} className={inputClass + " text-center text-lg tracking-widest"} />
             <button onClick={handleVerifyEnroll} disabled={loading || totpCode.length !== 6}
-              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
+              className="w-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] hover:from-[#6D28D9] hover:to-[#DB2777] text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
               {loading ? 'Verifying…' : 'Verify & Complete'}
             </button>
           </div>

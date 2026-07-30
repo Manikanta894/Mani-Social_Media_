@@ -88,10 +88,10 @@ export default function RootLayout({ children }) {
   }
 
   // Public pages don't need the sidebar
-  if (pathname === '/login') return <html><head><link rel="manifest" href="/manifest.json" /><meta name="theme-color" content="#2E5339" /><meta name="apple-mobile-web-app-capable" content="yes" /></head><body>{children}</body></html>
+  if (pathname === '/login') return <html><head><link rel="manifest" href="/manifest.json" /><meta name="theme-color" content="#7C3AED" /><meta name="apple-mobile-web-app-capable" content="yes" /></head><body>{children}</body></html>
 
   if (loading) return (
-    <html><head><link rel="manifest" href="/manifest.json" /><meta name="theme-color" content="#2E5339" /><meta name="apple-mobile-web-app-capable" content="yes" /></head><body className="bg-background text-foreground">
+    <html><head><link rel="manifest" href="/manifest.json" /><meta name="theme-color" content="#7C3AED" /><meta name="apple-mobile-web-app-capable" content="yes" /></head><body className="bg-background text-foreground">
       <div className="flex items-center justify-center h-screen text-muted-foreground gap-2">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading…
       </div>
@@ -110,12 +110,12 @@ export default function RootLayout({ children }) {
           <aside className="w-56 shrink-0 flex flex-col border-r border-border bg-sidebar text-sidebar-foreground">
             <div className="px-5 py-5 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-sm bg-primary flex items-center justify-center">
-                  <span className="font-serif text-sm font-bold text-primary-foreground">D</span>
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-sm">
+                  <span className="font-display text-sm font-bold text-white">S</span>
                 </div>
                 <div>
-                  <div className="font-serif font-semibold text-base tracking-tight text-foreground">The Desk</div>
-                  <div className="editorial-mono text-[0.625rem] text-muted-foreground">editorial command</div>
+                  <div className="studio-title text-lg text-foreground">Studio</div>
+                  <div className="studio-mono text-[0.5rem] text-muted-foreground">creator command</div>
                 </div>
               </div>
             </div>
@@ -124,13 +124,13 @@ export default function RootLayout({ children }) {
                 <button
                   key={key}
                   onClick={() => router.push(key)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     pathname === key
-                      ? 'bg-accent text-accent-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      ? 'bg-gradient-to-r from-[#7C3AED]/10 to-[#EC4899]/10 text-[#7C3AED] shadow-sm border border-[#7C3AED]/15'
+                      : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={`h-4 w-4 ${pathname === key ? 'text-[#7C3AED]' : ''}`} />
                   {label}
                 </button>
               ))}
@@ -149,46 +149,46 @@ export default function RootLayout({ children }) {
                     toast.info(`📊 ${pending} pending · ${failures} failed\n` + recent.join('\n'), { duration: 5000 })
                   } catch {}
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-all"
               >
                 <Bell className="h-4 w-4" />
                 Notifications
               </button>
               <button
                 onClick={() => router.push('/help')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-all"
               >
                 <HelpCircle className="h-4 w-4" />
                 Help
               </button>
               <button
                 onClick={() => router.push('/changelog')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-all"
               >
                 <FileText className="h-4 w-4" />
                 Build Log
               </button>
               <button
                 onClick={() => router.push('/settings')}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm transition-colors ${
-                  pathname === '/settings' ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  pathname === '/settings' ? 'bg-gradient-to-r from-[#7C3AED]/10 to-[#EC4899]/10 text-[#7C3AED] shadow-sm border border-[#7C3AED]/15' : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
                 }`}
               >
                 <SettingsIcon className="h-4 w-4" />
                 Settings
                 {!providersConfigured && (
-                  <span className="ml-auto editorial-mono text-[0.5rem] text-flag border border-flag/40 px-1 py-0.5 rounded-sm">SETUP</span>
+                  <span className="ml-auto studio-mono text-[0.5rem] text-[#D97706] bg-[#D97706]/10 border border-[#D97706]/20 px-1.5 py-0.5 rounded-full">SETUP</span>
                 )}
               </button>
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors mt-1">
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all mt-1">
                 <X className="h-4 w-4" /> Logout
               </button>
             </div>
             {activeStyle && (
-              <div className="mx-3 mb-3 p-3 rounded-sm border border-border bg-card">
-                <div className="editorial-eyebrow mb-1">Active style</div>
-                <div className="text-sm font-medium flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="mx-3 mb-3 p-3 rounded-lg bg-gradient-to-br from-[#7C3AED]/5 to-[#EC4899]/5 border border-[#7C3AED]/10">
+                <div className="studio-eyebrow mb-1">Active style</div>
+                <div className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                  <Sparkles className="h-3.5 w-3.5 text-[#7C3AED]" />
                   {activeStyle.name}
                 </div>
               </div>

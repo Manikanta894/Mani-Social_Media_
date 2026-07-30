@@ -2,56 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@300..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
-    /* Editorial palette */
-    --ink: 30 10% 10%;         /* #1C1A17 — near-black, warm */
-    --paper: 40 30% 96%;       /* #FAF7F0 — warm off-white */
-    --card: 0 0% 100%;         /* #FFFFFF — pure white */
-    --accent-green: 150 30% 25%; /* #2E5339 — deep editorial green */
-    --flag: 18 60% 45%;        /* #B8542E — muted brick/rust */
-    --muted-gray: 40 8% 50%;   /* #8A8477 — warm gray */
+    /* Creator Studio palette */
+    --surface: 240 20% 98%;        /* #FAFAFC — clean off-white */
+    --surface-raised: 0 0% 100%;   /* #FFFFFF — pure white */
+    --text: 250 15% 10%;           /* #16161D — near-black */
+    --text-muted: 250 5% 44%;      /* #6B6A78 — muted gray */
 
-    /* Derived semantic tokens (mapped to shadcn/ui conventions) */
-    --background: var(--paper);
-    --foreground: var(--ink);
-    --card: var(--card);
-    --card-foreground: var(--ink);
-    --popover: var(--card);
-    --popover-foreground: var(--ink);
-    --primary: var(--accent-green);
+    /* Gradient accent (violet → pink) */
+    --accent-from: 263 90% 51%;    /* #7C3AED — violet */
+    --accent-to: 330 81% 60%;      /* #EC4899 — hot pink */
+
+    /* State colors */
+    --live: 162 85% 35%;           /* #0EA37A — teal-green */
+    --warn: 35 92% 42%;            /* #D97706 — amber */
+
+    /* Derived semantic tokens */
+    --background: var(--surface);
+    --foreground: var(--text);
+    --card: var(--surface-raised);
+    --card-foreground: var(--text);
+    --popover: var(--surface-raised);
+    --popover-foreground: var(--text);
+    --primary: var(--accent-from);
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 15% 92%;
-    --secondary-foreground: var(--ink);
-    --muted: 40 10% 90%;
-    --muted-foreground: var(--muted-gray);
-    --accent: 40 10% 90%;
-    --accent-foreground: var(--ink);
-    --destructive: var(--flag);
+    --secondary: 240 10% 94%;
+    --secondary-foreground: var(--text);
+    --muted: 240 8% 92%;
+    --muted-foreground: var(--text-muted);
+    --accent: 260 50% 96%;
+    --accent-foreground: var(--text);
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 10% 86%;
-    --input: 40 10% 86%;
-    --ring: var(--accent-green);
-    --radius: 0.375rem;
+    --border: 240 6% 88%;
+    --input: 240 6% 88%;
+    --ring: var(--accent-from);
+    --radius: 0.625rem;
 
-    /* Chart colors (editorial-tinted) */
-    --chart-1: 150 30% 25%;
-    --chart-2: 18 60% 45%;
-    --chart-3: 40 8% 50%;
-    --chart-4: 30 10% 10%;
-    --chart-5: 150 20% 40%;
+    /* Chart colors (vibrant) */
+    --chart-1: 263 90% 51%;
+    --chart-2: 330 81% 60%;
+    --chart-3: 162 85% 35%;
+    --chart-4: 35 92% 42%;
+    --chart-5: 250 15% 10%;
 
     /* Sidebar */
-    --sidebar-background: 40 20% 94%;
-    --sidebar-foreground: var(--ink);
-    --sidebar-primary: var(--accent-green);
+    --sidebar-background: 240 20% 96%;
+    --sidebar-foreground: var(--text);
+    --sidebar-primary: var(--accent-from);
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 10% 88%;
-    --sidebar-accent-foreground: var(--ink);
-    --sidebar-border: 40 10% 82%;
-    --sidebar-ring: var(--accent-green);
+    --sidebar-accent: 263 50% 94%;
+    --sidebar-accent-foreground: var(--text);
+    --sidebar-border: 240 6% 86%;
+    --sidebar-ring: var(--accent-from);
   }
 }
 
@@ -66,155 +72,189 @@
 }
 
 @layer components {
-  /* Editorial display headings — serif, restrained */
-  .editorial-title {
-    font-family: 'Newsreader', Georgia, serif;
+  /* Display headlines — bold grotesk */
+  .studio-title {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
     font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
   }
 
-  .editorial-eyebrow {
-    font-family: 'Newsreader', Georgia, serif;
-    font-size: 0.6875rem;
-    font-weight: 500;
+  .studio-eyebrow {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 0.625rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: hsl(var(--muted));
+    color: hsl(var(--text-muted));
   }
 
-  /* Mono utility class for timestamps, IDs, counts */
-  .editorial-mono {
-    font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  .studio-mono {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
     letter-spacing: -0.01em;
   }
 
-  /* Status stamp — rotated badge like a proof stamp */
-  .status-stamp {
+  /* Status pill — gradient-filled for active, solid for states */
+  .studio-pill {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+    gap: 0.375rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
     font-size: 0.625rem;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.125rem 0.5rem;
-    border: 1.5px solid currentColor;
-    transform: rotate(-2deg);
-    transition: transform 0.2s ease;
-    line-height: 1.2;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .studio-pill:hover {
+    transform: scale(1.04);
   }
 
-  .status-stamp:hover {
-    transform: rotate(0deg);
+  .studio-pill--live {
+    background: linear-gradient(135deg, hsl(var(--accent-from)), hsl(var(--accent-to)));
+    color: white;
+  }
+  .studio-pill--published {
+    background: hsl(var(--live));
+    color: white;
+  }
+  .studio-pill--pending {
+    background: hsl(var(--warn));
+    color: white;
+  }
+  .studio-pill--draft {
+    background: hsl(var(--muted));
+    color: hsl(var(--text-muted));
+  }
+  .studio-pill--failed {
+    background: hsl(var(--destructive));
+    color: white;
+  }
+  .studio-pill--rejected {
+    background: hsl(var(--destructive));
+    color: white;
+  }
+  .studio-pill--archived {
+    background: hsl(var(--muted));
+    color: hsl(var(--text-muted));
   }
 
-  .status-stamp--draft {
-    color: hsl(var(--muted));
-    border-color: hsl(var(--muted));
+  /* Card board — replaces running-order-row */
+  .studio-card {
+    background: hsl(var(--surface-raised));
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+    animation: card-enter 0.35s ease forwards;
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  .studio-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(124,58,237,0.08), 0 2px 6px rgba(0,0,0,0.05);
   }
 
-  .status-stamp--approved {
-    color: hsl(var(--accent));
-    border-color: hsl(var(--accent));
+  /* Gradient top border for active cards */
+  .studio-card--active {
+    border-top: 3px solid transparent;
+    border-image: linear-gradient(90deg, hsl(var(--accent-from)), hsl(var(--accent-to))) 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03),
+                0 0 20px rgba(124,58,237,0.06);
+  }
+  .studio-card--active:hover {
+    box-shadow: 0 8px 25px rgba(124,58,237,0.12), 0 2px 6px rgba(0,0,0,0.05),
+                0 0 30px rgba(124,58,237,0.08);
   }
 
-  .status-stamp--live {
-    color: hsl(var(--accent));
-    border-color: hsl(var(--accent));
-    background: hsl(var(--accent) / 0.08);
+  /* Pulse glow for mid-automation cards */
+  .studio-card--pulse {
+    animation: card-pulse 2s ease-in-out infinite;
   }
 
-  .status-stamp--pending {
-    color: hsl(var(--flag));
-    border-color: hsl(var(--flag));
+  /* Gradient sweep on buttons */
+  .studio-btn-gradient {
+    background: linear-gradient(135deg, hsl(var(--accent-from)), hsl(var(--accent-to)));
+    color: white;
+    border: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .studio-btn-gradient:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 14px rgba(124,58,237,0.25);
+  }
+  .studio-btn-gradient:active {
+    background: linear-gradient(135deg, hsl(var(--accent-to)), hsl(var(--accent-from)));
   }
 
-  .status-stamp--failed {
-    color: hsl(var(--flag));
-    border-color: hsl(var(--flag));
+  /* Logo mark */
+  .studio-logo {
+    background: linear-gradient(135deg, hsl(var(--accent-from)), hsl(var(--accent-to)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
   }
 
-  /* Running order row — the signature layout element */
-  .running-order-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 0.875rem 0;
-    border-bottom: 1px solid hsl(var(--border));
-    transition: opacity 0.3s ease, transform 0.3s ease;
+  /* Animations */
+  @keyframes card-enter {
+    0% { opacity: 0; transform: translateY(6px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  .running-order-row:first-child {
-    padding-top: 0;
+  @keyframes card-pulse {
+    0%, 100% { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 15px rgba(124,58,237,0.04); }
+    50% { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 25px rgba(124,58,237,0.12); }
   }
 
-  .running-order-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .running-order-number {
-    font-family: 'Newsreader', Georgia, serif;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: hsl(var(--muted));
-    min-width: 1.75rem;
-    text-align: right;
-    flex-shrink: 0;
-    padding-top: 0.125rem;
-  }
-
-  /* Hairline divider */
-  .hairline {
-    height: 1px;
-    background: hsl(var(--border));
-    width: 100%;
-  }
-
-  /* Stamp animation */
-  @keyframes stamp-in {
-    0% {
-      transform: scale(0.8) rotate(-6deg);
-      opacity: 0;
-    }
-    60% {
-      transform: scale(1.05) rotate(1deg);
-    }
-    100% {
-      transform: scale(1) rotate(-2deg);
-      opacity: 1;
-    }
-  }
-
-  .stamp-animate {
-    animation: stamp-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-
-  /* Row fade-rise animation */
-  @keyframes fade-rise {
-    0% {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .row-enter {
-    animation: fade-rise 0.35s ease forwards;
+  @keyframes gradient-sweep {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 }
 
+/* Make primary buttons use gradient by default */
+.bg-primary {
+  background: linear-gradient(135deg, hsl(var(--accent-from)), hsl(var(--accent-to))) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+.bg-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 14px rgba(124,58,237,0.25);
+}
+button:active.bg-primary {
+  background: linear-gradient(135deg, hsl(var(--accent-to)), hsl(var(--accent-from))) !important;
+}
+
+/* Backward-compatible aliases for old editorial classes */
+.editorial-title { font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; }
+.editorial-eyebrow { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: hsl(var(--text-muted)); }
+.editorial-mono { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: -0.01em; }
+.status-stamp { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.3; white-space: nowrap; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.status-stamp:hover { transform: scale(1.04); }
+.status-stamp--live { background: linear-gradient(135deg, hsl(var(--accent-from)), hsl(var(--accent-to))); color: white; }
+.status-stamp--approved { background: linear-gradient(135deg, hsl(var(--accent-from)), hsl(var(--accent-to))); color: white; }
+.status-stamp--published { background: hsl(var(--live)); color: white; }
+.status-stamp--pending { background: hsl(var(--warn)); color: white; }
+.status-stamp--draft { background: hsl(var(--muted)); color: hsl(var(--text-muted)); }
+.status-stamp--failed { background: hsl(var(--destructive)); color: white; }
+.running-order-row { display: flex; align-items: flex-start; gap: 1rem; padding: 0.875rem 0; border-bottom: 1px solid hsl(var(--border)); transition: opacity 0.3s ease, transform 0.3s ease; animation: card-enter 0.35s ease forwards; }
+.running-order-row:first-child { padding-top: 0; }
+.running-order-row:last-child { border-bottom: none; padding-bottom: 0; }
+.running-order-number { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 600; color: hsl(var(--text-muted)); min-width: 1.75rem; text-align: right; flex-shrink: 0; padding-top: 0.125rem; }
+.stamp-animate { animation: card-enter 0.35s ease forwards; }
+.row-enter { animation: card-enter 0.35s ease forwards; }
+
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .stamp-animate,
-  .row-enter,
-  .running-order-row {
+  .studio-card,
+  .studio-pill,
+  .studio-card--pulse {
     animation: none !important;
     transition: none !important;
   }

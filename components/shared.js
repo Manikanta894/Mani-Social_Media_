@@ -61,44 +61,51 @@ export function resizeImageToBase64(file, maxDim = 1600, quality = 0.85) {
   })
 }
 
-export function StatusStamp({ status, className = '' }) {
+export function StatusPill({ status, className = '', pulse = false }) {
   const map = {
-    draft:            { label: 'DRAFT', cls: 'status-stamp--draft' },
-    pending_approval: { label: 'PENDING', cls: 'status-stamp--pending' },
-    approved:         { label: 'APPROVED', cls: 'status-stamp--approved' },
-    scheduled:        { label: 'SCHEDULED', cls: 'status-stamp--approved' },
-    published:        { label: 'LIVE', cls: 'status-stamp--live' },
-    live:             { label: 'LIVE', cls: 'status-stamp--live' },
-    rejected:         { label: 'REJECTED', cls: 'status-stamp--failed' },
-    failed:           { label: 'FAILED', cls: 'status-stamp--failed' },
-    queued:           { label: 'QUEUED', cls: 'status-stamp--draft' },
-    processing:       { label: 'PROCESSING', cls: 'status-stamp--pending' },
-    archived:         { label: 'ARCHIVED', cls: 'status-stamp--draft' },
-    new:              { label: 'NEW', cls: 'status-stamp--pending' },
-    ai_generated:     { label: 'AI READY', cls: 'status-stamp--approved' },
-    replied:          { label: 'REPLIED', cls: 'status-stamp--approved' },
-    ignored:          { label: 'IGNORED', cls: 'status-stamp--draft' },
-    pending:          { label: 'PENDING', cls: 'status-stamp--pending' },
+    draft:            { label: 'Draft', cls: 'studio-pill--draft' },
+    pending_approval: { label: 'Pending', cls: 'studio-pill--pending' },
+    approved:         { label: 'Approved', cls: 'studio-pill--live' },
+    scheduled:        { label: 'Scheduled', cls: 'studio-pill--live' },
+    published:        { label: 'Published', cls: 'studio-pill--published' },
+    live:             { label: 'Live', cls: 'studio-pill--live' },
+    rejected:         { label: 'Rejected', cls: 'studio-pill--rejected' },
+    failed:           { label: 'Failed', cls: 'studio-pill--failed' },
+    queued:           { label: 'Queued', cls: 'studio-pill--draft' },
+    processing:       { label: 'Processing', cls: 'studio-pill--pending' },
+    archived:         { label: 'Archived', cls: 'studio-pill--archived' },
+    new:              { label: 'New', cls: 'studio-pill--pending' },
+    ai_generated:     { label: 'AI Ready', cls: 'studio-pill--live' },
+    replied:          { label: 'Replied', cls: 'studio-pill--published' },
+    ignored:          { label: 'Ignored', cls: 'studio-pill--draft' },
+    pending:          { label: 'Pending', cls: 'studio-pill--pending' },
   }
-  const m = map[status] || { label: status, cls: 'status-stamp--draft' }
+  const m = map[status] || { label: status, cls: 'studio-pill--draft' }
+  return <span className={`studio-pill ${m.cls} ${pulse ? 'studio-card--pulse' : ''} ${className}`}>{m.label}</span>
+}
+
+// Keep old export name for backward compatibility
+export const StatusStamp = StatusPill
+
+export function StudioCard({ children, active = false, pulse = false, style = {}, className = '' }) {
+  const cls = `studio-card ${active ? 'studio-card--active' : ''} ${pulse ? 'studio-card--pulse' : ''} ${className}`
+  return <div className={cls} style={style}>{children}</div>
+}
+
+// Card-based board row — replaces RunningOrderRow
+export function BoardRow({ index, children, active = false, pulse = false, className = '' }) {
   return (
-    <span className={`status-stamp stamp-animate ${m.cls} ${className}`}>
-      {m.label}
-    </span>
+    <StudioCard active={active} pulse={pulse} style={{ animationDelay: `${(index || 0) * 40}ms` }} className={className}>
+      <div className="flex items-start gap-4">{children}</div>
+    </StudioCard>
   )
 }
 
-export function RunningOrderRow({ index, children, className = '' }) {
-  return (
-    <div className={`running-order-row row-enter ${className}`} style={{ animationDelay: `${index * 40}ms` }}>
-      <span className="running-order-number">{index + 1}</span>
-      <div className="flex-1 min-w-0">{children}</div>
-    </div>
-  )
-}
+// Keep old export name for backward compatibility  
+export const RunningOrderRow = BoardRow
 
 export function PlatformEyebrow({ platform }) {
   const p = PLATFORMS.find(x => x.key === platform)
-  if (!p) return <span className="editorial-eyebrow">{platform}</span>
-  return <span className="editorial-eyebrow">{p.label}</span>
+  if (!p) return <span className="studio-eyebrow">{platform}</span>
+  return <span className="studio-eyebrow">{p.label}</span>
 }

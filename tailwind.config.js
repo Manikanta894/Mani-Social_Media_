@@ -12,15 +12,13 @@ module.exports = {
       container: {
         center: true,
         padding: '2rem',
-        screens: {
-          '2xl': '1400px'
-        }
+        screens: { '2xl': '1400px' }
       },
       extend: {
         fontFamily: {
-          serif: ['Newsreader', 'Georgia', 'serif'],
+          display: ['Space Grotesk', 'system-ui', 'sans-serif'],
           sans: ['Inter', 'system-ui', 'sans-serif'],
-          mono: ['IBM Plex Mono', 'JetBrains Mono', 'monospace'],
+          mono: ['JetBrains Mono', 'monospace'],
         },
         colors: {
           border: 'hsl(var(--border))',
@@ -81,36 +79,27 @@ module.exports = {
         },
         keyframes: {
           'accordion-down': {
-            from: {
-              height: '0'
-            },
-            to: {
-              height: 'var(--radix-accordion-content-height)'
-            }
+            from: { height: '0' },
+            to: { height: 'var(--radix-accordion-content-height)' }
           },
           'accordion-up': {
-            from: {
-              height: 'var(--radix-accordion-content-height)'
-            },
-            to: {
-              height: '0'
-            }
+            from: { height: 'var(--radix-accordion-content-height)' },
+            to: { height: '0' }
           },
-          'fade-rise': {
-            '0%': { opacity: '0', transform: 'translateY(6px)' },
-            '100%': { opacity: '1', transform: 'translateY(0)' },
+          'card-enter': {
+            '0%': { opacity: '0', transform: 'translateY(6px) scale(0.98)' },
+            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
           },
-          'stamp-in': {
-            '0%': { transform: 'scale(0.8) rotate(-6deg)', opacity: '0' },
-            '60%': { transform: 'scale(1.05) rotate(1deg)' },
-            '100%': { transform: 'scale(1) rotate(-2deg)', opacity: '1' },
+          'card-pulse': {
+            '0%, 100%': { boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 0 15px rgba(124,58,237,0.04)' },
+            '50%': { boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 0 25px rgba(124,58,237,0.12)' },
           },
         },
         animation: {
           'accordion-down': 'accordion-down 0.2s ease-out',
           'accordion-up': 'accordion-up 0.2s ease-out',
-          'fade-rise': 'fade-rise 0.35s ease forwards',
-          'stamp-in': 'stamp-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          'card-enter': 'card-enter 0.35s ease forwards',
+          'card-pulse': 'card-pulse 2s ease-in-out infinite',
         }
       }
     },
