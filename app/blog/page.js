@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Dribbble, Clock, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
+import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Dribbble, Clock, RotateCcw, ChevronDown, ChevronUp, List, Plus, Trash2, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -177,6 +177,8 @@ function BlogPage() {
               {generating ? 'Generating...' : 'Generate Article'}
             </Button>
           </div>
+
+          <TopicQueueSection />
 
           <div className="border border-border rounded-sm bg-card shadow-sm">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
@@ -383,6 +385,91 @@ function BlogPage() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function TopicQueueSection() {
+  const [open, setOpen] = useState(false)
+  const [topics, setTopics] = useState([])
+  const [newTopic, setNewTopic] = useState('')
+  const [bulkText, setBulkText] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const load = async () => { try { setTopics(await api('/topic-queue')) } catch {} finally { setLoading(false) } }
+  useEffect(() => { if (open) load() }, [open])
+
+  const addTopic = async () => {
+    if (!newTopic.trim()) return
+    await api('/topic-queue', { method: 'POST', body: { topic: newTopic.trim() } })
+    setNewTopic(''); await load()
+  }
+
+  const addBulk = async () => {
+    const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length === 0) return
+    await api('/topic-queue', { method: 'POST', body: { topics: lines, bulk: true } })
+    setBulkText(''); toast.success(`Added ${lines.length} topics`); await load()
+  }
+
+  const removeTopic = async (id) => { await api('/topic-queue/' + id, { method: 'DELETE' }); await load() }
+
+  const generateNext = async () => {
+    setGenerating(true)
+    try { const r = await api('/topic-queue/generate-next', { method: 'POST' }); toast.success('Generated: ' + r.title); await load() }
+    catch (e) { toast.error(e.message) } finally { setGenerating(false) }
+  }
+
+  const copyQueue = async () => {
+    const text = topics.filter(t => t.status === 'pending').map(t => t.topic).join('\n')
+    await navigator.clipboard.writeText(text)
+    setCopied(true); setTimeout(() => setCopied(false), 2000)
+  }
+
+  const pending = topics.filter(t => t.status === 'pending').length
+
+  return (
+    <div className="border border-border rounded-sm bg-card shadow-sm mt-3">
+      <button onClick={() => setOpen(!open)} className="w-full px-4 py-3 flex items-center gap-2 text-sm font-display font-semibold">
+        <List className="h-4 w-4 text-primary" />
+        Topic Queue {pending > 0 && <span className="studio-mono text-[0.5rem] bg-primary text-primary-foreground rounded-full px-1.5 py-0.5">{pending}</span>}
+        <span className="ml-auto">{open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          <div className="flex gap-2">
+            <input value={newTopic} onChange={e => setNewTopic(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTopic()} placeholder="Add a topic..." className="flex-1 text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1.5" />
+            <button onClick={addTopic} className="text-xs bg-primary text-primary-foreground rounded-sm px-2 py-1.5 hover:bg-primary/90"><Plus className="h-3 w-3" /></button>
+          </div>
+          <div className="flex gap-2">
+            <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} rows={3} placeholder="Paste 50+ topics, one per line..." className="flex-1 text-xs bg-secondary/50 border border-border rounded-sm p-2 resize-none" />
+            <button onClick={addBulk} className="text-xs bg-primary text-primary-foreground rounded-sm px-2 py-1 self-end hover:bg-primary/90"><Plus className="h-3 w-3 mr-1" /> Bulk</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={generateNext} disabled={generating || pending === 0} className="text-xs studio-btn-gradient rounded-sm px-3 py-1.5">
+              {generating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
+              Generate Next
+            </button>
+            <button onClick={copyQueue} className="text-xs border border-border rounded-sm px-3 py-1.5 hover:bg-secondary/50">
+              {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+              {copied ? 'Copied' : 'Copy All'}
+            </button>
+            <span className="text-[0.5rem] text-muted-foreground ml-auto">{topics.length} total, {pending} pending</span>
+          </div>
+          <div className="max-h-40 overflow-y-auto space-y-0.5">
+            {topics.filter(t => t.status === 'pending').map(t => (
+              <div key={t.id} className="flex items-center gap-2 text-xs px-2 py-1 rounded-sm hover:bg-secondary/20 group">
+                <span className="flex-1 truncate">{t.topic}</span>
+                <span className="text-[0.45rem] text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</span>
+                <button onClick={() => removeTopic(t.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100"><X className="h-3 w-3" /></button>
+              </div>
+            ))}
+          </div>
+          <div className="text-[0.5rem] text-muted-foreground">Use /nexttopic in Telegram to auto-generate from this queue</div>
+        </div>
+      )}
     </div>
   )
 }

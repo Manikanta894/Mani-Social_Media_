@@ -1136,6 +1136,33 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
     if (resource === 'bio-links' && method === 'PUT' && id) return ok(await storage.bioLinks.update(id, await request.json()))
     if (resource === 'bio-links' && method === 'DELETE' && id) { await storage.bioLinks.remove(id); return ok({}) }
 
+    // --- Topic queue (blog topics) ---
+    if (resource === 'topic-queue') {
+      if (method === 'GET') return ok(await storage.topicQueue.list())
+      if (method === 'POST' && !id) { const body = await request.json(); if (body.bulk) return ok(await storage.topicQueue.bulkCreate(body.topics)); return ok(await storage.topicQueue.create(body)) }
+      if (method === 'PUT' && id) return ok(await storage.topicQueue.update(parseInt(id), await request.json()))
+      if (method === 'DELETE' && id) { await storage.topicQueue.remove(parseInt(id)); return ok({}) }
+      if (id === 'next-pending' && method === 'GET') return ok(await storage.topicQueue.nextPending())
+      if (id === 'count' && method === 'GET') return ok({ count: await storage.topicQueue.count() })
+      if (id === 'generate-next' && method === 'POST') {
+        const next = await storage.topicQueue.nextPending()
+        if (!next) return err('No pending topics')
+        const { generateBlogPost } = await import('@/lib/ai/generate')
+        const result = await generateBlogPost({ context: next.topic })
+        const bp = await storage.blogPosts.create({ title: result.title, body_markdown: result.body_markdown, seo_description: result.seo_description, status: 'draft' })
+        await storage.topicQueue.update(next.id, { status: 'used', used_at: new Date().toISOString() })
+        await storage.audit.log('blog_generate', 'topic_queue', next.id, 'pending', 'used', { topic: next.topic, blog_id: bp.id })
+        const { publishToInsights } = await import('@/lib/blog/generate')
+        const s = await storage.settings.get()
+        if (s.telegram_bot_token && s.telegram_admin_chat_id) {
+          const { sendPhoto } = await import('@/lib/telegram/client')
+          const { formatBlogMessage, buildBlogKeyboard } = await import('@/lib/blog/formatter')
+          try { await sendPhoto({ chatId: s.telegram_admin_chat_id, photoUrl: '', caption: formatBlogMessage(result, { file_name: next.topic }, 'pending_approval'), replyMarkup: buildBlogKeyboard(bp.id, result, 'pending_approval') }) } catch {}
+        }
+        return ok({ generated: true, title: result.title, blog_id: bp.id })
+      }
+    }
+
     // --- Notification settings ---
     if (resource === 'notification-settings' && method === 'GET') {
       const sb = supabase()

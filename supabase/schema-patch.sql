@@ -211,3 +211,14 @@ END $$;
 
 -- Notification settings
 ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS notification_level TEXT DEFAULT 'failures_only';
+
+-- Topic queue for blog automation
+CREATE TABLE IF NOT EXISTS topic_queue (
+  id BIGSERIAL PRIMARY KEY,
+  topic TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  used_at TIMESTAMPTZ
+);
+ALTER TABLE topic_queue ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN CREATE POLICY "service_role_only" ON topic_queue FOR ALL TO service_role USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
