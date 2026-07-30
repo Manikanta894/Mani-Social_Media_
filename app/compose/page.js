@@ -131,7 +131,7 @@ export default function ComposePage() {
         variants: variantsEnabled ? 2 : undefined,
         emoji_instruction: emojiInstruction,
       }
-      if (images.length > 0) {
+      if (images.length > 0 && !contextData) {
         payload.images = images.map(i => ({ base64: i.base64, mimeType: i.mimeType }))
         payload.image_base64 = images[0].base64
         payload.mime_type = images[0].mimeType
@@ -415,7 +415,7 @@ function ResultsPanel({ result, regenerating, onRegenerate, onUpdatePost, onSave
       )}
 
       {/* Platform cards — Buffer-style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {PLATFORMS.slice(0, 4).map(p => {
           const post = result.posts[p.key]
           if (!post) return null
@@ -425,36 +425,36 @@ function ResultsPanel({ result, regenerating, onRegenerate, onUpdatePost, onSave
           const style = PLATFORM_STYLES[p.key] || {}
           const complianceWarnings = caption ? complianceCheck(caption) : []
           return (
-            <div key={p.key} className="bg-card border border-border rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-secondary/20">
-                <span className="text-sm">{style.avatar || '🌐'}</span>
-                <span className="text-xs font-semibold">{style.name || p.label}</span>
-                <span className={`ml-auto studio-mono text-[0.45rem] ${overLimit ? 'text-[#D97706]' : 'text-muted-foreground'}`}>{caption.length}/{p.limit}</span>
+            <div key={p.key} className="bg-card border border-border rounded-sm overflow-hidden shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-secondary/20">
+                <span className="text-base">{style.avatar || '🌐'}</span>
+                <span className="text-sm font-semibold">{style.name || p.label}</span>
+                <span className={`ml-auto studio-mono text-[0.6rem] ${overLimit ? 'text-[#D97706]' : 'text-muted-foreground'}`}>{caption.length}/{p.limit}</span>
               </div>
-              <div className="p-3 space-y-2" style={{ backgroundColor: style.bg || 'transparent' }}>
+              <div className="p-4 space-y-3" style={{ backgroundColor: style.bg || 'transparent' }}>
                 {complianceWarnings.length > 0 && (
-                  <div className="flex flex-wrap gap-1">{complianceWarnings.map((w, i) => <span key={i} className="text-[0.45rem] bg-yellow-500/10 text-yellow-600 border border-yellow-500/30 px-1.5 py-0.5 rounded-sm">{w}</span>)}</div>
+                  <div className="flex flex-wrap gap-1">{complianceWarnings.map((w, i) => <span key={i} className="text-xs bg-yellow-500/10 text-yellow-600 border border-yellow-500/30 px-2 py-0.5 rounded-sm">{w}</span>)}</div>
                 )}
                 <textarea value={caption} onChange={(e) => onUpdatePost(p.key, { caption: e.target.value })}
-                  rows={4} className="w-full text-xs bg-white border border-border/50 rounded-sm p-2 resize-none focus:outline-none focus:border-primary/50"
+                  rows={5} className="w-full text-sm bg-white border border-border/50 rounded-sm p-3 resize-none focus:outline-none focus:border-primary/50 leading-relaxed"
                   placeholder="Edit caption…" />
                 {hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {hashtags.map((tag, i) => (
-                      <span key={i} className="studio-mono text-[0.45rem] text-[#7C3AED] bg-[#7C3AED]/5 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                      <span key={i} className="text-xs text-[#7C3AED] bg-[#7C3AED]/5 px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-[#7C3AED]/10">
                         {tag}
-                        <button onClick={() => onUpdatePost(p.key, { hashtags: hashtags.filter((_, j) => j !== i) })} className="opacity-60 hover:opacity-100"><X className="h-2 w-2" /></button>
+                        <button onClick={() => onUpdatePost(p.key, { hashtags: hashtags.filter((_, j) => j !== i) })} className="opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button>
                       </span>
                     ))}
                     <AddHashtagInline onAdd={(tag) => onUpdatePost(p.key, { hashtags: [...hashtags, tag] })} />
                   </div>
                 )}
-                <div className="flex items-center justify-between pt-1">
-                  <button onClick={() => onRegenerate(p.key)} disabled={regenerating === p.key} className="studio-mono text-[0.45rem] text-muted-foreground hover:text-foreground flex items-center gap-1" title="Regenerate this platform">
-                    {regenerating === p.key ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <RefreshCw className="h-2.5 w-2.5" />} Regenerate
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <button onClick={() => onRegenerate(p.key)} disabled={regenerating === p.key} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5" title="Regenerate this platform">
+                    {regenerating === p.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerate
                   </button>
-                  <button onClick={() => { const text = caption + (hashtags.length ? '\n\n' + hashtags.join(' ') : ''); navigator.clipboard.writeText(text); toast.success('Copied') }} className="studio-mono text-[0.45rem] text-muted-foreground hover:text-foreground" title="Copy">
-                    <Copy className="h-2.5 w-2.5 inline mr-0.5" /> Copy
+                  <button onClick={() => { const text = caption + (hashtags.length ? '\n\n' + hashtags.join(' ') : ''); navigator.clipboard.writeText(text); toast.success('Copied') }} className="text-xs text-muted-foreground hover:text-foreground" title="Copy">
+                    <Copy className="h-3.5 w-3.5 inline mr-1" /> Copy
                   </button>
                 </div>
               </div>
@@ -489,9 +489,9 @@ function ResultsPanel({ result, regenerating, onRegenerate, onUpdatePost, onSave
 
 function AddHashtagInline({ onAdd }) {
   const [v, setV] = useState(''); const [open, setOpen] = useState(false)
-  if (!open) return <button onClick={() => setOpen(true)} className="studio-mono text-[0.45rem] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded-full border border-dashed border-border hover:border-muted-foreground">+ tag</button>
+  if (!open) return <button onClick={() => setOpen(true)} className="text-xs text-muted-foreground hover:text-foreground px-2.5 py-1 rounded-full border border-dashed border-border hover:border-muted-foreground">+ tag</button>
   const commit = () => { let t = v.trim(); if (!t) { setOpen(false); return }; if (!t.startsWith('#')) t = '#' + t; t = t.replace(/\s+/g, ''); onAdd(t); setV(''); setOpen(false) }
-  return <input autoFocus value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setOpen(false) }} placeholder="#tag" className="studio-mono text-[0.45rem] bg-secondary/50 border border-border rounded-sm px-1.5 py-0.5 w-16 focus:outline-none focus:border-primary" />
+  return <input autoFocus value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setOpen(false) }} placeholder="#tag" className="text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1 w-20 focus:outline-none focus:border-primary" />
 }
 
 function OnboardingEmptyState() {
