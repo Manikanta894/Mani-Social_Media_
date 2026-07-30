@@ -81,11 +81,14 @@ function BlogPage() {
 
   const scheduleForLater = async () => {
     if (!activePost) return
+    const dateVal = scheduleDate || new Date().toISOString().split('T')[0]
+    const timeVal = scheduleTime || '10:00'
     try {
-      const sched = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+      const sched = new Date(`${dateVal}T${timeVal}:00`).toISOString()
       await api('/blog/posts/' + activePost.id, { method: 'PUT', body: { status: 'scheduled', scheduled_for: sched } })
-      toast.success('Scheduled for 2 hours from now')
+      toast.success(`Scheduled for ${dateVal} at ${timeVal}`)
       setActivePost(prev => ({ ...prev, status: 'scheduled' }))
+      setScheduleDate(''); setScheduleTime('')
       await refresh()
     } catch (e) { toast.error(e.message) }
   }
@@ -138,6 +141,8 @@ function BlogPage() {
   const selectPost = (p) => { setActivePost(p); setEditing(false); setEditTitle(p.title); setEditBody(p.body_markdown); setEditSeo(p.seo_description || ''); setShowPreview(true) }
 
   const [dripOpen, setDripOpen] = useState(false); const [dripCount, setDripCount] = useState(4); const [dripSpread, setDripSpread] = useState(5); const [dripRunning, setDripRunning] = useState(false); const [dripResult, setDripResult] = useState(null)
+  const [scheduleDate, setScheduleDate] = useState('')
+  const [scheduleTime, setScheduleTime] = useState('')
 
   const runDrip = async () => {
     if (!activePost) return; setDripRunning(true); setDripResult(null)
@@ -222,9 +227,13 @@ function BlogPage() {
                         {publishing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
                         Publish Now
                       </Button>
-                      <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={scheduleForLater}>
-                        <Clock className="h-3 w-3 mr-1" /> Schedule
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-28 text-[0.6rem] bg-secondary/50 border border-border rounded-sm px-1.5 py-1" />
+                        <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-20 text-[0.6rem] bg-secondary/50 border border-border rounded-sm px-1.5 py-1" />
+                        <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={scheduleForLater}>
+                          <Clock className="h-3 w-3 mr-1" /> Set
+                        </Button>
+                      </div>
                       <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={() => { setEditing(v => !v); if (!v) { setEditTitle(activePost.title); setEditBody(activePost.body_markdown); setEditSeo(activePost.seo_description || '') } }}>
                         <Pencil className="h-3 w-3 mr-1" /> {editing ? 'Preview' : 'Edit'}
                       </Button>
