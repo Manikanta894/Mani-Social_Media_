@@ -236,6 +236,48 @@ function HashtagsPage() {
           ))}
         </div>
       )}
+
+      <SuggestionsPanel refresh={refresh} />
+    </div>
+  )
+}
+
+function SuggestionsPanel({ refresh }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [loading, setLoading] = useState(false)
+  const load = async () => {
+    setLoading(true)
+    try { setSuggestions(await api('/hashtag-suggestions')) } catch {}
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+
+  const act = async (id, action) => {
+    try {
+      await api(`/hashtag-suggestions`, { method: 'POST', body: { action, id } })
+      toast.success(action === 'accept' ? 'Accepted' : 'Rejected')
+      await load(); if (refresh) await refresh()
+    } catch (e) { toast.error(e.message) }
+  }
+
+  const pending = suggestions.filter(s => s.status === 'pending')
+  if (pending.length === 0) return null
+
+  return (
+    <div className="mt-8 border border-yellow-200 bg-yellow-50/50 rounded-sm p-4">
+      <div className="text-sm font-medium text-yellow-800 mb-2 flex items-center gap-2">
+        <span>💡 Trending suggestions ({pending.length})</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {pending.map(s => (
+          <span key={s.id} className="inline-flex items-center gap-1 text-xs bg-white border border-yellow-200 rounded-sm px-2 py-1">
+            {s.tag}
+            <button onClick={() => act(s.id, 'accept')} className="text-green-600 hover:text-green-800" title="Accept">✓</button>
+            <button onClick={() => act(s.id, 'reject')} className="text-red-400 hover:text-red-600" title="Reject">✗</button>
+          </span>
+        ))}
+      </div>
+      <div className="text-[0.5rem] text-yellow-600 mt-1">Auto-detected from RSS trends — never auto-added.</div>
     </div>
   )
 }

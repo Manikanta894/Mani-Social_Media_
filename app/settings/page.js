@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   PlugZap, Sliders, Wand2, MessageSquare, KeyRound, Star, Plus, Check, X, Trash2, Pencil,
   Save, Loader2, RefreshCw, Eye, EyeOff, Send, Layers, Zap, Copy, ArrowRight, Upload, ImageIcon, AlertTriangle, Download,
+  Link as LinkIcon, ExternalLink,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,6 +49,7 @@ function SettingsPage() {
         <TabsTrigger value="automation" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><Wand2 className="h-4 w-4 mr-2" /> Automation</TabsTrigger>
         <TabsTrigger value="telegram"   className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><MessageSquare className="h-4 w-4 mr-2" /> Telegram</TabsTrigger>
         <TabsTrigger value="security"   className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><KeyRound className="h-4 w-4 mr-2" /> Security</TabsTrigger>
+        <TabsTrigger value="bio-links" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><LinkIcon className="h-4 w-4 mr-2" /> Bio Links</TabsTrigger>
         <TabsTrigger value="danger-zone" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><AlertTriangle className="h-4 w-4 mr-2" /> Danger Zone</TabsTrigger>
       </TabsList>
       <TabsContent value="providers">
@@ -64,6 +66,9 @@ function SettingsPage() {
       </TabsContent>
       <TabsContent value="security">
         <SecurityTab />
+      </TabsContent>
+      <TabsContent value="bio-links">
+        <BioLinksTab />
       </TabsContent>
       <TabsContent value="danger-zone">
         <DangerZoneTab />
@@ -863,6 +868,47 @@ function AutomationTab() {
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+function BioLinksTab() {
+  const [links, setLinks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({ title: '', url: '', icon: 'link' })
+  const [editId, setEditId] = useState(null)
+  const load = async () => { try { setLinks(await api('/bio-links')) } catch {} finally { setLoading(false) } }
+  useEffect(() => { load() }, [])
+  const save = async () => {
+    if (!form.title || !form.url) return toast.error('Title and URL required')
+    try {
+      if (editId) await api('/bio-links', { method: 'PUT', body: form }).then(() => { setEditId(null); setForm({ title: '', url: '', icon: 'link' }); load() })
+      else await api('/bio-links', { method: 'POST', body: form }).then(() => { setForm({ title: '', url: '', icon: 'link' }); load() })
+      toast.success('Saved')
+    } catch (e) { toast.error(e.message) }
+  }
+  const remove = async (id) => { await api('/bio-links', { method: 'DELETE', body: { id } }); load() }
+  return (
+    <div className="space-y-4">
+      <div><h3 className="font-serif font-semibold text-lg">Bio Links</h3><p className="text-sm text-muted-foreground">Manage links for your public bio page at /bio.</p></div>
+      <div className="flex gap-2">
+        <Input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="bg-secondary/50 border-border flex-1" />
+        <Input placeholder="URL" value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} className="bg-secondary/50 border-border flex-[2]" />
+        <Button size="sm" onClick={save} className="bg-primary text-primary-foreground"><Save className="h-3.5 w-3.5 mr-1" /> {editId ? 'Update' : 'Add'}</Button>
+      </div>
+      {loading ? <div className="text-sm text-muted-foreground">Loading…</div> : links.length === 0 ? <div className="text-sm text-muted-foreground">No links yet.</div> : (
+        <div className="space-y-1">
+          {links.map(l => (
+            <div key={l.id} className="flex items-center gap-2 p-2 border border-border rounded-sm bg-card">
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-sm flex-1">{l.title} <span className="text-muted-foreground">— {l.url}</span></span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditId(l.id); setForm({ title: l.title, url: l.url, icon: l.icon }) }}><Pencil className="h-3.5 w-3.5" /></Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(l.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="text-xs text-muted-foreground">Public at: <code>{typeof window !== 'undefined' ? window.location.origin : ''}/bio</code></div>
     </div>
   )
 }

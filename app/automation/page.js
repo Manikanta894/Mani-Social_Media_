@@ -116,6 +116,8 @@ function Dashboard() {
         ))}
       </div>
 
+      <PipelineView api={api} useState={useState} useEffect={useEffect} Loader2={Loader2} />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -417,6 +419,42 @@ function QueueRow({ row, index, selected, onToggle }) {
       </div>
       <StatusStamp status={row.status} />
     </div>
+  )
+}
+
+function PipelineView({ api, useState, useEffect, Loader2 }) {
+  const [pipeline, setPipeline] = useState(null)
+  useEffect(() => {
+    api('/pipeline-status').then(setPipeline).catch(() => {})
+  }, [])
+  if (!pipeline) return null
+  const stages = [
+    { key: 'fetch', label: 'Fetch', color: 'bg-blue-400' },
+    { key: 'generate', label: 'Generate', color: 'bg-yellow-400' },
+    { key: 'validate', label: 'Validate', color: 'bg-purple-400' },
+    { key: 'approve', label: 'Approve', color: 'bg-orange-400' },
+    { key: 'publish', label: 'Publish', color: 'bg-green-400' },
+  ]
+  const maxVal = Math.max(...stages.map(s => pipeline[s.key] || 0), 1)
+  return (
+    <Card className="bg-card border-border shadow-sm">
+      <CardHeader className="pb-2"><CardTitle className="text-sm font-serif">Pipeline</CardTitle></CardHeader>
+      <CardContent>
+        <div className="flex items-end gap-2 h-24">
+          {stages.map(s => {
+            const val = pipeline[s.key] || 0
+            const pct = (val / maxVal) * 100
+            return (
+              <div key={s.key} className="flex-1 flex flex-col items-center gap-1">
+                <span className="editorial-mono text-[0.5rem] text-muted-foreground">{val}</span>
+                <div className="w-full rounded-sm" style={{ height: `${Math.max(pct, 8)}%`, backgroundColor: s.color.replace('bg-', '') }} className={`w-full rounded-sm ${s.color}`} />
+                <span className="editorial-mono text-[0.5rem] text-muted-foreground">{s.label}</span>
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -130,3 +130,84 @@ DO $$ BEGIN
   CREATE POLICY "service_role_only" ON automation_settings FOR ALL TO service_role USING (true) WITH CHECK (true);
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Compose templates
+CREATE TABLE IF NOT EXISTS compose_templates (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name TEXT NOT NULL,
+  context TEXT DEFAULT '',
+  style_id TEXT,
+  tone_adjustment REAL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE compose_templates ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON compose_templates FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Content jobs new columns
+ALTER TABLE content_jobs ADD COLUMN IF NOT EXISTS tone_adjustment REAL DEFAULT 0;
+ALTER TABLE content_jobs ADD COLUMN IF NOT EXISTS image_refs JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE content_jobs ADD COLUMN IF NOT EXISTS campaign_id TEXT;
+ALTER TABLE content_jobs ADD COLUMN IF NOT EXISTS auto_sent BOOLEAN DEFAULT false;
+
+-- Follower snapshots for growth trend
+CREATE TABLE IF NOT EXISTS follower_snapshots (
+  id BIGSERIAL PRIMARY KEY,
+  platform TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE follower_snapshots ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON follower_snapshots FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Comments auto-reply columns
+ALTER TABLE comments_queue ADD COLUMN IF NOT EXISTS draft_reply TEXT DEFAULT '';
+ALTER TABLE comments_queue ADD COLUMN IF NOT EXISTS auto_sendable BOOLEAN DEFAULT false;
+ALTER TABLE comments_queue ADD COLUMN IF NOT EXISTS auto_sent BOOLEAN DEFAULT false;
+ALTER TABLE comments_queue ADD COLUMN IF NOT EXISTS sentiment TEXT DEFAULT 'neutral';
+ALTER TABLE comments_queue ADD COLUMN IF NOT EXISTS commenter_follower_count INTEGER DEFAULT 0;
+ALTER TABLE comments_queue ADD COLUMN IF NOT EXISTS ai_generated_draft BOOLEAN DEFAULT false;
+
+-- Pending hashtag suggestions
+CREATE TABLE IF NOT EXISTS pending_hashtag_suggestions (
+  id BIGSERIAL PRIMARY KEY,
+  tag TEXT NOT NULL,
+  source TEXT DEFAULT 'trending',
+  set_id TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE pending_hashtag_suggestions ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON pending_hashtag_suggestions FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Seasonal events lead_time and personal entries
+ALTER TABLE seasonal_events ADD COLUMN IF NOT EXISTS lead_time_days INTEGER DEFAULT 3;
+ALTER TABLE seasonal_events ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'public';
+ALTER TABLE seasonal_events ADD COLUMN IF NOT EXISTS recurs_yearly BOOLEAN DEFAULT false;
+
+-- Bio links
+CREATE TABLE IF NOT EXISTS bio_links (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  title TEXT NOT NULL,
+  url TEXT NOT NULL,
+  icon TEXT DEFAULT 'link',
+  sort_order INTEGER DEFAULT 0,
+  visible BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE bio_links ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY "service_role_only" ON bio_links FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Notification settings
+ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS notification_level TEXT DEFAULT 'failures_only';

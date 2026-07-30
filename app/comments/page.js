@@ -15,12 +15,21 @@ function InboxPage() {
   const [replyingId, setReplyingId] = useState(null)
   const [replyTexts, setReplyTexts] = useState({})
   const [savingId, setSavingId] = useState(null)
+  const [sortBy, setSortBy] = useState('chronological')
 
   const refresh = async () => {
     setLoading(true)
     try { setComments(await api('/comments')) } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refresh() }, [])
+
+  const generateDraft = async (id) => {
+    try {
+      const r = await api(`/comments/${id}/auto-reply`, { method: 'POST' })
+      setReplyTexts(prev => ({ ...prev, [id]: r.draft_reply }))
+      toast.success('Draft generated')
+    } catch (e) { toast.error(e.message) }
+  }
 
   const fetchNow = async () => {
     setFetching(true)
@@ -59,10 +68,12 @@ function InboxPage() {
     } catch (e) { toast.error(e.message) } finally { setSavingId(null) }
   }
 
-  const filtered = statusFilter === 'all' ? comments : comments.filter(c => c.status === statusFilter)
-
   const statusCounts = { all: comments.length, pending: 0, replied: 0, ignored: 0 }
   for (const c of comments) { if (statusCounts[c.status] !== undefined) statusCounts[c.status]++ }
+
+  let filtered = statusFilter === 'all' ? comments : comments.filter(c => c.status === statusFilter)
+  if (sortBy === 'followers') filtered = [...filtered].sort((a, b) => (b.commenter_follower_count || 0) - (a.commenter_follower_count || 0))
+  else filtered = [...filtered].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
 
   const statusFilters = [
     { key: 'all', label: 'All', count: statusCounts.all },
@@ -70,6 +81,9 @@ function InboxPage() {
     { key: 'replied', label: 'Replied', count: statusCounts.replied },
     { key: 'ignored', label: 'Ignored', count: statusCounts.ignored },
   ]
+
+  const sentimentColors = { positive: 'text-green-500', neutral: 'text-gray-400', negative: 'text-red-500' }
+  const sentimentIcons = { positive: '🟢', neutral: '⚪', negative: '🔴' }
 
   return (
     <div className="space-y-6">
@@ -100,6 +114,13 @@ function InboxPage() {
             <span className="ml-1.5 opacity-60">{f.count}</span>
           </button>
         ))}
+        <div className="ml-auto flex items-center gap-2">
+          <span className="editorial-mono text-[0.5rem] text-muted-foreground">Sort:</span>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1">
+            <option value="chronological">Newest</option>
+            <option value="followers">By followers</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -122,8 +143,11 @@ function InboxPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="editorial-eyebrow">{pc}</span>
                         <span className="font-medium text-sm">{c.author}</span>
+                        <span className={`text-xs ${sentimentColors[c.sentiment] || 'text-gray-400'}`}>{sentimentIcons[c.sentiment] || '⚪'}</span>
+                        {c.commenter_follower_count > 0 && <span className="editorial-mono text-[0.5rem] text-muted-foreground">{c.commenter_follower_count} followers</span>}
                         <span className="editorial-mono text-[0.625rem] text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleString() : ''}</span>
                         <StatusStamp status={c.status} />
+                        {c.auto_sent && <span className="editorial-mono text-[0.5rem] text-green-600 border border-green-200 px-1 rounded-sm">🤖 auto</span>}
                       </div>
                       <div className="text-sm text-foreground/80 bg-secondary/30 rounded-sm p-3 border border-border/50">
                         {c.comment_text}
@@ -132,6 +156,9 @@ function InboxPage() {
                         <div className="space-y-2 pl-3 border-l-2 border-primary/30">
                           {c.draft_reply && (
                             <div className="editorial-mono text-[0.625rem] text-muted-foreground mb-1 italic">Saved draft: "{c.draft_reply}"</div>
+                          )}
+                          {c.ai_generated_draft && (
+                            <div className="editorial-mono text-[0.5rem] text-blue-600 mb-1">🤖 AI-generated draft</div>
                           )}
                           <Textarea
                             value={replyTexts[c.id] ?? c.draft_reply ?? ''}
@@ -147,6 +174,9 @@ function InboxPage() {
                             </Button>
                             <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={() => saveDraftReply(c.id)} disabled={savingId === c.id}>
                               <Save className="h-3 w-3 mr-1" /> Save draft
+                            </Button>
+                            <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={() => generateDraft(c.id)}>
+                              <RefreshCw className="h-3 w-3 mr-1" /> AI draft
                             </Button>
                             {c.status === 'pending' && (
                               <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground" onClick={() => { updateStatus(c.id, 'replied'); setReplyingId(null) }}>

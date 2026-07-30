@@ -528,6 +528,19 @@ async function route(request, method) {
         if (!comment) return err('Comment not found', 404)
         return ok({ text: comment.comment_text || comment.dm_content || '', platform: comment.platform })
       }
+      if (method === 'POST' && id && action === 'auto-reply') {
+        const comment = await storage.comments.get(id)
+        if (!comment) return err('Comment not found', 404)
+        const providers = await storage.providers.list()
+        const tp = providers.find(p => p.active_for_text)
+        if (!tp) return err('No text provider active')
+        const { callAi } = await import('@/lib/ai/providers')
+        const prompt = `Write a short, friendly reply to this social media comment. Keep it under 100 characters. Be natural and human.\n\nComment: "${comment.comment_text || comment.dm_content || ''}"\n\nReply:`
+        const raw = await callAi({ provider: tp, prompt }).catch(() => 'Thanks for your comment! 🙏')
+        const draft = raw.trim().replace(/^["']|["']$/g, '').slice(0, 300)
+        await storage.comments.update(id, { draft_reply: draft, ai_generated_draft: true })
+        return ok({ draft_reply: draft })
+      }
     }
 
     // --- Blog (long-form articles for Hashnode) -------------------------
@@ -1059,6 +1072,111 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
         return ok({ rejected: true })
       }
       return err('Invalid action')
+    }
+
+    // --- Compose templates ---
+    if (resource === 'templates' && method === 'GET') return ok(await storage.composeTemplates.list())
+    if (resource === 'templates' && method === 'POST') return ok(await storage.composeTemplates.create(await request.json()))
+    if (resource === 'templates' && method === 'PUT' && id) return ok(await storage.composeTemplates.update(id, await request.json()))
+    if (resource === 'templates' && method === 'DELETE' && id) { await storage.composeTemplates.remove(id); return ok({}) }
+
+    // --- Cost estimate ---
+    if (resource === 'cost-estimate' && method === 'GET') {
+      const providers = await storage.providers.list()
+      const tp = providers.find(p => p.active_for_text)
+      if (!tp) return ok({ estimated: '0.00', currency: 'USD', note: 'No active text provider' })
+      const costPer1K = { gemini: 0.0005, openai: 0.002, anthropic: 0.003, groq: 0.0002 }[tp.type] || 0.001
+      const estimated = (tp.model?.includes('pro') ? 0.002 : costPer1K) * 5
+      return ok({ estimated: estimated.toFixed(4), currency: 'USD', provider: tp.name, note: `~$${estimated.toFixed(4)} with ${tp.name}` })
+    }
+
+    // --- Blog related posts (internal-linking) ---
+    if (resource === 'blog-related' && id && method === 'GET') {
+      const target = await storage.jobs.get(id)
+      if (!target) return err('Not found', 404)
+      const all = await storage.jobs.list({})
+      const topicWords = (target.topic || '').toLowerCase().split(/\s+/).filter(w => w.length > 3)
+      const scored = all.filter(j => j.id !== id && j.platform_posts).map(j => {
+        const overlap = topicWords.filter(w => (j.topic || '').toLowerCase().includes(w)).length
+        return { id: j.id, topic: j.topic, score: overlap / topicWords.length }
+      }).filter(x => x.score > 0.1).sort((a, b) => b.score - a.score).slice(0, 3)
+      return ok(scored)
+    }
+
+    // --- Blog drip decomposition ---
+    if (resource === 'blog-drip' && id && method === 'POST') {
+      const body = await request.json()
+      const count = body.count || 4; const spreadDays = body.spread_days || 5
+      const { generateDripPosts } = await import('@/lib/ai/drip')
+      const results = await generateDripPosts({ blogJobId: id, count, spreadDays })
+      return ok(results)
+    }
+
+    // --- Follower snapshots ---
+    if (resource === 'follower-snapshots' && method === 'GET') return ok(await storage.followerSnapshots.list())
+    if (resource === 'follower-snapshots' && method === 'POST') {
+      const body = await request.json()
+      return ok(await storage.followerSnapshots.create(body))
+    }
+
+    // --- Hashtag suggestions ---
+    if (resource === 'hashtag-suggestions' && method === 'GET') return ok(await storage.pendingHashtagSuggestions.list())
+    if (resource === 'hashtag-suggestions' && method === 'POST') {
+      const body = await request.json()
+      if (body.action === 'accept' && id) { await storage.pendingHashtagSuggestions.update(id, { status: 'accepted' }); return ok({}) }
+      if (body.action === 'reject' && id) { await storage.pendingHashtagSuggestions.update(id, { status: 'rejected' }); return ok({}) }
+      return ok(await storage.pendingHashtagSuggestions.create(body))
+    }
+    if (resource === 'hashtag-suggestions' && method === 'DELETE' && id) { await storage.pendingHashtagSuggestions.remove(id); return ok({}) }
+
+    // --- Bio links ---
+    if (resource === 'bio-links' && method === 'GET') return ok(await storage.bioLinks.list())
+    if (resource === 'bio-links' && method === 'POST') return ok(await storage.bioLinks.create(await request.json()))
+    if (resource === 'bio-links' && method === 'PUT' && id) return ok(await storage.bioLinks.update(id, await request.json()))
+    if (resource === 'bio-links' && method === 'DELETE' && id) { await storage.bioLinks.remove(id); return ok({}) }
+
+    // --- Notification settings ---
+    if (resource === 'notification-settings' && method === 'GET') {
+      const sb = supabase()
+      const { data } = await sb.from('app_settings').select('value').eq('key', 'notification_level').maybeSingle()
+      return ok({ level: data?.value?.level || 'failures_only' })
+    }
+    if (resource === 'notification-settings' && method === 'PUT') {
+      const body = await request.json()
+      const sb = supabase()
+      await sb.from('app_settings').upsert({ key: 'notification_level', value: { level: body.level || 'failures_only' } }, { onConflict: 'key' })
+      return ok({ saved: true })
+    }
+
+    // --- Unscheduled jobs (for calendar sidebar) ---
+    if (resource === 'unscheduled-jobs' && method === 'GET') {
+      const all = await storage.jobs.list({})
+      return ok(all.filter(j => j.status === 'approved' && !j.scheduled_for).slice(0, 50))
+    }
+
+    // --- Campaign rollup ---
+    if (resource === 'campaign-rollup' && id && method === 'GET') {
+      const sb = supabase()
+      const { data } = await sb.from('content_jobs').select('*').eq('campaign_id', id)
+      const posts = data || []
+      const totalImp = posts.reduce((s, p) => s + (p.platform_posts?.stats?.impressions || 0), 0)
+      const totalEng = posts.reduce((s, p) => s + (p.platform_posts?.stats?.engagement || 0), 0)
+      return ok({ campaign_id: id, total_posts: posts.length, total_impressions: totalImp, total_engagement: totalEng, posts })
+    }
+
+    // --- Pipeline status (automation visual) ---
+    if (resource === 'pipeline-status' && method === 'GET') {
+      const sb = supabase()
+      const jobs = await storage.jobs.list({})
+      const stages = { fetch: 0, generate: 0, validate: 0, approve: 0, publish: 0 }
+      jobs.forEach(j => {
+        if (j.status === 'draft' || j.status === 'processing') stages.generate++
+        else if (j.status === 'pending_approval') stages.approve++
+        else if (j.status === 'approved' || j.status === 'scheduled') stages.validate++
+        else if (j.status === 'published') stages.publish++
+        else stages.fetch++
+      })
+      return ok(stages)
     }
 
     return err(`No route for ${method} /${parts.join('/')}`, 404)

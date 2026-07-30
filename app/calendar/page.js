@@ -17,6 +17,13 @@ export default function CalendarPage() {
   const [draggingJob, setDraggingJob] = useState(null)
   const [publishing, setPublishing] = useState(null)
   const [showList, setShowList] = useState(false)
+  const [showUnscheduled, setShowUnscheduled] = useState(false)
+  const [unscheduled, setUnscheduled] = useState([])
+  const [filterPlatform, setFilterPlatform] = useState('')
+  const [filterPillar, setFilterPillar] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [selectedJobs, setSelectedJobs] = useState([])
+  const [draggingSelected, setDraggingSelected] = useState(false)
 
   const refresh = async () => {
     setLoading(true)
@@ -57,9 +64,16 @@ export default function CalendarPage() {
   const getJobsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0]
     return jobs.filter(j => {
-      if (j.scheduled_for && j.scheduled_for.startsWith(dateStr)) return true
-      if (!j.scheduled_for && j.created_at && j.created_at.startsWith(dateStr)) return true
-      return false
+      if (!j.scheduled_for && !j.created_at) return false
+      const matchDate = j.scheduled_for?.startsWith(dateStr) || j.created_at?.startsWith(dateStr)
+      if (!matchDate) return false
+      if (filterPlatform) {
+        const p = j.platform_posts?.[filterPlatform]
+        if (!p) return false
+      }
+      if (filterPillar && j.pillar !== filterPillar) return false
+      if (filterStatus && j.status !== filterStatus) return false
+      return true
     })
   }
 
@@ -159,6 +173,53 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 flex-wrap mb-4">
+        <select value={filterPlatform} onChange={e => setFilterPlatform(e.target.value)} className="text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1">
+          <option value="">All platforms</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="instagram">Instagram</option>
+          <option value="facebook">Facebook</option>
+          <option value="threads">Threads</option>
+        </select>
+        <select value={filterPillar} onChange={e => setFilterPillar(e.target.value)} className="text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1">
+          <option value="">All pillars</option>
+          <option value="hr-analytics">HR Analytics</option>
+          <option value="career">Career</option>
+          <option value="tools">Tool Breakdowns</option>
+          <option value="industry">Industry Insights</option>
+          <option value="general">General</option>
+        </select>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1">
+          <option value="">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="pending_approval">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="published">Published</option>
+        </select>
+        <Button variant="outline" size="sm" className="border-border text-xs" onClick={async () => {
+          try {
+            setUnscheduled(await api('/unscheduled-jobs'))
+            setShowUnscheduled(!showUnscheduled)
+          } catch {}
+        }}>
+          <CalendarIcon className="h-3 w-3 mr-1" /> Unscheduled ({unscheduled.length})
+        </Button>
+      </div>
+
+      <div className="flex gap-4">
+      {showUnscheduled && (
+        <div className="w-56 shrink-0 border border-border rounded-sm bg-card p-3 max-h-96 overflow-y-auto">
+          <div className="editorial-eyebrow mb-2">Unscheduled ({unscheduled.length})</div>
+          {unscheduled.length === 0 ? <div className="text-xs text-muted-foreground">None</div> : unscheduled.map(j => (
+            <div key={j.id} draggable onDragStart={e => { setDraggingJob(j); e.dataTransfer.setData('text/plain', j.id) }}
+              className="text-xs p-2 mb-1 rounded-sm border border-dashed border-border bg-secondary/30 cursor-grab hover:bg-secondary/50"
+            >{j.topic?.slice(0, 30) || 'Untitled'}</div>
+          ))}
+          <div className="text-[0.5rem] text-muted-foreground mt-2">Drag onto calendar</div>
+        </div>
+      )}
+
       {!showList && (
         view === 'week' ? (
           <div className="grid grid-cols-7 gap-px bg-border rounded-sm overflow-hidden mb-6">
@@ -237,6 +298,7 @@ export default function CalendarPage() {
           </div>
         )
       )}
+      </div>
 
       {/* Running order list */}
       <div className="bg-card border border-border rounded-sm p-4 sm:p-5">

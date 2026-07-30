@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import { Sparkles, Calendar as CalendarIcon, ImageIcon, BarChart3, MessageSquare,
   Settings as SettingsIcon, Wand2, List, Radio, Globe, Sun, X, PlugZap, Loader2, Hash,
-  HelpCircle, FileText } from 'lucide-react'
+  HelpCircle, FileText, Bell } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { api } from '@/components/shared'
 import './globals.css'
@@ -38,6 +38,28 @@ export default function RootLayout({ children }) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {})
     }
+    // Command palette
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        const pages = [
+          { key: '/', label: 'Dashboard' }, { key: '/compose', label: 'Compose' },
+          { key: '/calendar', label: 'Schedule' }, { key: '/automation', label: 'Automation' },
+          { key: '/blog-automation', label: 'Blog Engine' }, { key: '/analytics', label: 'Analytics' },
+          { key: '/bulk', label: 'Bulk Posts' }, { key: '/comments', label: 'Inbox' },
+          { key: '/news', label: 'News Radar' }, { key: '/blog', label: 'Blog' },
+          { key: '/seasonal', label: 'Seasonal' }, { key: '/hashtags', label: 'Hashtags' },
+          { key: '/settings', label: 'Settings' }, { key: '/help', label: 'Help' },
+        ]
+        const input = window.prompt('Go to: (Ctrl+K palette)\n' + pages.map(p => `${p.key} — ${p.label}`).join('\n'))
+        if (input) {
+          const match = pages.find(p => p.key.includes(input) || p.label.toLowerCase().includes(input.toLowerCase()))
+          if (match) router.push(match.key)
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [])
 
   useEffect(() => {
@@ -114,6 +136,24 @@ export default function RootLayout({ children }) {
               ))}
             </nav>
             <div className="px-3 pb-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const [j, audit] = await Promise.all([
+                      api('/jobs').catch(() => []),
+                      api('/audit?limit=5').catch(() => []),
+                    ])
+                    const failures = j.filter(x => x.status === 'failed').length
+                    const pending = j.filter(x => x.status === 'pending_approval').length
+                    const recent = audit.slice(0, 3).map(a => `${a.action} — ${a.entity_type}`)
+                    toast.info(`📊 ${pending} pending · ${failures} failed\n` + recent.join('\n'), { duration: 5000 })
+                  } catch {}
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+              >
+                <Bell className="h-4 w-4" />
+                Notifications
+              </button>
               <button
                 onClick={() => router.push('/help')}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"

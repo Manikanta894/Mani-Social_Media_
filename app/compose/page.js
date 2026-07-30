@@ -45,15 +45,21 @@ export default function ComposePage() {
   const [tone, setTone] = useState(50)
   const [pillar, setPillar] = useState('general')
   const [variantsEnabled, setVariantsEnabled] = useState(false)
+  const [templates, setTemplates] = useState([])
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [costEstimate, setCostEstimate] = useState(null)
   const fileInputRef = useRef(null)
   const dropRef = useRef(null)
 
   useEffect(() => {
     (async () => {
       try {
-        const [p, s] = await Promise.all([api('/providers'), api('/prompt-styles')])
-        setProviders(p)
-        setStyles(s)
+        const [p, s, t, c] = await Promise.all([
+          api('/providers'), api('/prompt-styles'),
+          api('/templates').catch(() => []),
+          api('/cost-estimate').catch(() => ({ estimated: '0.00' })),
+        ])
+        setProviders(p); setStyles(s); setTemplates(t); setCostEstimate(c)
         if (s.length > 0) {
           setStyleId(prev => prev || (s.find(x => x.is_active) || s[0])?.id || null)
         }
@@ -205,10 +211,13 @@ export default function ComposePage() {
     const r = variantResult || result
     if (!r) return null
     try {
+      const toneAdj = (tone - 50) / 50
       const job = await api('/jobs', { method: 'POST', body: {
         source: 'ai_manual',
         topic: context.slice(0, 120),
         pillar,
+        tone_adjustment: toneAdj,
+        image_refs: images.map(i => i.preview || i.base64?.slice(0, 40) || ''),
         research_context: r.research_context,
         images: images.map(i => ({ base64: i.base64, mimeType: i.mimeType })),
         image_base64: images[0]?.base64 || undefined,
@@ -336,6 +345,30 @@ export default function ComposePage() {
             </div>
 
             <div>
+              <Label className="editorial-eyebrow mb-1.5 block">Template</Label>
+              <div className="flex gap-2">
+                <Select value={selectedTemplate} onValueChange={async (v) => {
+                  setSelectedTemplate(v)
+                  if (!v) return
+                  const t = templates.find(x => x.id === v)
+                  if (t) { setContext(t.context || ''); if (t.style_id) setStyleId(t.style_id); if (t.tone_adjustment) setTone((t.tone_adjustment + 1) * 50) }
+                }}>
+                  <SelectTrigger className="bg-secondary/50 border-border flex-1"><SelectValue placeholder="Load a saved template…" /></SelectTrigger>
+                  <SelectContent>
+                    {templates.map(t => (<SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" className="border-border shrink-0" onClick={async () => {
+                  const name = prompt('Template name:')
+                  if (!name) return
+                  await api('/templates', { method: 'POST', body: { name, context, style_id: styleId, tone_adjustment: (tone - 50) / 50 } })
+                  setTemplates(await api('/templates'))
+                  toast.success('Template saved')
+                }}><Save className="h-3.5 w-3.5" /></Button>
+              </div>
+            </div>
+
+            <div>
               <Label className="editorial-eyebrow mb-1.5 block">Voice</Label>
               <Select value={styleId || undefined} onValueChange={setStyleId}>
                 <SelectTrigger className="bg-secondary/50 border-border"><SelectValue placeholder="Choose a voice…" /></SelectTrigger>
@@ -393,14 +426,21 @@ export default function ComposePage() {
               Generate A/B variants
             </label>
 
-            <Button
-              onClick={generate}
-              disabled={!canGenerate}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40"
-              size="lg"
-            >
-              {generating ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Writing…</>) : (<><Wand2 className="h-4 w-4 mr-2" /> Write captions</>)}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={generate}
+                disabled={!canGenerate}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40"
+                size="lg"
+              >
+                {generating ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Writing…</>) : (<><Wand2 className="h-4 w-4 mr-2" /> Write captions</>)}
+              </Button>
+              {costEstimate && (
+                <div className="editorial-mono text-[0.5rem] text-muted-foreground bg-secondary/50 border border-border rounded-sm px-2 py-1.5 shrink-0">
+                  ~${costEstimate.estimated}
+                </div>
+              )}
+            </div>
 
             <div className="editorial-mono text-[0.625rem] text-muted-foreground space-y-1 pt-1">
               <div className="flex items-center gap-1.5"><Eye className="h-3 w-3" /> Vision: <span className="text-foreground/70">{activeVision ? `${activeVision.name} · ${activeVision.model}` : 'not configured'}</span></div>
