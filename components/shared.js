@@ -15,6 +15,7 @@ export const PROVIDER_TYPES = [
   { value: 'openai',    label: 'OpenAI',                  defaultModel: 'gpt-4o',                      supportsVision: true  },
   { value: 'anthropic', label: 'Anthropic Claude',        defaultModel: 'claude-sonnet-4-5-20250929',  supportsVision: true  },
   { value: 'groq',      label: 'Groq (OpenAI-compat.)',   defaultModel: 'llama-3.3-70b-versatile',     supportsVision: false },
+  { value: 'openrouter', label: 'OpenRouter',              defaultModel: 'openai/gpt-4o',               supportsVision: true  },
   { value: 'custom',    label: 'Custom (OpenAI-compat.)', defaultModel: '',                            supportsVision: true  },
 ]
 
