@@ -89,6 +89,7 @@ export default function ComposePage() {
       catch (e) { toast.error(`Failed to process ${file.name}`) }
     }
     if (newImages.length === 0) return
+    setPastedArticle('') // clear article text when using photos
     setImages(prev => { const combined = [...prev, ...newImages]; return combined.slice(0, 10) })
     setResult(null)
   }
@@ -106,6 +107,7 @@ export default function ComposePage() {
 
   const extractUrl = async () => {
     if (!url.trim()) { toast.error('Enter a URL first'); return }
+    setImages([]) // clear photos when using article mode
     setExtracting(true)
     try {
       const data = await api('/extract', { method: 'POST', body: { url: url.trim() } })
