@@ -121,18 +121,20 @@ export default function ComposePage() {
       const started = Date.now()
       const contextData = context.trim() || pastedArticle.trim() || undefined
       const emojiInstruction = emojiEnabled ? `Use emojis in captions at density level ${emojiDensity}/100. ${emojiDensity < 30 ? 'Use sparingly, roughly 1 every 2-3 sentences.' : emojiDensity < 60 ? 'Use a moderate amount of emojis.' : 'Use emojis liberally throughout each caption.'}` : 'Do NOT use any emojis in any caption.'
-      const data = await api('/generate', {
-        method: 'POST',
-        body: {
-          images: images.map(i => ({ base64: i.base64, mimeType: i.mimeType })),
-          context: contextData,
-          styleId: styleId || undefined,
-          tone,
-          pillar: pillar || undefined,
-          variants: variantsEnabled ? 2 : undefined,
-          emoji_instruction: emojiInstruction,
-        },
-      })
+      const payload = {
+        context: contextData,
+        styleId: styleId || undefined,
+        tone,
+        pillar: pillar || undefined,
+        variants: variantsEnabled ? 2 : undefined,
+        emoji_instruction: emojiInstruction,
+      }
+      if (images.length > 0) {
+        payload.images = images.map(i => ({ base64: i.base64, mimeType: i.mimeType }))
+        payload.image_base64 = images[0].base64
+        payload.mime_type = images[0].mimeType
+      }
+      const data = await api('/generate', { method: 'POST', body: payload })
       setResult({ ...data, ms: Date.now() - started })
       toast.success(`Generated captions in ${((Date.now() - started) / 1000).toFixed(1)}s`)
     } catch (e) { toast.error(e.message) } finally { setGenerating(false) }
