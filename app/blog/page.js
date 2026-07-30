@@ -440,11 +440,11 @@ function DripManagement({ blogId }) {
                           <div className="p-2.5 border-t border-border space-y-2">
                             <div>
                               <div className="studio-eyebrow mb-1">Caption</div>
-                              <textarea value={editValues[`${job.id}_${p}`] ?? post.caption || ''} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}`]: e.target.value }))} rows={3} className="w-full text-xs bg-secondary/50 border border-border rounded-sm p-2 resize-none" />
+                              <textarea value={editValues[`${job.id}_${p}`] !== undefined ? editValues[`${job.id}_${p}`] : (post.caption || '')} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}`]: e.target.value }))} rows={3} className="w-full text-xs bg-secondary/50 border border-border rounded-sm p-2 resize-none" />
                             </div>
                             <div>
                               <div className="studio-eyebrow mb-1">Hashtags (comma separated)</div>
-                              <input value={editValues[`${job.id}_${p}_tags`] ?? (post.hashtags || []).join(', ')} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}_tags`]: e.target.value }))} className="w-full text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1.5" />
+                              <input value={editValues[`${job.id}_${p}_tags`] !== undefined ? editValues[`${job.id}_${p}_tags`] : (post.hashtags || []).join(', ')} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}_tags`]: e.target.value }))} className="w-full text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1.5" />
                             </div>
                             <div className="flex gap-1.5">
                               <Button size="sm" onClick={() => savePlatform(job.id, p)} className="studio-btn-gradient h-6 text-[0.6rem]"><Save className="h-2.5 w-2.5 mr-1" /> Save</Button>
