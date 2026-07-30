@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { storage } from '@/lib/storage'
+import { supabase } from '@/lib/supabase'
 import { generateFromImage, regeneratePlatform, generateBulk, generateBlogPost } from '@/lib/ai/generate'
 import { testProvider } from '@/lib/ai/providers'
 import { handleUpdate, sendDraftToAdmin } from '@/lib/telegram/handler'
