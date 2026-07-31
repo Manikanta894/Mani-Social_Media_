@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { supabaseBrowser } from '@/lib/supabase-browser'
+import { supabaseBrowser, syncSessionCookie } from '@/lib/supabase-browser'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -15,10 +15,11 @@ export default function LoginPage() {
   useEffect(() => {
     supabaseBrowser().auth.getSession().then(({ data }) => {
       if (data?.session) {
+        syncSessionCookie()
         supabaseBrowser().auth.mfa.listFactors().then(({ data: mfa }) => {
           const enrolled = mfa?.all?.filter(f => f.status === 'verified') || []
           if (enrolled.length === 0) setStep('enroll')
-          else window.location.href = '/'
+          else { syncSessionCookie(); window.location.href = '/' }
         })
       }
     })
@@ -95,7 +96,7 @@ export default function LoginPage() {
       })
       if (verifyErr) { toast.error('Invalid code'); return }
 
-      window.location.href = '/'
+      syncSessionCookie(); window.location.href = '/'
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
 
@@ -124,7 +125,7 @@ export default function LoginPage() {
       if (verifyErr) { toast.error(verifyErr.message); return }
 
       toast.success('TOTP enrolled successfully')
-      window.location.href = '/'
+      syncSessionCookie(); window.location.href = '/'
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
 
