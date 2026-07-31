@@ -109,7 +109,7 @@ function Dashboard() {
         api('/automation/settings').catch(() => ({})),
         api('/automation-stats').catch(() => ({})),
       ])
-      setStats(st); setActivity(act); setSettings(s); setLiveStats(ls)
+      setStats(st || {}); setActivity(act || []); setSettings(s || {}); setLiveStats(ls || {})
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }, [])
 
@@ -382,9 +382,9 @@ function QueueManager() {
         api('/jobs').catch(() => []),
         api('/news/posts').catch(() => []),
       ])
-      setSocialQueue(sq); setSocialStats(ss); setBlogQueue(bq); setBlogStats(bs)
-      setManualJobs(mj.filter(j => j.source === 'ai_manual' || j.source === 'compose'))
-      setNewsItems(ni.filter(n => n.status === 'pending_approval'))
+      setSocialQueue(sq || []); setSocialStats(ss || {}); setBlogQueue(bq || []); setBlogStats(bs || {})
+      setManualJobs((mj || []).filter(j => j.source === 'ai_manual' || j.source === 'compose'))
+      setNewsItems((ni || []).filter(n => n.status === 'pending_approval'))
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refresh() }, [])

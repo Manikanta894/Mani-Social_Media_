@@ -19,7 +19,7 @@ function InboxPage() {
 
   const refresh = async () => {
     setLoading(true)
-    try { setComments(await api('/comments')) } catch (e) { toast.error(e.message) } finally { setLoading(false) }
+    try { setComments((await api('/comments')) || []) } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refresh() }, [])
 

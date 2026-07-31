@@ -63,7 +63,7 @@ function BlogDashboard() {
         api('/blog/activity?limit=30').catch(() => []),
         api('/blog/settings').catch(() => ({})),
       ])
-      setStats(st); setActivity(act); setSettings(s)
+      setStats(st || {}); setActivity(act || []); setSettings(s || {})
     } catch (e) { toast.error(e.message) }
     finally { setLoading(false) }
   }, [])
@@ -185,7 +185,7 @@ function BlogQueueManager() {
     try {
       const path = statusFilter ? `/blog/queue?status=${statusFilter}` : '/blog/queue'
       const [st, q] = await Promise.all([api('/blog/stats'), api(path)])
-      setStats(st); setQueue(q)
+      setStats(st || {}); setQueue(q || [])
     } catch (e) { toast.error(e.message) }
     finally { setLoading(false) }
   }

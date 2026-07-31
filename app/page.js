@@ -29,7 +29,7 @@ export default function DashboardPage() {
           api('/jobs').catch(() => []),
           api('/audit?limit=15').catch(() => []),
           api('/analytics/stats').catch(() => ({})),
-        ])
+        ]).then(([j, a, s]) => [(j || []), (a || []), (s || {})])
         const published = jobs.filter(j => j.status === 'published')
         const today = new Date().toDateString()
         const postsToday = published.filter(j => j.published_at && new Date(j.published_at).toDateString() === today).length
