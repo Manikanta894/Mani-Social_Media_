@@ -18,6 +18,7 @@ import { runNewsCheck, generateAndSave, detectConflicts, findNextSlot } from '@/
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 const ok = (data) => NextResponse.json({ ok: true, data })
 const err = (message, status = 400, extra = {}) =>
