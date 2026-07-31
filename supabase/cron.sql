@@ -16,9 +16,15 @@ BEGIN
   END IF;
 END $$;
 
+-- ⚠️ MANUAL STEP REQUIRED (not a code task):
+-- 1. Open Settings → Automation in the app (or GET /api/automation/settings) to read your tick_secret.
+-- 2. Replace TICK_SECRET_HERE with that real value.
+-- 3. Replace BASE_URL_HERE with https://social.manikantar.in
+-- 4. Paste this whole file into the Supabase SQL Editor and run once.
+-- The Automation Settings page in the app also generates this exact SQL with
+-- the real secret inlined — copy from there to avoid manual substitution errors.
+
 -- Fire /api/automation/tick every minute.
--- Replace TICK_SECRET_HERE with the value shown in Settings → Automation → Tick secret
--- Replace BASE_URL_HERE with your NEXT_PUBLIC_BASE_URL
 SELECT cron.schedule(
   'socialforge-tick',
   '* * * * *',   -- every minute

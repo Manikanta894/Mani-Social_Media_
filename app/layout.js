@@ -8,6 +8,7 @@ import { Sparkles, Calendar as CalendarIcon, ImageIcon, BarChart3, MessageSquare
   HelpCircle, FileText, Bell } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { api } from '@/components/shared'
+import ErrorBoundary from '@/components/error-boundary'
 import './globals.css'
 
 const NAV_ITEMS = [
@@ -106,6 +107,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="bg-background text-foreground">
+        <ErrorBoundary>
         <div className="flex h-screen w-full overflow-hidden">
           <aside className="w-56 shrink-0 flex flex-col border-r border-border bg-sidebar text-sidebar-foreground">
             <div className="px-5 py-5 border-b border-border">
@@ -196,6 +198,7 @@ export default function RootLayout({ children }) {
           </aside>
           <main className="flex-1 overflow-y-auto">{children}</main>
         </div>
+        </ErrorBoundary>
         <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>

@@ -29,6 +29,28 @@ async function route(request, method) {
   const parts = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean)
   const [resource, id, action] = parts
 
+  // Defense-in-depth session check (middleware also checks).
+  // Public routes: auth flow, telegram webhook, health, automation ticks (secret-authed), blog tick, approve.
+  const PUBLIC_API = ['auth', 'health', 'telegram', 'approve']
+  const PUBLIC_RESOURCES = ['health', 'telegram', 'approve']
+  const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
+  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick'
+  if (!isPublic && !isTick) {
+    const cookieName = 'sb-socialforge-auth-auth-token'
+    const token = request.cookies.get(cookieName)?.value
+    let authed = false
+    if (token) {
+      try {
+        const parts = token.split('.')
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
+          authed = payload.exp * 1000 > Date.now() - 30000
+        }
+      } catch {}
+    }
+    if (!authed) return err('Unauthorized', 401)
+  }
+
   try {
     // --- Health -------------------------------------------------------------
     if (!resource || resource === 'health') {
