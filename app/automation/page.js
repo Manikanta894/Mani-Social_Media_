@@ -104,56 +104,81 @@ function Dashboard() {
     reorder: { emoji: '📋', label: 'Reordered' },
   }
 
-  if (loading) return <div className="text-muted-foreground flex items-center gap-2 py-10 justify-center"><Loader2 className="h-5 w-5 animate-spin" /> Loading dashboard…</div>
+  if (loading) return <div className="text-muted-foreground flex items-center gap-2 py-10 justify-center"><Loader2 className="h-5 w-5 animate-spin" /> Loading control center…</div>
+
+  const statusColor = liveStats.status === 'Running' ? '#0EA37A' : liveStats.status === 'Paused' ? '#D97706' : '#6B6A78'
+  const kpis = [
+    { label: 'Queue size', value: liveStats.queue_size ?? '—', icon: '📋' },
+    { label: 'Generated today', value: liveStats.posts_generated_today ?? '—', icon: '🤖' },
+    { label: 'Published today', value: liveStats.posts_published_today ?? '—', icon: '🚀' },
+    { label: 'Waiting approval', value: liveStats.waiting_approval ?? '—', icon: '⏳' },
+    { label: 'Failed', value: liveStats.failed ?? '—', icon: '❌' },
+    { label: 'Success rate', value: `${liveStats.success_rate ?? '—'}%`, icon: '📈' },
+    { label: 'Blogs published', value: liveStats.blogs_published_today ?? '—', icon: '📝' },
+    { label: 'Blogs awaiting', value: liveStats.blog_waiting_approval ?? '—', icon: '🗞️' },
+  ]
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-        {statuses.map(([k, label, cls]) => (
-          <div key={k} className="border border-border rounded-sm p-3 bg-card shadow-sm">
-            <div className="editorial-eyebrow">{label}</div>
-            <div className={`text-xl font-semibold mt-1 ${(stats?.[k] || 0) > 0 ? '' : 'text-muted-foreground'}`}>
-              {stats?.[k] || 0}
+      {/* Hero status banner */}
+      <div className="rounded-xl bg-gradient-to-r from-[#7C3AED]/10 via-[#EC4899]/8 to-[#7C3AED]/10 border border-[#7C3AED]/15 p-5 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-3 w-3">
+            {liveStats.status === 'Running' && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: statusColor }} />
+            )}
+            <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: statusColor }} />
+          </div>
+          <div>
+            <div className="studio-title text-lg">Automation {liveStats.status || '—'}</div>
+            <div className="text-xs text-muted-foreground">Next slot: <b>{liveStats.next_slot || '—'}</b> · Last tick: {liveStats.last_tick_at ? new Date(liveStats.last_tick_at).toLocaleTimeString() : 'never'}</div>
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Button onClick={refresh} variant="outline" size="sm" className="border-border"><RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh</Button>
+          <Button onClick={async () => {
+            setRunning(true)
+            try {
+              const s = await api('/automation/settings')
+              const r = await fetch('/api/automation/tick', { method: 'POST', headers: { 'X-Automation-Secret': s.tick_secret, 'Content-Type': 'application/json' } })
+              const j = await r.json()
+              if (j.ok) toast.success('Tick: ' + JSON.stringify(j.data).slice(0, 120))
+              else toast.error(j.error || 'Tick failed')
+              await refresh()
+            } catch (e) { toast.error(e.message) } finally { setRunning(false) }
+          }} disabled={running} size="sm" className="studio-btn-gradient">
+            {running ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Zap className="h-3.5 w-3.5 mr-1" />}
+            Run tick
+          </Button>
+        </div>
+      </div>
+
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {kpis.map(k => (
+          <div key={k.label} className="rounded-lg border border-border bg-card p-3.5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="studio-eyebrow">{k.label}</div>
+              <span className="text-base">{k.icon}</span>
             </div>
+            <div className="studio-title text-2xl mt-1.5">{k.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Live status bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Status</div>
-          <div className={`text-sm font-semibold mt-0.5 ${liveStats.status === 'Running' ? 'text-[#0EA37A]' : liveStats.status === 'Paused' ? 'text-[#D97706]' : 'text-muted-foreground'}`}>
-            {liveStats.status || '—'}
-          </div>
+      {/* Queue status mini-bar */}
+      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="studio-eyebrow">Queue Status</div>
+          <div className="text-xs text-muted-foreground">{liveStats.timezone || ''}</div>
         </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Next slot</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.next_slot || '—'}</div>
-        </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Generated today</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.posts_generated_today ?? '—'}</div>
-        </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Success rate</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.success_rate ?? '—'}%</div>
-        </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Published today</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.posts_published_today ?? '—'}</div>
-        </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Waiting approval</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.waiting_approval ?? '—'}</div>
-        </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Failed</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.failed ?? '—'}</div>
-        </div>
-        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
-          <div className="editorial-eyebrow">Queue size</div>
-          <div className="text-sm font-semibold mt-0.5">{liveStats.queue_size ?? '—'}</div>
+        <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+          {statuses.map(([k, label]) => (
+            <div key={k} className="text-center rounded-md bg-secondary/40 px-2 py-2">
+              <div className="studio-title text-lg">{stats?.[k] || 0}</div>
+              <div className="text-[0.5rem] uppercase tracking-wider text-muted-foreground">{label}</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -171,35 +196,14 @@ function Dashboard() {
             ) : (
               <div className="space-y-1.5">
                 {todaySchedule.map(slot => (
-                  <div key={slot.index} className={`flex items-center gap-3 px-3 py-2 rounded-sm text-sm ${slot.isPast ? 'bg-secondary/30 text-muted-foreground' : 'bg-secondary/60 text-foreground'}`}>
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${slot.isPast ? 'bg-muted-foreground/30' : 'bg-primary'}`} />
+                  <div key={slot.index} className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm ${slot.isPast ? 'bg-secondary/30 text-muted-foreground' : 'bg-secondary/60 text-foreground'}`}>
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${slot.isPast ? 'bg-muted-foreground/30' : 'bg-[#0EA37A]'}`} />
                     <span className="font-medium">{slot.time}</span>
-                    <span className="editorial-mono text-[0.5rem] ml-auto">{slot.label}</span>
+                    <span className={`text-[0.55rem] ml-auto px-1.5 py-0.5 rounded-full ${slot.isPast ? 'bg-muted/40 text-muted-foreground' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{slot.label}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div className="mt-3 flex items-center gap-2">
-              <Button onClick={refresh} variant="ghost" size="sm"><RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh</Button>
-              <Button onClick={async () => {
-                setRunning(true)
-                try {
-                  const s = await api('/automation/settings')
-                  const r = await fetch('/api/automation/tick', {
-                    method: 'POST',
-                    headers: { 'X-Automation-Secret': s.tick_secret, 'Content-Type': 'application/json' },
-                  })
-                  const j = await r.json()
-                  if (j.ok) toast.success('Tick: ' + JSON.stringify(j.data).slice(0, 120))
-                  else toast.error(j.error || 'Tick failed')
-                  await refresh()
-                } catch (e) { toast.error(e.message) }
-                finally { setRunning(false) }
-              }} disabled={running} variant="outline" size="sm" className="border-border">
-                {running ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Zap className="h-3.5 w-3.5 mr-1" />}
-                Run Tick
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
@@ -215,7 +219,7 @@ function Dashboard() {
                 {activity.slice(0, 30).map((a, i) => {
                   const meta = actionLabels[a.action] || { emoji: '•', label: a.action }
                   return (
-                    <div key={a.id || i} className="flex items-start gap-2 text-sm">
+                    <div key={a.id || i} className="flex items-start gap-2 text-sm rounded-md px-2 py-1.5 hover:bg-secondary/30">
                       <span className="shrink-0">{meta.emoji}</span>
                       <div className="flex-1 min-w-0">
                         <span className="font-medium">{meta.label}</span>
