@@ -749,8 +749,23 @@ $sql$);`
       </Card>
 
       <Card className="bg-card border-border shadow-sm">
-        <CardHeader className="pb-2"><CardTitle className="text-sm font-serif">Manual Controls</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm font-serif">Safety & Controls</CardTitle></CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm">Kill switch</Label>
+              <div className="studio-mono text-[0.5rem] text-muted-foreground">Stops ALL automation immediately when ON</div>
+            </div>
+            <Switch checked={s.kill_switch || false} onCheckedChange={v => save({ kill_switch: v })} />
+          </div>
+          <div>
+            <Label className="studio-eyebrow block">Auto-publish confidence threshold</Label>
+            <div className="studio-mono text-[0.5rem] text-muted-foreground mb-1">Leave empty = always require manual approval. Set e.g. 0.9 to auto-approve high-confidence posts.</div>
+            <Input type="number" min="0" max="1" step="0.05" placeholder="empty" value={s.auto_publish_confidence_threshold ?? ''}
+              onChange={e => setS({ ...s, auto_publish_confidence_threshold: e.target.value === '' ? null : Number(e.target.value) })}
+              onBlur={e => save({ auto_publish_confidence_threshold: e.target.value === '' ? null : Number(e.target.value) })}
+              className="bg-secondary/50 border-border mt-1 w-32" />
+          </div>
           <div className="editorial-mono text-[0.5rem] text-muted-foreground space-y-1">
             <div>Last tick: <span className="text-foreground/70">{s.last_tick_at ? new Date(s.last_tick_at).toLocaleString() : 'never'}</span></div>
             <div>Queue: <span className="text-foreground/70">{s.pause_queue ? 'Paused' : 'Running'}</span></div>

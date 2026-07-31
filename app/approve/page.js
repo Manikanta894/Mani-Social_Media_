@@ -38,9 +38,9 @@ export default function ApprovePage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-lg w-full">
+      <Card className="max-w-lg w-full shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
         <CardHeader>
-          <CardTitle className="font-serif">{job.topic || 'Untitled Post'}</CardTitle>
+          <CardTitle className="studio-title">{job.topic || 'Untitled Post'}</CardTitle>
           <StatusStamp status={job.status} />
         </CardHeader>
         <CardContent className="space-y-4">
@@ -54,15 +54,15 @@ export default function ApprovePage() {
             </div>
           ))}
           {actionTaken ? (
-            <div className="text-center py-4 text-accent font-medium">
+            <div className="text-center py-4 text-primary font-medium">
               {actionTaken === 'approve' ? '✓ Approved' : '✕ Rejected'}
             </div>
           ) : (
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => handleAction('approve')} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/80">
+              <Button onClick={() => handleAction('approve')} className="flex-1 studio-btn-gradient">
                 <Check className="h-4 w-4 mr-1" /> Approve
               </Button>
-              <Button onClick={() => handleAction('reject')} variant="outline" className="flex-1">
+              <Button onClick={() => handleAction('reject')} variant="outline" className="flex-1 border-border">
                 <X className="h-4 w-4 mr-1" /> Reject
               </Button>
             </div>

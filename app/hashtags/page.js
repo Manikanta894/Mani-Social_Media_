@@ -121,12 +121,12 @@ function HashtagsPage() {
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold">Hashtag Sets</h1>
+          <h1 className="studio-title text-xl">Hashtag Sets</h1>
           <p className="text-sm text-muted-foreground">Saved hashtag collections for quick reuse</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4" /> New Set</Button>
+            <Button size="sm" onClick={openNew} className="studio-btn-gradient"><Plus className="h-4 w-4" /> New Set</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
