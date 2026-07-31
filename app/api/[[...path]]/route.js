@@ -1208,6 +1208,30 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       if (method === 'DELETE' && id) { await storage.csvTopics.remove(parseInt(id)); return ok({}) }
       if (id === 'next-unused' && method === 'GET') return ok(await storage.csvTopics.nextUnused())
       if (id === 'count' && method === 'GET') return ok({ count: await storage.csvTopics.countPending() })
+      if (id === 'generate' && method === 'POST') {
+        const body = await request.json()
+        const count = Math.min(Math.max(body.count || 10, 1), 30)
+        const niche = body.niche || ''
+        const providers = await storage.providers.list()
+        const tp = providers.find(p => p.active_for_text)
+        if (!tp) return err('No active text provider')
+        const { callAi } = await import('@/lib/ai/providers')
+        const prompt = `Generate ${count} unique blog topic ideas${niche ? ` for the niche: ${niche}` : ''} in AI, technology, business, productivity, and thought leadership. Each topic must be specific, original, and compelling for a premium publication.
+Respond with a JSON array of objects: [{"topic": "...", "category": "ai|tech|business|essays|productivity", "keywords": "kw1, kw2, kw3", "search_intent": "informational|educational|comparison|how-to", "target_audience": "..."}]
+JSON only, no markdown fences.`
+        let raw = ''
+        try { raw = await callAi({ provider: tp, prompt, json: true, maxTokens: 4000 }) } catch (e) { return err(e.message, 400) }
+        let parsed = []
+        try { parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()) } catch {}
+        if (!Array.isArray(parsed)) return err('AI returned invalid format')
+        const rows = parsed.slice(0, count).map(t => ({
+          topic: t.topic || t.Topic || '', category: t.category || 'tech',
+          keywords: t.keywords || '', audience: t.target_audience || '',
+        })).filter(t => t.topic)
+        if (rows.length === 0) return err('No topics generated')
+        const saved = await storage.csvTopics.bulkCreate(rows)
+        return ok({ generated: rows.length, saved: (saved || []).length, topics: rows })
+      }
     }
 
     // --- Unscheduled jobs (for calendar sidebar) ---
