@@ -51,20 +51,23 @@ function Dashboard() {
   const [stats, setStats] = useState(null)
   const [activity, setActivity] = useState([])
   const [settings, setSettings] = useState(null)
+  const [liveStats, setLiveStats] = useState({})
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
 
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const [st, act, s] = await Promise.all([
+      const [st, act, s, ls] = await Promise.all([
         api('/intake/stats').catch(() => ({})),
         api('/automation/activity?limit=30').catch(() => []),
         api('/automation/settings').catch(() => ({})),
+        api('/automation-stats').catch(() => ({})),
       ])
       setStats(st)
       setActivity(act)
       setSettings(s)
+      setLiveStats(ls)
     } catch (e) { toast.error(e.message) }
     finally { setLoading(false) }
   }, [])
@@ -114,6 +117,44 @@ function Dashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Live status bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Status</div>
+          <div className={`text-sm font-semibold mt-0.5 ${liveStats.status === 'Running' ? 'text-[#0EA37A]' : liveStats.status === 'Paused' ? 'text-[#D97706]' : 'text-muted-foreground'}`}>
+            {liveStats.status || '—'}
+          </div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Next slot</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.next_slot || '—'}</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Generated today</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.posts_generated_today ?? '—'}</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Success rate</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.success_rate ?? '—'}%</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Published today</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.posts_published_today ?? '—'}</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Waiting approval</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.waiting_approval ?? '—'}</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Failed</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.failed ?? '—'}</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 bg-card shadow-sm">
+          <div className="editorial-eyebrow">Queue size</div>
+          <div className="text-sm font-semibold mt-0.5">{liveStats.queue_size ?? '—'}</div>
+        </div>
       </div>
 
       <PipelineView api={api} useState={useState} useEffect={useEffect} Loader2={Loader2} />
@@ -744,6 +785,24 @@ $sql$);`
               <div className="editorial-mono text-[0.625rem] text-muted-foreground">Single tap → publishes immediately to enabled platforms</div>
             </div>
             <Switch checked={s.auto_publish_after_approve !== false} onCheckedChange={v => save({ auto_publish_after_approve: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm">Approval reminders</Label>
+              <div className="editorial-mono text-[0.625rem] text-muted-foreground">Telegram nudge 3 min before slot if unapproved</div>
+            </div>
+            <Switch checked={s.approval_reminders !== false} onCheckedChange={v => save({ approval_reminders: v })} />
+          </div>
+          <div>
+            <Label className="studio-eyebrow block">If not approved by publish time</Label>
+            <Select value={s.approval_timeout_action || 'move_next'} onValueChange={v => save({ approval_timeout_action: v })}>
+              <SelectTrigger className="bg-secondary/50 border-border mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="move_next">Move to next slot</SelectItem>
+                <SelectItem value="skip">Skip this post</SelectItem>
+                <SelectItem value="auto_publish">Auto-publish anyway</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

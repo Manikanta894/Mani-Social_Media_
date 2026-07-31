@@ -1241,6 +1241,40 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       return ok(stages)
     }
 
+    // --- Live automation stats (social + blog dashboards) ---
+    if (resource === 'automation-stats' && method === 'GET') {
+      const sb = supabase()
+      const today = new Date().toISOString().slice(0, 10)
+      const [settings, dqStats, jobs, pending, failed, publishedToday, blogPending, blogPublishedToday] = await Promise.all([
+        automation.get().catch(() => ({})),
+        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'queued'),
+        storage.jobs.list({}).catch(() => []),
+        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
+        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'failed'),
+        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+        sb.from('blog_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
+        sb.from('blog_queue').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+      ])
+      const totalJobs = jobs.length
+      const published = jobs.filter(j => j.status === 'published').length
+      const failedJobs = jobs.filter(j => j.status === 'failed').length
+      const successRate = totalJobs > 0 ? Math.round(((totalJobs - failedJobs) / totalJobs) * 100) : 0
+      return ok({
+        status: settings.kill_switch ? 'Stopped' : settings.pause_queue ? 'Paused' : settings.enabled ? 'Running' : 'Disabled',
+        queue_size: dqStats.count || 0,
+        waiting_approval: (pending.count || 0),
+        failed: (failed.count || 0) + failedJobs,
+        posts_generated_today: jobs.filter(j => j.created_at?.startsWith(today)).length,
+        posts_published_today: (publishedToday.count || 0),
+        success_rate: successRate,
+        blog_waiting_approval: blogPending.count || 0,
+        blogs_published_today: blogPublishedToday.count || 0,
+        next_slot: settings.posting_times?.find(t => t >= (new Date().toISOString().slice(11, 16))) || settings.posting_times?.[0] || null,
+        timezone: settings.timezone,
+        last_tick_at: settings.last_tick_at,
+      })
+    }
+
     return err(`No route for ${method} /${parts.join('/')}`, 404)
 
   } catch (e) {
