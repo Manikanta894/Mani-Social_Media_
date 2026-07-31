@@ -7,6 +7,8 @@ import { NextResponse } from 'next/server'
 
 const PUBLIC_PATHS = ['/login', '/approve', '/bio']
 const PUBLIC_API_PREFIXES = ['/api/auth/', '/api/telegram/webhook', '/api/health']
+// Secret-authenticated endpoints — middleware must NOT block them; route handler verifies the secret
+const SECRET_API_PREFIXES = ['/api/automation/tick', '/api/blog/tick']
 
 function getSessionCookie(request) {
   // Supabase cookie name: sb-<storageKey>-auth-token
@@ -53,6 +55,11 @@ export function middleware(request) {
 
   // Public API routes (auth flow, telegram webhook, health)
   if (PUBLIC_API_PREFIXES.some(p => pathname.startsWith(p))) {
+    return NextResponse.next()
+  }
+
+  // Secret-authenticated endpoints (tick) — let route handler verify the secret
+  if (SECRET_API_PREFIXES.some(p => pathname === p)) {
     return NextResponse.next()
   }
 
