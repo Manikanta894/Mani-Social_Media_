@@ -279,6 +279,42 @@ function TopicManager() {
     } catch (e) { toast.error(e.message) } finally { setGenerating(false) }
   }
 
+  const downloadTemplate = () => {
+    const header = ['Topic', 'Primary Keyword', 'Secondary Keywords', 'Category', 'Tags', 'Priority', 'Publish Date', 'Publish Time', 'Author', 'Status']
+    const rows = [
+      ['The Future of AI in Recruitment', 'AI recruitment', 'hiring automation, candidate screening', 'tech', 'AI,HR,Recruitment', 'high', '', '', 'Manikanta', 'pending'],
+      ['Why Remote Work Is Here to Stay', 'remote work', 'hybrid work, distributed teams', 'essays', 'Remote,Work', 'medium', '', '', 'Manikanta', 'pending'],
+      ['Building a Personal Brand with AI Tools', 'personal branding', 'AI tools, content creation', 'productivity', 'Branding,AI', 'high', '', '', 'Manikanta', 'pending'],
+      ['The Rise of the AI-Native Employee', 'AI-native workforce', 'AI skills, workforce transformation', 'business', 'FutureOfWork', 'low', '', '', 'Manikanta', 'pending'],
+    ]
+    const csv = [header.join(','), ...rows.map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'blog-topics-template.csv'
+    a.click()
+    URL.revokeObjectURL(blob)
+    toast.success('Template downloaded')
+  }
+
+  const loadSamples = async () => {
+    const samples = [
+      { topic: 'AI in HR Analytics: Beyond the Hype', category: 'tech', keywords: 'AI, HR analytics, people analytics', audience: 'HR leaders' },
+      { topic: 'The 2026 Guide to Employee Wellbeing Tech', category: 'business', keywords: 'wellbeing, HR tech, retention', audience: 'HR professionals' },
+      { topic: 'Why Skills-Based Hiring Beats Degrees', category: 'career', keywords: 'skills-based hiring, talent acquisition', audience: 'Recruiters' },
+      { topic: 'How AI Is Reshaping Performance Reviews', category: 'tech', keywords: 'AI performance reviews, feedback', audience: 'People teams' },
+      { topic: 'The Quiet Rise of Four-Day Work Weeks', category: 'essays', keywords: 'four-day week, productivity, hybrid work', audience: 'Business leaders' },
+      { topic: 'Building a Data-Driven HR Team', category: 'productivity', keywords: 'data-driven HR, HR metrics', audience: 'HR analytics' },
+      { topic: 'What ChatGPT Can Teach Us About Onboarding', category: 'ai', keywords: 'AI onboarding, employee experience', audience: 'HR ops' },
+      { topic: 'The Hidden Cost of Employee Burnout', category: 'business', keywords: 'burnout, mental health, retention', audience: 'Executives' },
+    ]
+    try {
+      await api('/csv-topics/bulk', { method: 'POST', body: { rows: samples } })
+      toast.success(`Loaded ${samples.length} sample topics`)
+      load()
+    } catch (e) { toast.error(e.message) }
+  }
+
   const handleFile = async (file) => {
     if (!file) return
     const ext = file.name.split('.').pop().toLowerCase()
@@ -327,11 +363,13 @@ function TopicManager() {
   return (
     <div className="space-y-5">
       {/* Action bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={() => { topicInputRef.current?.focus(); topicInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }} className="rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-md"><Plus className="h-3.5 w-3.5 mr-1" /> New Topic</Button>
         <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => fileRef.current?.click()}><FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Import Excel</Button>
         <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => fileRef.current?.click()}><FileText className="h-3.5 w-3.5 mr-1" /> Import CSV</Button>
-        <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={aiGenerate} disabled={generating}>{generating ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />} Generate Topics</Button>
+        <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={downloadTemplate}><Download className="h-3.5 w-3.5 mr-1" /> CSV Template</Button>
+        <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={loadSamples}><Sparkles className="h-3.5 w-3.5 mr-1" /> Load Samples</Button>
+        <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={aiGenerate} disabled={generating}>{generating ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <BrainCircuit className="h-3.5 w-3.5 mr-1" />} Generate Topics</Button>
         <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={exportQueue}><Download className="h-3.5 w-3.5 mr-1" /> Export Queue</Button>
         <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
       </div>
