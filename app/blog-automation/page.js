@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Layers, Sliders, Loader2, Sparkles, RefreshCw, Upload,
   FileSpreadsheet, FileText, Plus, Trash2, SkipForward, Archive, CheckCircle2,
   XCircle, Clock, TrendingUp, BrainCircuit, CalendarDays, Search, ChevronDown,
-  ChevronUp, Download, Filter, PenLine, Copy, Eye, Zap, KeyRound, Network,
+  ChevronUp, Download, Filter, PenLine, Copy, Eye, Zap, KeyRound, Network, X,
 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
@@ -252,6 +252,7 @@ function TopicManager() {
   const [generating, setGenerating] = useState(false)
   const [importPreview, setImportPreview] = useState(null)
   const fileRef = useRef(null)
+  const topicInputRef = useRef(null)
 
   const load = async () => { try { setTopics((await api('/csv-topics')) || []) } catch (e) { toast.error(e.message) } finally { setLoading(false) } }
   useEffect(() => { load() }, [])
@@ -327,7 +328,7 @@ function TopicManager() {
     <div className="space-y-5">
       {/* Action bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-        <Button size="sm" onClick={addTopic} className="rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-md"><Plus className="h-3.5 w-3.5 mr-1" /> New Topic</Button>
+        <Button size="sm" onClick={() => { topicInputRef.current?.focus(); topicInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }} className="rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white shadow-md"><Plus className="h-3.5 w-3.5 mr-1" /> New Topic</Button>
         <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => fileRef.current?.click()}><FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Import Excel</Button>
         <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => fileRef.current?.click()}><FileText className="h-3.5 w-3.5 mr-1" /> Import CSV</Button>
         <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={aiGenerate} disabled={generating}>{generating ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />} Generate Topics</Button>
@@ -362,7 +363,7 @@ function TopicManager() {
         <div className="rounded-2xl border border-[#EBECF2] bg-white p-5 shadow-sm">
           <div className="text-sm font-semibold text-[#16161D] mb-3">Add Topic</div>
           <div className="flex gap-2">
-            <Input value={newTopic} onChange={e => setNewTopic(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTopic()} placeholder="Enter a blog topic…" className="rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
+            <Input ref={topicInputRef} value={newTopic} onChange={e => setNewTopic(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTopic()} placeholder="Enter a blog topic…" className="rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
             <Button onClick={addTopic} className="rounded-xl bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] text-white"><Plus className="h-4 w-4" /></Button>
           </div>
         </div>
@@ -572,7 +573,24 @@ function BlogLibrary() {
   const [posts, setPosts] = useState([])
   const [filter, setFilter] = useState('')
   const [loading, setLoading] = useState(true)
-  useEffect(() => { api('/blog/posts').then(p => { setPosts(p || []); setLoading(false) }).catch(() => setLoading(false)) }, [])
+  const [preview, setPreview] = useState(null)
+  const load = () => api('/blog/posts').then(p => { setPosts(p || []); setLoading(false) }).catch(() => setLoading(false))
+  useEffect(() => { load() }, [])
+
+  const duplicate = async (p) => {
+    try {
+      await api('/blog/posts', { method: 'POST', body: { title: `${p.title} (copy)`, body_markdown: p.body_markdown, seo_description: p.seo_description, status: 'draft' } })
+      toast.success('Duplicated to drafts')
+      load()
+    } catch (e) { toast.error(e.message) }
+  }
+  const remove = async (p) => {
+    try {
+      await api(`/blog/posts/${p.id}`, { method: 'DELETE' })
+      toast.success('Deleted')
+      load()
+    } catch (e) { toast.error(e.message) }
+  }
 
   const statuses = ['', 'draft', 'scheduled', 'published', 'archived', 'rejected']
   const filtered = posts.filter(p => !filter || p.status === filter)
@@ -614,15 +632,39 @@ function BlogLibrary() {
                 <span>· {p.updated_at ? new Date(p.updated_at).toLocaleDateString() : ''}</span>
               </div>
               <div className="flex gap-1.5 mt-4 pt-3 border-t border-[#F0F1F5]">
-                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2" title="Preview"><Eye className="h-3.5 w-3.5" /></Button>
-                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2" title="Edit"><PenLine className="h-3.5 w-3.5" /></Button>
-                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2" title="Duplicate"><Copy className="h-3.5 w-3.5" /></Button>
-                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2 ml-auto text-[#EF4444]" title="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2" title="Preview" onClick={() => setPreview(p)}><Eye className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2" title="Edit" onClick={() => window.open(`/blog?post=${p.id}`, '_blank')}><PenLine className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2" title="Duplicate" onClick={() => duplicate(p)}><Copy className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" className="rounded-lg h-7 px-2 ml-auto text-[#EF4444]" title="Delete" onClick={() => remove(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             </motion.div>
           ))}
         </div>
       )}
+
+      {/* Preview modal */}
+      <AnimatePresence>
+        {preview && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPreview(null)}
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={e => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2"><StatusBadge status={preview.status || 'draft'} /><span className="text-[0.6rem] text-[#8A8A96]">{preview.updated_at ? new Date(preview.updated_at).toLocaleString() : ''}</span></div>
+                <Button size="sm" variant="ghost" className="rounded-lg" onClick={() => setPreview(null)}><X className="h-4 w-4" /></Button>
+              </div>
+              <h2 className="text-xl font-bold text-[#16161D] mb-2">{preview.title || 'Untitled'}</h2>
+              {preview.seo_description && <p className="text-sm text-[#8A8A96] italic mb-4">{preview.seo_description}</p>}
+              <div className="prose prose-sm max-w-none text-[#16161D] leading-relaxed whitespace-pre-wrap">{preview.body_markdown}</div>
+              {preview.published_url && (
+                <a href={preview.published_url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#3B82F6] hover:underline mt-4 inline-flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5" /> View published
+                </a>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
