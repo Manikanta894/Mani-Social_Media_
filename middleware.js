@@ -16,13 +16,20 @@ function getSessionCookie(request) {
   return cookie?.value || null
 }
 
+function base64UrlDecode(str) {
+  // Edge runtime has no Buffer — use atob with URL-safe padding fix
+  const b64 = str.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')
+  return decodeURIComponent(escape(atob(padded)))
+}
+
 function isTokenValid(token) {
   if (!token) return false
   try {
     // JWT payload is the middle segment, base64url encoded
     const parts = token.split('.')
     if (parts.length !== 3) return false
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
+    const payload = JSON.parse(base64UrlDecode(parts[1]))
     if (!payload.exp) return false
     // Allow 30s clock skew
     return payload.exp * 1000 > Date.now() - 30000
