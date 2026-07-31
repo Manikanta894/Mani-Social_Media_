@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { supabaseBrowser, syncSessionCookie } from '@/lib/supabase-browser'
+import { supabaseBrowser, syncSessionCookie, hasSessionCookie } from '@/lib/supabase-browser'
 import { Sparkles, Calendar as CalendarIcon, ImageIcon, BarChart3, MessageSquare,
   Settings as SettingsIcon, Wand2, List, Radio, Globe, Sun, X, PlugZap, Loader2, Hash,
   HelpCircle, FileText, Bell } from 'lucide-react'
@@ -69,7 +69,16 @@ export default function RootLayout({ children }) {
       try {
       const { data } = await supabaseBrowser().auth.getSession()
       if (!data?.session) { router.replace('/login'); return }
-      syncSessionCookie()
+      const synced = syncSessionCookie(data.session)
+      // If we have a session but the cookie didn't make it, hard-reload once to break the loop
+      if (!hasSessionCookie()) {
+        if (!sessionStorage.getItem('sf_cookie_retry')) {
+          sessionStorage.setItem('sf_cookie_retry', '1')
+          window.location.reload()
+          return
+        }
+      }
+      sessionStorage.removeItem('sf_cookie_retry')
       setUser(data.session.user)
         const [providers, styles] = await Promise.all([
           api('/providers'), api('/prompt-styles'),

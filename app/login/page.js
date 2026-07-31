@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { supabaseBrowser, syncSessionCookie } from '@/lib/supabase-browser'
+import { supabaseBrowser, syncSessionCookie, hasSessionCookie } from '@/lib/supabase-browser'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -15,11 +15,12 @@ export default function LoginPage() {
   useEffect(() => {
     supabaseBrowser().auth.getSession().then(({ data }) => {
       if (data?.session) {
-        syncSessionCookie()
+        const synced = syncSessionCookie(data.session)
+        if (!synced) return
         supabaseBrowser().auth.mfa.listFactors().then(({ data: mfa }) => {
           const enrolled = mfa?.all?.filter(f => f.status === 'verified') || []
           if (enrolled.length === 0) setStep('enroll')
-          else { syncSessionCookie(); window.location.href = '/' }
+          else window.location.href = '/'
         })
       }
     })
