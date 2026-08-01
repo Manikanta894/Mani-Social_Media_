@@ -126,6 +126,8 @@ export default function AnalyticsPage() {
   const [platform, setPlatform] = useState('all')
   const [coachOpen, setCoachOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [libStats, setLibStats] = useState(null)
 
   const refresh = async () => {
     setLoading(true)
@@ -146,6 +148,23 @@ export default function AnalyticsPage() {
     try { const r = await api('/analytics/fetch', { method: 'POST' }); toast.success(`Fetched stats for ${r.fetched} post(s)`); await refresh() }
     catch (e) { toast.error(e.message) } finally { setFetching(false) }
   }
+
+  const syncNow = async () => {
+    setSyncing(true)
+    try {
+      const r = await api('/analytics/sync', { method: 'POST' })
+      const parts = Object.entries(r).filter(([k]) => ['linkedin', 'facebook', 'instagram', 'threads', 'app_posts'].includes(k))
+        .map(([k, v]) => `${k}: ${v.imported || 0} new, ${v.updated || 0} updated`).filter(s => !s.endsWith('0 new, 0 updated'))
+      toast.success(parts.length ? `Content Library synced — ${parts.join(' · ')}` : 'Library up to date — no new posts found')
+      if (r.library) setLibStats(r.library)
+      await refresh()
+    } catch (e) { toast.error(e.message) } finally { setSyncing(false) }
+  }
+
+  const loadLibStats = async () => {
+    try { const r = await api('/analytics/library', { method: 'GET' }); if (Array.isArray(r)) setLibStats({ total: r.length }) } catch {}
+  }
+  useEffect(() => { loadLibStats() }, [])
 
   const exportCSV = async () => {
     setExporting(true)
@@ -285,11 +304,24 @@ export default function AnalyticsPage() {
           <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => setCoachOpen(true)}><Sparkles className="h-3.5 w-3.5 mr-1 text-[#7C3AED]" /> AI Coach</Button>
           <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={exportCSV} disabled={exporting}><Download className="h-3.5 w-3.5 mr-1" /> CSV</Button>
           <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={exportPDF}><FileText className="h-3.5 w-3.5 mr-1" /> PDF</Button>
+          <Button size="sm" className="rounded-xl bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] text-white shadow-md" onClick={syncNow} disabled={syncing} title="Import full publishing history from connected accounts">
+            {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />} Sync Accounts
+          </Button>
           <Button size="sm" className="rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md" onClick={fetchNow} disabled={fetching}>
             {fetching ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />} Fetch
           </Button>
         </div>
       </motion.div>
+
+      {libStats?.total > 0 && (
+        <motion.div variants={fade} initial="initial" animate="animate" className="flex items-center gap-2 flex-wrap text-[0.65rem] text-[#8A8A96]">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0EA37A]/8 text-[#0EA37A] font-semibold"><RefreshCw className="h-3 w-3" /> Content Library</span>
+          <span>{libStats.total} historical posts archived · continuously synced from connected accounts</span>
+          {Object.entries(libStats.byPlatform || {}).map(([p, c]) => (
+            <span key={p} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#EBECF2]"><Icon p={p} size={11} /> {c}</span>
+          ))}
+        </motion.div>
+      )}
 
       {!hasData && (
         <motion.div variants={fade} initial="initial" animate="animate" className="rounded-3xl border border-dashed border-[#D8D9E3] bg-white p-14 text-center">
@@ -424,13 +456,16 @@ export default function AnalyticsPage() {
                   <div className="text-sm text-[#8A8A96] py-8 text-center">Your best posts will appear here after publishing</div>
                 ) : topPosts.map((p, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-3 rounded-xl border border-[#EBECF2] p-3 hover:bg-[#F8F9FC] hover:border-[#D8C8FB] transition-colors group">
-                    <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center shrink-0 overflow-hidden">
-                      <Icon p={p.platform} size={18} />
-                      <span className="absolute -top-0.5 -left-0.5 h-4 w-4 rounded-br-lg bg-gradient-to-br from-[#7C3AED] to-[#EC4899] text-white text-[0.5rem] font-bold flex items-center justify-center">{i + 1}</span>
-                    </div>
+                    {p.thumbnail_url ? (
+                      <img src={p.thumbnail_url} alt="" className="h-10 w-10 rounded-xl object-cover shrink-0" onError={e => { e.currentTarget.style.display = 'none' }} />
+                    ) : (
+                      <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center shrink-0 overflow-hidden">
+                        <Icon p={p.platform} size={18} />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-[#16161D] truncate">{p.caption ? p.caption.slice(0, 60) : 'Untitled post'}</div>
-                      <div className="text-[0.6rem] text-[#8A8A96] mt-0.5">{M[p.platform]?.label || p.platform} · {p.checked_at?.slice(0, 10) || '—'}</div>
+                      <div className="text-[0.6rem] text-[#8A8A96] mt-0.5">{M[p.platform]?.label || p.platform} · {p.published_at ? p.published_at.slice(0, 10) : (p.checked_at || '').slice(0, 10) || '—'}{p.source === 'import' && <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#0EA37A]/10 text-[#0EA37A] font-semibold">imported</span>}</div>
                     </div>
                     <div className="hidden md:flex items-center gap-3 text-center shrink-0">
                       <div><div className="text-xs font-bold text-[#16161D]">{short(p.reach || 0)}</div><div className="text-[0.5rem] text-[#8A8A96]">Reach</div></div>
@@ -438,7 +473,11 @@ export default function AnalyticsPage() {
                       <div><div className="text-xs font-bold text-[#16161D]">{fmt(p.comments || 0)}</div><div className="text-[0.5rem] text-[#8A8A96]">Cmts</div></div>
                       <div><div className="text-xs font-bold text-[#0EA37A]">{engPct(p)}%</div><div className="text-[0.5rem] text-[#8A8A96]">Eng</div></div>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-[0.6rem] text-[#7C3AED] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">View analytics</Button>
+                    {p.url ? (
+                      <a href={p.url} target="_blank" rel="noreferrer" className="text-[0.6rem] text-[#7C3AED] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity font-medium">View on {M[p.platform]?.label || p.platform} →</a>
+                    ) : (
+                      <span className="text-[0.6rem] text-[#8A8A96] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">Analytics fetched</span>
+                    )}
                   </motion.div>
                 ))}
               </div>

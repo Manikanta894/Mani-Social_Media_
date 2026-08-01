@@ -438,6 +438,23 @@ async function route(request, method) {
         const body = await request.json().catch(() => ({}))
         return ok(await generateReport(body.type || 'daily'))
       }
+      if (id === 'library' && method === 'GET') {
+        const { getLibrary } = await import('@/lib/content-library')
+        return ok(await getLibrary({ platform: url.searchParams.get('platform') || null }))
+      }
+      if (id === 'library' && method === 'DELETE') {
+        const body = await request.json().catch(() => ({}))
+        if (!body?.id) return err('Missing id')
+        const { storage: st } = await import('@/lib/storage')
+        return ok(await st.contentLibrary.remove(body.id))
+      }
+      if (id === 'sync' && method === 'POST') {
+        const { syncLibrary, getLibraryStats } = await import('@/lib/content-library')
+        const body = await request.json().catch(() => ({}))
+        const result = await syncLibrary({ limit: body.limit || 25, budgetMs: body.budgetMs || 40000 })
+        const stats = await getLibraryStats()
+        return ok({ ...result, library: stats })
+      }
     }
 
     // --- UTM analytics -----------------------------------------------
