@@ -7,6 +7,7 @@ import { Loader2, RefreshCw, Sparkles, TrendingUp, TrendingDown, BarChart3, Eye,
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '@/components/shared'
 import { toast } from 'sonner'
+import { ChevronDown } from 'lucide-react'
 
 const C = 'rounded-2xl border border-[#EBECF2] bg-white shadow-sm'
 const M = { linkedin: { label: 'LinkedIn', color: '#0A66C2' }, instagram: { label: 'Instagram', color: '#E4405F' }, facebook: { label: 'Facebook', color: '#1877F2' }, threads: { label: 'Threads', color: '#111827' }, twitter: { label: 'X', color: '#000000' } }
@@ -27,10 +28,10 @@ function Icon({ p, size = 16 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill={M[p]?.color}><path d={d} /></svg>
 }
 
-function Kpi({ k }) {
+function Kpi({ k, onSelect }) {
   const up = (k.trend ?? 0) >= 0
   return (
-    <motion.div variants={fade} className={`${C} p-4 group relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)]`}>
+    <motion.button variants={fade} onClick={() => onSelect?.(k)} className={`${C} p-4 group relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] text-left w-full cursor-pointer`}>
       <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br from-[#7C3AED]/5 to-[#EC4899]/5 blur-xl" />
       <div className="flex items-start justify-between">
         <div className="min-w-0">
@@ -56,11 +57,38 @@ function Kpi({ k }) {
           </ResponsiveContainer>
         </div>
       )}
-    </motion.div>
+    </motion.button>
   )
 }
 
 function Sk({ h = 'h-28' }) { return <div className={`animate-pulse rounded-2xl bg-[#EEEFF4] ${h}`} /> }
+
+function Section({ title, icon, accent = '#7C3AED', badge, open, onToggle, children, sub }) {
+  return (
+    <div className={`${C} overflow-hidden`}>
+      <button onClick={onToggle} className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-[#F8F9FC] transition-colors">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}12`, color: accent }}>{icon}</span>
+          <div className="text-left min-w-0">
+            <div className="text-sm font-semibold text-[#16161D]">{title}</div>
+            {sub && <div className="text-[0.6rem] text-[#8A8A96] truncate">{sub}</div>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {badge && <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96] font-semibold">{badge}</span>}
+          <ChevronDown className={`h-4 w-4 text-[#8A8A96] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div key="body" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
+            <div className="px-5 pb-5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -72,20 +100,26 @@ export default function DashboardPage() {
   const [coach, setCoach] = useState(null)
   const [range, setRange] = useState(7)
   const [pausing, setPausing] = useState(false)
+  const [queue, setQueue] = useState([])
+  const [expanded, setExpanded] = useState({})
+  const [focusKpi, setFocusKpi] = useState(null)
   const router = useRouter()
+
+  const toggle = k => setExpanded(s => ({ ...s, [k]: !s[k] }))
 
   useEffect(() => {
     (async () => {
       try {
-        const [j, a, s, p, am, c] = await Promise.all([
+        const [j, a, s, p, am, c, q] = await Promise.all([
           api('/jobs').catch(() => []),
-          api('/audit?limit=30').catch(() => []),
+          api('/audit?limit=50').catch(() => []),
           api('/analytics/stats').catch(() => ({})),
           api('/analytics/posts').catch(() => []),
           api('/automation-stats').catch(() => ({})),
           api('/analytics/coach').catch(() => null),
+          api('/automation/queue').catch(() => []),
         ])
-        setJobs(j || []); setAudit(a || []); setAnalytics(s || {}); setPosts(p || []); setAuto(am || {}); setCoach(c || null)
+        setJobs(j || []); setAudit(a || []); setAnalytics(s || {}); setPosts(p || []); setAuto(am || {}); setCoach(c || null); setQueue(q || [])
       } catch (e) { console.error(e) } finally { setLoading(false) }
     })()
   }, [])
@@ -273,8 +307,60 @@ export default function DashboardPage() {
 
       {/* KPI grid */}
       <motion.div variants={st} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        {kpis.map(k => <Kpi key={k.label} k={k} />)}
+        {kpis.map(k => <Kpi key={k.label} k={k} onSelect={k => setFocusKpi(f => f === k.label ? null : k.label)} />)}
       </motion.div>
+
+      {/* KPI drill-down panel */}
+      <AnimatePresence>
+        {focusKpi && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className={`${C} p-5 border-l-4`} style={{ borderLeftColor: '#7C3AED' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-[#16161D] flex items-center gap-2"><BarChart3 className="h-4 w-4 text-[#7C3AED]" /> {focusKpi} — Detail Audit</h3>
+              <button onClick={() => setFocusKpi(null)} className="text-[0.6rem] text-[#8A8A96] hover:text-[#7C3AED] font-medium">Close ✕</button>
+            </div>
+            {(() => {
+              const rows = []
+              if (focusKpi === 'Published Today' || focusKpi === 'AI Generated Today') {
+                todayJobs.slice(-12).reverse().forEach(j => rows.push({ t: j.topic || 'Untitled', d: j.created_at, s: j.status, icon: <CheckCircle className="h-3.5 w-3.5 text-[#0EA37A]" /> }))
+              } else if (focusKpi === 'Queue Size' || focusKpi === 'Waiting Approval') {
+                queue.filter(q => focusKpi === 'Waiting Approval' ? q.status === 'pending_approval' : true).slice(0, 12).forEach(q => rows.push({ t: q.topic || q.file_id || 'Queued item', d: q.queue_position ? `position ${q.queue_position}` : q.updated_at, s: q.status, icon: <Clock className="h-3.5 w-3.5 text-[#F59E0B]" /> }))
+                if (focusKpi === 'Waiting Approval') rows.push({ t: `Blog: ${auto.blog_waiting_approval || 0} awaiting approval`, d: 'blog queue', s: 'pending_approval', icon: <FileText className="h-3.5 w-3.5 text-[#7C3AED]" /> })
+              } else if (focusKpi === 'Scheduled') {
+                jobs.filter(j => j.status === 'scheduled').slice(0, 12).forEach(j => rows.push({ t: j.topic || 'Untitled', d: j.scheduled_for, s: 'scheduled', icon: <CalendarDays className="h-3.5 w-3.5 text-[#7C3AED]" /> }))
+              } else if (focusKpi === 'Failed Jobs') {
+                jobs.filter(j => j.status === 'failed').slice(0, 12).forEach(j => rows.push({ t: j.topic || 'Untitled', d: j.created_at, s: 'failed', icon: <XCircle className="h-3.5 w-3.5 text-red-500" /> }))
+                queue.filter(q => q.status === 'failed').slice(0, 5).forEach(q => rows.push({ t: q.file_id || 'Queue item', d: q.updated_at, s: 'failed', icon: <XCircle className="h-3.5 w-3.5 text-red-500" /> }))
+              } else if (['Total Reach', 'Impressions', 'Engagement Today', 'Followers'].includes(focusKpi)) {
+                Object.entries(byPlatform || {}).forEach(([p, d]) => {
+                  const val = focusKpi === 'Total Reach' ? d.reach : focusKpi === 'Impressions' ? d.impressions : focusKpi === 'Engagement Today' ? (d.likes + d.comments + d.shares) : d.followers
+                  rows.push({ t: M[p]?.label || p, d: `${fmt(val || 0)}`, s: 'metric', icon: <Icon p={p} size={14} /> })
+                })
+                if (rows.length === 0) rows.push({ t: 'No metrics yet', d: 'Sync accounts and publish posts', s: 'empty', icon: <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> })
+              } else if (focusKpi === 'Success Rate') {
+                rows.push({ t: `Published: ${publishedToday}`, d: `${pipeline.find(p => p.key === 'completed')?.count || 0} today`, s: 'ok', icon: <CheckCircle className="h-3.5 w-3.5 text-[#0EA37A]" /> })
+                rows.push({ t: `Failed: ${failed}`, d: 'review queue', s: 'err', icon: <XCircle className="h-3.5 w-3.5 text-red-500" /> })
+                rows.push({ t: `Queue backlog: ${queueSize}`, d: `${queueEta} ETA`, s: 'info', icon: <Clock className="h-3.5 w-3.5 text-[#F59E0B]" /> })
+              } else {
+                rows.push({ t: 'No detailed breakdown available yet', d: 'Data appears as you publish and sync', s: 'empty', icon: <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> })
+              }
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {rows.map((r, i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-xl border border-[#EBECF2] p-2.5 hover:bg-[#F8F9FC] transition-colors">
+                      <span className="h-8 w-8 rounded-lg bg-[#F4F5F9] flex items-center justify-center shrink-0">{r.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-[#16161D] truncate">{r.t}</div>
+                        <div className="text-[0.6rem] text-[#8A8A96] truncate">{r.d}</div>
+                      </div>
+                      <span className={`text-[0.55rem] px-2 py-0.5 rounded-full font-semibold shrink-0 ${r.s === 'failed' ? 'bg-red-50 text-red-500' : r.s === 'pending_approval' ? 'bg-amber-50 text-amber-600' : r.s === 'scheduled' ? 'bg-[#7C3AED]/10 text-[#7C3AED]' : 'bg-emerald-50 text-[#0EA37A]'}`}>{r.s}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* AI Command Center hero */}
       <motion.div variants={fade} initial="initial" animate="animate" className="rounded-3xl overflow-hidden bg-gradient-to-br from-[#1A1037] via-[#2A1B52] to-[#4C1D63] relative">
@@ -330,11 +416,7 @@ export default function DashboardPage() {
 
       {/* Timeline + Automation pipeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><Activity className="h-4 w-4 text-[#7C3AED]" /> Today's Timeline</h3>
-            <span className="text-[0.6rem] text-[#8A8A96]">{timeline.length} events</span>
-          </div>
+        <Section open={expanded.timeline} onToggle={() => toggle('timeline')} icon={<Activity className="h-4 w-4" />} accent="#7C3AED" title="Today's Timeline" sub={new Date().toLocaleDateString('en', { month: 'long', day: 'numeric' })} badge={`${timeline.length} events`}>
           <div className="relative">
             <div className="absolute left-[13px] top-1 bottom-1 w-px bg-[#EEEFF4]" />
             <div className="space-y-4">
@@ -358,10 +440,22 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
-        </motion.div>
+          <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
+            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Audit trail</div>
+            <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+              {audit.length === 0 && <div className="text-xs text-[#8A8A96] py-2">No audit events yet.</div>}
+              {audit.map((a, i) => (
+                <div key={i} className="flex items-center gap-2 text-[0.65rem]">
+                  <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: a.new_status === 'failed' ? '#EF4444' : a.new_status === 'published' ? '#0EA37A' : '#7C3AED' }} />
+                  <span className="text-[#16161D] truncate">{a.action.replace(/_/g, ' ')}</span>
+                  <span className="text-[#8A8A96] ml-auto shrink-0 font-mono">{a.performed_at ? new Date(a.performed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
 
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
-          <h3 className="text-sm font-semibold text-[#16161D] mb-4 flex items-center gap-2"><Rocket className="h-4 w-4 text-[#0EA37A]" /> Automation Pipeline</h3>
+        <Section open={expanded.pipeline} onToggle={() => toggle('pipeline')} icon={<Rocket className="h-4 w-4" />} accent="#0EA37A" title="Automation Pipeline" sub={`${queueSize} queued · ${publishedToday} completed`} badge={`${successRate}% success`}>
           <div className="space-y-3">
             {pipeline.map((p, i) => (
               <div key={p.key}>
@@ -378,10 +472,22 @@ export default function DashboardPage() {
           <div className="mt-4 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3">
             <div className="flex items-center gap-2 text-[0.65rem] text-[#8A8A96]"><BrainCircuit className="h-3.5 w-3.5 text-[#7C3AED]" /> AI processes <span className="font-bold text-[#16161D]">{queueSize}</span> queued items at ~8 min each — queue clears in <span className="font-bold text-[#16161D]">{queueEta}</span>.</div>
           </div>
-        </motion.div>
+          <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
+            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Queue breakdown</div>
+            <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+              {queue.length === 0 && <div className="text-xs text-[#8A8A96] py-2">Queue is empty.</div>}
+              {queue.slice(0, 20).map(q => (
+                <div key={q.file_id} className="flex items-center gap-2 text-[0.65rem] rounded-lg border border-[#EBECF2] p-2">
+                  <span className="text-[#8A8A96] font-mono shrink-0">#{q.queue_position}</span>
+                  <span className="text-[#16161D] truncate flex-1">{q.topic || q.file_id}</span>
+                  <span className={`text-[0.55rem] px-1.5 py-0.5 rounded-full font-semibold ${q.status === 'failed' ? 'bg-red-50 text-red-500' : q.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : q.status === 'published' ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{q.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
 
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
-          <h3 className="text-sm font-semibold text-[#16161D] mb-4 flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-[#F59E0B]" /> Recent Notifications</h3>
+        <Section open={expanded.notifications} onToggle={() => toggle('notifications')} icon={<AlertTriangle className="h-4 w-4" />} accent="#F59E0B" title="Notifications & System Status" sub="Live alerts, audit trail and platform health" badge={`${notifications.length} alerts`}>
           <div className="space-y-0">
             {notifications.map((n, i) => (
               <div key={i} className="flex items-start gap-2.5 py-2 border-b border-[#F0F1F5] last:border-0">
@@ -415,17 +521,27 @@ export default function DashboardPage() {
               <span className={`ml-auto h-1.5 w-1.5 rounded-full ${status === 'Running' ? 'bg-[#0EA37A] animate-pulse' : 'bg-amber-500'}`} />
             </div>
           </div>
-        </motion.div>
+          <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
+            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Full audit trail</div>
+            <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+              {audit.length === 0 && <div className="text-xs text-[#8A8A96] py-2">No audit events yet.</div>}
+              {audit.map((a, i) => (
+                <div key={i} className="flex items-center gap-2 text-[0.65rem]">
+                  <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: a.new_status === 'failed' ? '#EF4444' : a.new_status === 'published' ? '#0EA37A' : '#7C3AED' }} />
+                  <span className="text-[#16161D] truncate flex-1">{a.action.replace(/_/g, ' ')}</span>
+                  <span className="text-[#8A8A96] shrink-0 font-mono">{a.performed_at ? new Date(a.performed_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
       </div>
 
       {/* Performance charts */}
       <motion.div variants={fade} initial="initial" animate="animate" className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className={`${C} p-5 lg:col-span-2`}>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <h3 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><BarChart3 className="h-4 w-4 text-[#7C3AED]" /> Performance Overview</h3>
-            <div className="flex bg-[#F4F5F9] rounded-xl p-1">
-              {[7, 30, 90].map(d => <button key={d} onClick={() => setRange(d)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${range === d ? 'bg-white shadow-sm text-[#7C3AED]' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>{d}D</button>)}
-            </div>
+        <Section open={expanded.perf} onToggle={() => toggle('perf')} icon={<BarChart3 className="h-4 w-4" />} accent="#7C3AED" title="Performance Overview" sub="Reach, impressions and engagement over time" badge={`${range}D`} >
+          <div className="flex bg-[#F4F5F9] rounded-xl p-1 mb-4 w-fit">
+            {[7, 30, 90].map(d => <button key={d} onClick={() => setRange(d)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${range === d ? 'bg-white shadow-sm text-[#7C3AED]' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>{d}D</button>)}
           </div>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
@@ -445,7 +561,26 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+          <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
+            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Daily breakdown</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs min-w-[480px]">
+                <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">{['Date', 'Published', 'Reach', 'Impressions', 'Engagement'].map(h => <th key={h} className={`py-2 text-left font-semibold text-[0.58rem] uppercase tracking-wider ${h !== 'Date' ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {series.slice(-14).reverse().map((d, i) => (
+                    <tr key={i} className="border-b border-[#F0F1F5] last:border-0 hover:bg-[#F8F9FC]">
+                      <td className="py-1.5 font-medium text-[#16161D]">{d.date}</td>
+                      <td className="py-1.5 text-right">{d.published}</td>
+                      <td className="py-1.5 text-right">{fmt(d.reach)}</td>
+                      <td className="py-1.5 text-right">{fmt(d.impressions)}</td>
+                      <td className="py-1.5 text-right text-[#0EA37A] font-semibold">{fmt(d.engagement)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Section>
         <div className="space-y-5">
           <div className={`${C} p-5`}>
             <h3 className="text-sm font-semibold text-[#16161D] mb-3">Posts Published</h3>
@@ -491,11 +626,7 @@ export default function DashboardPage() {
 
       {/* Recent posts + Top posts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5 lg:col-span-2`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#0EA37A]" /> Recent Posts</h3>
-            <button onClick={() => router.push('/analytics')} className="text-[0.6rem] text-[#7C3AED] font-medium flex items-center gap-1 hover:underline">All analytics <ArrowRight className="h-3 w-3" /></button>
-          </div>
+        <Section open={expanded.recent} onToggle={() => toggle('recent')} icon={<CheckCircle className="h-4 w-4" />} accent="#0EA37A" title="Recent Posts" sub="Latest published content across platforms" badge={`${posts.length} total`}>
           <div className="space-y-2">
             {recentPosts.length === 0 ? (
               <div className="text-sm text-[#8A8A96] py-8 text-center">No posts yet — generate your first post from Compose.</div>
@@ -518,10 +649,13 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </motion.div>
+          <div className="mt-3 flex items-center justify-between">
+            <button onClick={() => router.push('/analytics')} className="text-[0.6rem] text-[#7C3AED] font-medium flex items-center gap-1 hover:underline">All analytics <ArrowRight className="h-3 w-3" /></button>
+            <button onClick={() => router.push('/compose')} className="text-[0.6rem] text-[#0EA37A] font-medium hover:underline">Compose new →</button>
+          </div>
+        </Section>
 
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
-          <h3 className="text-sm font-semibold text-[#16161D] mb-4 flex items-center gap-2"><Star className="h-4 w-4 text-[#F59E0B]" /> Top Performing</h3>
+        <Section open={expanded.top} onToggle={() => toggle('top')} icon={<Star className="h-4 w-4" />} accent="#F59E0B" title="Top Performing" sub="Highest engagement content" badge={`${topPosts.length}`}>
           <div className="space-y-2.5">
             {topPosts.length === 0 ? (
               <div className="text-sm text-[#8A8A96] py-8 text-center">Performance data will appear after publishing + syncing.</div>
@@ -536,27 +670,35 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </Section>
       </div>
 
       {/* AI Insights + Audience + Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <motion.div variants={fade} initial="initial" animate="animate" className="lg:col-span-2 rounded-3xl bg-gradient-to-r from-[#7C3AED]/5 via-white to-[#EC4899]/5 border border-[#EBECF2] p-6">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center shadow-md"><BrainCircuit className="h-4 w-4 text-white" /></div>
-            <div><h3 className="text-sm font-semibold text-[#16161D]">AI Insights</h3><p className="text-[0.6rem] text-[#8A8A96]">Strategic recommendations from your data</p></div>
-          </div>
+        <Section open={expanded.insights} onToggle={() => toggle('insights')} icon={<BrainCircuit className="h-4 w-4" />} accent="#EC4899" title="AI Insights" sub="Strategic recommendations from your data" badge="AI">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {insights.map((x, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl bg-white/80 backdrop-blur border border-[#EBECF2] p-3.5 flex items-start gap-2.5 hover:shadow-md transition-shadow">
+              <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3.5 flex items-start gap-2.5 hover:shadow-md transition-shadow">
                 <span className="text-lg shrink-0">{x.i}</span><span className="text-xs text-[#16161D] leading-relaxed">{x.t}</span>
               </motion.div>
             ))}
           </div>
-        </motion.div>
+          {coach?.insight && (
+            <div className="mt-4 rounded-xl bg-gradient-to-r from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#EBECF2] p-4">
+              <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">AI Coach summary</div>
+              <p className="text-xs text-[#16161D] leading-relaxed">{coach.insight}</p>
+              {coach.recommendations?.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {coach.recommendations.map((r, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[0.7rem]"><span className="px-1.5 py-0.5 rounded bg-[#7C3AED]/10 text-[#7C3AED] font-semibold shrink-0 mt-0.5">{r.category}</span><span className="text-[#16161D]">{r.text}</span></div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </Section>
 
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
-          <h3 className="text-sm font-semibold text-[#16161D] mb-4 flex items-center gap-2"><Users className="h-4 w-4 text-[#0EA37A]" /> Audience Snapshot</h3>
+        <Section open={expanded.audience} onToggle={() => toggle('audience')} icon={<Users className="h-4 w-4" />} accent="#0EA37A" title="Audience Snapshot" sub="Followers, platforms and activity patterns" badge={fmt(followers)}>
           <div className="space-y-3">
             <div className="flex items-center justify-between rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3">
               <div><div className="text-[0.58rem] text-[#8A8A96] uppercase tracking-wider font-semibold">Total followers</div><div className="text-lg font-bold text-[#16161D]">{fmt(followers)}</div></div>
@@ -585,16 +727,25 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </motion.div>
+          <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
+            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Most active days</div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {dayNames.map((d, i) => (
+                <div key={d} className="text-center">
+                  <div className={`h-10 rounded-lg flex items-end justify-center ${dayHits[i] > 0 ? 'bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/20' : 'bg-[#F4F5F9]'}`}>
+                    <div className={`w-2 rounded-t-md ${dayHits[i] > 0 ? 'bg-gradient-to-t from-[#7C3AED] to-[#EC4899]' : 'bg-[#D8D9E3]'}`} style={{ height: `${Math.max(6, (dayHits[i] / Math.max(...dayHits, 1)) * 30)}px` }} />
+                  </div>
+                  <div className="text-[0.5rem] text-[#8A8A96] mt-1">{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
       </div>
 
       {/* Calendar + Quick actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#7C3AED]" /> Content Calendar</h3>
-            <span className="text-[0.6rem] text-[#8A8A96]">{now.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</span>
-          </div>
+        <Section open={expanded.calendar} onToggle={() => toggle('calendar')} icon={<CalendarDays className="h-4 w-4" />} accent="#7C3AED" title="Content Calendar" sub={now.toLocaleDateString('en', { month: 'long', year: 'numeric' })} badge={`${calDays.filter(c => c && (c.pub > 0 || c.sch > 0)).length} days`}>
           <div className="grid grid-cols-7 gap-1">
             {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-center text-[0.55rem] text-[#8A8A96] font-semibold py-1">{d}</div>)}
             {calDays.map((cell, i) => cell ? (
@@ -609,7 +760,20 @@ export default function DashboardPage() {
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#7C3AED]/30" /> Scheduled</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border border-[#D8D9E3]" /> Empty</span>
           </div>
-        </motion.div>
+          <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
+            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Upcoming scheduled</div>
+            <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+              {jobs.filter(j => j.status === 'scheduled').length === 0 && <div className="text-xs text-[#8A8A96] py-2">Nothing scheduled yet.</div>}
+              {jobs.filter(j => j.status === 'scheduled').sort((a, b) => new Date(a.scheduled_for || 0) - new Date(b.scheduled_for || 0)).slice(0, 10).map(j => (
+                <div key={j.id} className="flex items-center gap-2 text-[0.65rem] rounded-lg border border-[#EBECF2] p-2">
+                  <CalendarDays className="h-3 w-3 text-[#7C3AED] shrink-0" />
+                  <span className="text-[#16161D] truncate flex-1">{j.topic || 'Untitled'}</span>
+                  <span className="text-[#8A8A96] font-mono shrink-0">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
 
         <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5 lg:col-span-2`}>
           <h3 className="text-sm font-semibold text-[#16161D] mb-4 flex items-center gap-2"><Zap className="h-4 w-4 text-[#EC4899]" /> Quick Actions</h3>
