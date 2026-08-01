@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, RefreshCw, Sparkles, CalendarDays, List, Sliders, X, Clock, Check, TrendingUp, Star, Eye, Zap, Bot, Send, Copy, Trash2, Sun, AlertTriangle, Search, Download, LayoutGrid, ChevronLeft, ChevronRight, Target, BrainCircuit, ShieldCheck, Zap as ZapIcon, FileText, Mail, Image as ImageIcon, MessageSquare } from 'lucide-react'
+import { Loader2, RefreshCw, Sparkles, CalendarDays, List, Sliders, X, Clock, Check, TrendingUp, Star, Eye, Zap, Bot, Send, Copy, Trash2, Sun, AlertTriangle, Search, Download, LayoutGrid, ChevronLeft, ChevronRight, Target, BrainCircuit, ShieldCheck, Zap as ZapIcon, FileText, Mail, Image as ImageIcon, MessageSquare, Radar } from 'lucide-react'
 import { api } from '@/components/shared'
 import { toast } from 'sonner'
 
@@ -38,6 +38,9 @@ export default function SeasonalDashboard() {
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
   const [selected, setSelected] = useState([])
   const [copied, setCopied] = useState(null)
+  const [discovery, setDiscovery] = useState(null)
+  const [discWindow, setDiscWindow] = useState('week')
+  const [discCat, setDiscCat] = useState('all')
 
   const refreshAll = async () => {
     setLoading(true)
@@ -48,6 +51,7 @@ export default function SeasonalDashboard() {
         api('/seasonal/settings').catch(() => ({})),
       ])
       setEvents(ev || []); setQueue(q || []); setSettings(prev => ({ ...prev, ...(s || {}) }))
+      api('/seasonal/discovery').then(setDiscovery).catch(() => {})
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refreshAll() }, [])
@@ -144,13 +148,101 @@ export default function SeasonalDashboard() {
 
       {/* Tabs */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex bg-white border border-[#EBECF2] rounded-xl p-1 shadow-sm w-fit flex-wrap">
-        {[['campaigns', 'Campaigns', CalendarDays], ['queue', 'Content Queue', List], ['calendar', 'Calendar', LayoutGrid], ['settings', 'Auto Mode', Sliders]].map(([k, l, Ic]) => (
+        {[['discovery', 'Event Discovery', Radar], ['campaigns', 'Campaigns', CalendarDays], ['queue', 'Content Queue', List], ['calendar', 'Calendar', LayoutGrid], ['settings', 'Auto Mode', Sliders]].map(([k, l, Ic]) => (
           <button key={k} onClick={() => setTab(k)} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>
             <Ic className="h-4 w-4" />{l}
             {k === 'queue' && <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-white/20">{queue.length}</span>}
           </button>
         ))}
       </motion.div>
+
+      {/* ============ EVENT DISCOVERY ENGINE ============ */}
+      {tab === 'discovery' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+          {/* Notifications */}
+          {discovery?.notifications?.length > 0 && (
+            <div className={`${C} p-4`}>
+              <div className="text-sm font-bold text-[#16161D] mb-3 flex items-center gap-2"><Bot className="h-4 w-4 text-[#7C3AED]" /> Smart notifications · auto-generated daily</div>
+              <div className="space-y-1.5">
+                {discovery.notifications.slice(0, 6).map((n, i) => (
+                  <div key={i} className="flex items-center gap-2.5 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5">
+                    <span className="text-lg shrink-0">{n.emoji}</span>
+                    <span className="text-[0.7rem] text-[#16161D] flex-1">{n.label}</span>
+                    <span className={`text-[0.55rem] px-2 py-0.5 rounded-full font-bold ${n.priority === 'high' ? 'bg-red-50 text-red-500' : n.priority === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{n.daysUntil === 0 ? 'Today' : `T-${n.daysUntil}`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Window switcher */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex bg-white border border-[#EBECF2] rounded-xl p-1 shadow-sm">
+              {[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This Week'], ['month', 'This Month'], ['ninetyDays', 'Next 90 Days']].map(([k, l]) => (
+                <button key={k} onClick={() => setDiscWindow(k)} className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${discWindow === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>{l} <span className="opacity-70">({discovery?.windows?.[k]?.length || 0})</span></button>
+              ))}
+            </div>
+            <div className="flex-1 min-w-[220px] flex items-center gap-2 rounded-xl bg-white border border-[#EBECF2] px-3.5 py-2.5">
+              <Search className="h-4 w-4 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search events…" className="flex-1 bg-transparent text-sm focus:outline-none" />
+            </div>
+          </div>
+
+          {/* Category filters */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button onClick={() => setDiscCat('all')} className={`text-[0.65rem] font-semibold px-3 py-1.5 rounded-full transition-all ${discCat === 'all' ? 'bg-[#7C3AED] text-white' : 'bg-white border border-[#EBECF2] text-[#8A8A96]'}`}>All categories</button>
+            {Object.entries(discovery?.categories || {}).map(([k, l]) => (
+              <button key={k} onClick={() => setDiscCat(discCat === k ? 'all' : k)} className={`text-[0.65rem] font-semibold px-3 py-1.5 rounded-full transition-all ${discCat === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-white border border-[#EBECF2] text-[#8A8A96] hover:border-[#D8C8FB]'}`}>{l}</button>
+            ))}
+          </div>
+
+          {/* Events grid */}
+          {!discovery ? (
+            <div className={`${C} p-10 text-center text-sm text-[#8A8A96] flex items-center justify-center gap-2`}><Loader2 className="h-4 w-4 animate-spin" /> Scanning the global event database…</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {(discovery.windows?.[discWindow] || []).filter(e => discCat === 'all' || e.type === discCat).filter(e => !search || e.name.toLowerCase().includes(search.toLowerCase())).map((e, i) => {
+                const pr = eventPriority(e)
+                return (
+                  <motion.div key={`${e.name}-${e.month}-${e.day}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer ${e.isDrafted ? 'ring-1 ring-[#7C3AED]/30' : ''}`} onClick={() => setSelEvent(e)}>
+                    <div className="h-16 bg-gradient-to-r from-[#1A1037] to-[#6B21A8] relative overflow-hidden">
+                      <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[#EC4899]/25 blur-2xl" />
+                      <div className="absolute bottom-2 left-4 flex items-center gap-2">
+                        <span className="text-2xl">{e.emoji}</span>
+                        <div><div className="text-sm font-bold text-white leading-tight">{e.name}</div><div className="text-[0.55rem] text-white/60">{e.country || 'Global'}{e.region && e.region !== 'Global' ? ` · ${e.region}` : ''} · {e.type}</div></div>
+                      </div>
+                      <div className="absolute top-2 right-2.5">
+                        <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: e.isDrafted ? '#0EA37A22' : '#FFFFFF15', color: e.isDrafted ? '#6EE7B7' : '#C4B5FD' }}>{e.isDrafted ? '✓ Draft ready' : 'Not started'}</span>
+                      </div>
+                    </div>
+                    <div className="p-3.5">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+                        <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${e.daysUntil === 0 ? 'bg-red-50 text-red-600' : e.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{e.daysUntil === 0 ? 'TODAY' : `${e.daysUntil}d left`}</span>
+                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l}</span>
+                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(e))} reach</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mb-2.5">
+                        {[['Popularity', e.popularity, '#EC4899'], ['Trend', e.trend, '#7C3AED'], ['Difficulty', Math.min(10, e.difficulty || 3), '#F59E0B']].map(([l, v, c]) => (
+                          <div key={l}><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}{l === 'Difficulty' ? '/10' : '%'}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min(100, v * (l === 'Difficulty' ? 10 : 1))}%`, backgroundColor: c }} /></div></div>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                        {eventPlatforms(e).slice(0, 4).map(p => M[p] ? <span key={p} className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                        <span className="ml-auto text-[0.55rem] text-[#8A8A96]">{e.month}/{e.day}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {(e.contentTypes || []).slice(0, 3).map(ct => <span key={ct} className="text-[0.5rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{ct}</span>)}
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+              {(discovery.windows?.[discWindow] || []).filter(e => discCat === 'all' || e.type === discCat).length === 0 && (
+                <div className="col-span-full ${C} p-10 text-center text-sm text-[#8A8A96]">No events in this window for the selected category.</div>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* ============ CAMPAIGNS ============ */}
       {tab === 'campaigns' && (

@@ -887,6 +887,13 @@ async function route(request, method) {
         const body = await request.json().catch(() => ({}))
         return ok(await detectUpcomingEvents(body.daysAhead || 14, body.userSettings || {}))
       }
+      if (method === 'GET' && id === 'discovery') {
+        const { detectEventWindows } = await import('@/lib/seasonal-engine')
+        const days = parseInt(url.searchParams.get('days') || '90', 10)
+        const { getSeasonalSettings } = await import('@/lib/seasonal-engine')
+        const settings = await getSeasonalSettings().catch(() => ({}))
+        return ok(await detectEventWindows(days, settings))
+      }
       if (method === 'POST' && id === 'generate') {
         const body = await request.json()
         const { generateSeasonalDraft } = await import('@/lib/seasonal-engine')
