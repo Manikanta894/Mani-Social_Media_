@@ -9,6 +9,7 @@ import { DEFAULT_PILLARS } from '@/lib/content-pillars'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AnalysisPanel, PlatformPreview, ContentLibrary, SuggestionPanel, AIChat, QUICK_ACTIONS, runQuickAction, M, TYPES, REAL_KEYS } from './studio-components'
 import { QuickStartCanvas, ProcessingCanvas, VersionPanel, PromptHistory, GenTimeline, AIPack, EXTRA_ACTIONS, runStudioAction, ScoreBadge } from './canvas-components'
+import { AnalysisPanel as CoachPanel, inlineIssues, applyCoachFix } from './coach'
 
 const C = 'rounded-2xl border border-[#EBECF2] bg-white shadow-sm'
 const fade = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }
@@ -553,6 +554,17 @@ export default function ComposePage() {
                     </div>
                     <span className={`text-xs font-mono ${(activePost?.caption || '').length > 2800 ? 'text-red-500' : 'text-[#8A8A96]'}`}>{(activePost?.caption || '').length} / {M[activeTab]?.limit || '—'}</span>
                   </div>
+                  {inlineIssues(activePost?.caption).length > 0 && (
+                    <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
+                      <span className="text-[0.55rem] font-bold uppercase tracking-wider text-[#8A8A96]">Inline issues:</span>
+                      {inlineIssues(activePost?.caption).map((iss, i) => (
+                        <span key={i} className="flex items-center gap-1.5 text-[0.6rem] px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />{iss.label}
+                          <button onClick={() => applyCoachFix(iss.fix, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: (patch) => result.posts?.[activeTab] ? updatePost(activeTab, patch) : null })} className="text-[0.55rem] font-bold text-[#7C3AED] hover:underline">Fix</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <textarea value={activePost?.caption || ''} onChange={e => result.posts?.[activeTab] ? updatePost(activeTab, { caption: e.target.value }) : null} rows={12} className="w-full text-sm leading-relaxed rounded-xl border border-[#EBECF2] p-4 resize-y focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 whitespace-pre-wrap" />
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {(activeHashtags || []).map((tag, i) => (
@@ -625,7 +637,7 @@ export default function ComposePage() {
             <h4 className="text-sm font-semibold text-[#16161D] mb-2 flex items-center gap-2"><Copy className="h-4 w-4 text-[#7C3AED]" /> Live Preview · {M[activeTab]?.label || activeTab}</h4>
             <PlatformPreview platform={activeTab} caption={activePost?.caption} hashtags={activeHashtags} imageUrl={images[0]?.previewUrl} />
           </motion.div>
-          <motion.div variants={fade} initial="initial" animate="animate"><AnalysisPanel text={activePost?.caption || ''} /></motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate"><CoachPanel text={activePost?.caption || ''} hashtags={activeHashtags} onAction={(key) => applyCoachFix(key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: (patch) => result?.posts?.[activeTab] ? updatePost(activeTab, patch) : null, rewrite: () => regenerate(activeTab) })} /></motion.div>
           <motion.div variants={fade} initial="initial" animate="animate"><SuggestionPanel posts={result?.posts} /></motion.div>
           <motion.div variants={fade} initial="initial" animate="animate">
             <AIChat post={activePost} onUpdate={(patch) => result?.posts?.[activeTab] && updatePost(activeTab, patch)} onRegenerate={() => regenerate(activeTab)} disabled={!result} />
