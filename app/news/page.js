@@ -120,7 +120,7 @@ export default function NewsRadarPage() {
   const filtered = useMemo(() => posts.filter(p => {
     if (search && !(p.title + ' ' + (p.summary || '') + ' ' + (p.category || '')).toLowerCase().includes(search.toLowerCase())) return false
     if (period !== 'all') {
-      const d = new Date(p.detected_at || p.published_at || Date.now())
+      const d = new Date(p.created_at || p.published_at || Date.now())
       const now = Date.now()
       if (period === 'today' && d.toDateString() !== new Date().toDateString()) return false
       if (period === 'yesterday') { const y = new Date(); y.setDate(y.getDate() - 1); if (d.toDateString() !== y.toDateString()) return false }
@@ -137,7 +137,7 @@ export default function NewsRadarPage() {
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 10)
   }, [posts])
 
-  const todayCount = posts.filter(p => new Date(p.detected_at || p.published_at || 0).toDateString() === new Date().toDateString()).length
+  const todayCount = posts.filter(p => new Date(p.created_at || p.published_at || 0).toDateString() === new Date().toDateString()).length
   const kpis = [
     { l: 'Breaking Today', v: fmt(todayCount), c: '#EF4444' },
     { l: 'AI Ready', v: fmt(posts.filter(p => p.status === 'ai_generated').length), c: '#7C3AED' },
@@ -356,7 +356,7 @@ export default function NewsRadarPage() {
                       <td className="py-2.5 px-3 font-mono">{a.impact}</td>
                       <td className="py-2.5 px-3 font-mono text-[#EC4899]">{a.virality}</td>
                       <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span></td>
-                      <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{item.detected_at ? new Date(item.detected_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
+                      <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{item.created_at ? new Date(item.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
                       <td className="py-2.5 px-3" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
                           {item.status === 'new' && <button onClick={() => generateAi(item.id)} className="h-7 w-7 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white flex items-center justify-center" title="Generate AI"><Wand2 className="h-3 w-3" /></button>}
