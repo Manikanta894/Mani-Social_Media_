@@ -7,6 +7,7 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContai
 import { Button } from '@/components/ui/button'
 import { api } from '@/components/shared'
 import { toast } from 'sonner'
+import { AccountCards, ComparisonTable, ContentTable, TopPerformers, ContentAnalysis, AudiencePanel, BestTimePanel, GoalsPanel, ForecastPanel, AlertsStrip } from './intel-components'
 
 const C = 'rounded-2xl border border-[#EBECF2] bg-white shadow-sm'
 const M = { linkedin: { label: 'LinkedIn', color: '#0A66C2' }, instagram: { label: 'Instagram', color: '#E4405F' }, facebook: { label: 'Facebook', color: '#1877F2' }, threads: { label: 'Threads', color: '#111827' }, twitter: { label: 'X', color: '#000000' } }
@@ -394,6 +395,13 @@ export default function AnalyticsPage() {
           </motion.div>
 
           {pData.length > 0 && (
+            <motion.div variants={fade} initial="initial" animate="animate" className="space-y-5">
+              <AccountCards byPlatform={byPlatform} posts={posts} />
+              <ComparisonTable byPlatform={byPlatform} hourHist={hourHits} bestHour={bestHour} />
+            </motion.div>
+          )}
+
+          {pData.length > 0 && (
             <motion.div variants={fade} initial="initial" animate="animate" className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <div className={`${C} p-5 lg:col-span-2`}>
                 <h3 className="text-sm font-semibold text-[#16161D] mb-4">Platform Comparison</h3>
@@ -585,6 +593,20 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Intelligence modules */}
+          <motion.div variants={fade} initial="initial" animate="animate"><ContentTable posts={posts} /></motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate"><TopPerformers posts={posts} /></motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate" className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <ContentAnalysis posts={posts} />
+            <AudiencePanel posts={posts} hourHits={hourHits} dayHits={dayHits} followers={totals.followers || 0} />
+          </motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate" className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <BestTimePanel hourHits={hourHits} dayHits={dayHits} />
+            <GoalsPanel followers={totals.followers || 0} engagementRate={Number(engagement_rate) || 0} />
+          </motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate"><ForecastPanel posts={posts} /></motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate"><AlertsStrip posts={posts} /></motion.div>
         </>
       )}
 
