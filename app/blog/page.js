@@ -1,17 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Dribbble, Clock, RotateCcw, ChevronDown, ChevronUp, List, Plus, Trash2, Copy, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { api, StatusPill, PLATFORMS } from '@/components/shared'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Clock, RotateCcw, ChevronDown, ChevronUp, List, Plus, Trash2, Copy, Check, LayoutDashboard, FileText, CalendarDays, CheckCircle, Search, Gauge, Sparkles, Zap, PenLine, Newspaper, Hash, Dribbble, Link, History, MoreHorizontal, AlertTriangle, Bot } from 'lucide-react'
+import { api } from '@/components/shared'
 import { toast } from 'sonner'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog'
-import { Slider } from '@/components/ui/slider'
-import { Label } from '@/components/ui/label'
+import { SeoPanel, SeoSuggestions, GooglePreview, AssistantPanel, RepurposePanel, blogSeo } from './studio-components'
 
-function BlogPage() {
+const C = 'rounded-2xl border border-[#EBECF2] bg-white shadow-sm'
+const fmt = n => (n || 0).toLocaleString()
+
+export default function BlogPage() {
   const [posts, setPosts] = useState([])
   const [activePost, setActivePost] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -22,12 +21,28 @@ function BlogPage() {
   const [styles, setStyles] = useState([])
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [imageBase64, setImageBase64] = useState(null)
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editBody, setEditBody] = useState('')
   const [editSeo, setEditSeo] = useState('')
-  const [imageBase64, setImageBase64] = useState(null)
+  const [editSlug, setEditSlug] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editTags, setEditTags] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  const [createMode, setCreateMode] = useState('topic')
+  const [libraryFilter, setLibraryFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState([])
+  const [dripOpen, setDripOpen] = useState(false)
+  const [dripCount, setDripCount] = useState(4)
+  const [dripSpread, setDripSpread] = useState(5)
+  const [dripRunning, setDripRunning] = useState(false)
+  const [dripResult, setDripResult] = useState(null)
+  const [scheduleDate, setScheduleDate] = useState('')
+  const [scheduleTime, setScheduleTime] = useState('')
+  const [autoSaved, setAutoSaved] = useState(false)
+  const bodyRef = useRef(null)
 
   const refresh = async () => {
     setLoading(true)
@@ -37,6 +52,13 @@ function BlogPage() {
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refresh() }, [])
+
+  // Autosave draft body
+  useEffect(() => {
+    if (!editing || !activePost) return
+    const t = setTimeout(() => { localStorage.setItem('sf_blog_autosave', JSON.stringify({ id: activePost.id, title: editTitle, body: editBody, seo: editSeo })); setAutoSaved(true); setTimeout(() => setAutoSaved(false), 2000) }, 1200)
+    return () => clearTimeout(t)
+  }, [editBody, editTitle, editSeo, editing])
 
   const handleImage = (e) => {
     const file = e.target.files?.[0]
@@ -53,14 +75,14 @@ function BlogPage() {
     try {
       const result = await api('/blog/generate', {
         method: 'POST',
-        body: { context, style_id: styleId || undefined },
+        body: { context: context.trim(), style_id: styleId || undefined, imageBase64: imageBase64 || undefined, mimeType: 'image/jpeg', imageUrl: imagePreview || undefined },
       })
       const bp = await api('/blog/posts', {
         method: 'POST',
         body: { title: result.title, body_markdown: result.body_markdown, seo_description: result.seo_description, status: 'draft' },
       })
-      setActivePost(bp)
-      setEditing(false)
+      setActivePost(bp); setEditing(true)
+      setEditTitle(bp.title); setEditBody(bp.body_markdown); setEditSeo(bp.seo_description || ''); setEditSlug(bp.slug || ''); setEditCategory(bp.category || ''); setEditTags((bp.tags || []).join(', '))
       setShowPreview(true)
       toast.success('Article generated — review before publishing')
       setContext(''); setImageFile(null); setImagePreview(null); setImageBase64(null)
@@ -97,496 +119,316 @@ function BlogPage() {
     if (!activePost) return
     setGenerating(true)
     try {
-      const result = await api('/blog/generate', {
-        method: 'POST',
-        body: { context: activePost.title + ' — ' + (activePost.seo_description || ''), style_id: styleId || undefined },
-      })
+      const result = await api('/blog/generate', { method: 'POST', body: { context: editTitle + ' — ' + (editSeo || ''), style_id: styleId || undefined } })
       await api('/blog/posts/' + activePost.id, { method: 'PUT', body: { title: result.title, body_markdown: result.body_markdown, seo_description: result.seo_description } })
       toast.success('Regenerated')
-      setActivePost(prev => ({ ...prev, title: result.title, body_markdown: result.body_markdown, seo_description: result.seo_description }))
-      setEditing(false)
+      setEditTitle(result.title); setEditBody(result.body_markdown); setEditSeo(result.seo_description || '')
     } catch (e) { toast.error(e.message) } finally { setGenerating(false) }
-  }
-
-  const rejectArticle = async () => {
-    if (!activePost) return
-    try {
-      await api('/blog/posts/' + activePost.id, { method: 'PUT', body: { status: 'rejected' } })
-      toast.success('Rejected')
-      setActivePost(null)
-      await refresh()
-    } catch (e) { toast.error(e.message) }
-  }
-
-  const skipDraft = async () => {
-    if (!activePost) return
-    try {
-      await api('/blog/posts/' + activePost.id, { method: 'PUT', body: { status: 'draft' } })
-      toast.success('Saved as draft')
-      setActivePost(null)
-      await refresh()
-    } catch (e) { toast.error(e.message) }
   }
 
   const saveEdit = async () => {
     if (!activePost) return
     try {
-      await api('/blog/posts/' + activePost.id, { method: 'PUT', body: { title: editTitle, body_markdown: editBody, seo_description: editSeo } })
+      const slug = editSlug || (editTitle || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const body = { title: editTitle, body_markdown: editBody, seo_description: editSeo, slug, category: editCategory || null, tags: editTags.split(',').map(t => t.trim()).filter(Boolean) }
+      await api('/blog/posts/' + activePost.id, { method: 'PUT', body })
       toast.success('Saved')
-      setEditing(false)
-      setActivePost(prev => ({ ...prev, title: editTitle, body_markdown: editBody, seo_description: editSeo }))
+      setActivePost(prev => ({ ...prev, ...body }))
+      await refresh()
     } catch (e) { toast.error(e.message) }
   }
 
-  const selectPost = (p) => { setActivePost(p); setEditing(false); setEditTitle(p.title); setEditBody(p.body_markdown); setEditSeo(p.seo_description || ''); setShowPreview(true) }
-
-  const [dripOpen, setDripOpen] = useState(false); const [dripCount, setDripCount] = useState(4); const [dripSpread, setDripSpread] = useState(5); const [dripRunning, setDripRunning] = useState(false); const [dripResult, setDripResult] = useState(null)
-  const [scheduleDate, setScheduleDate] = useState('')
-  const [scheduleTime, setScheduleTime] = useState('')
+  const selectPost = (p) => {
+    setActivePost(p); setEditing(true)
+    setEditTitle(p.title); setEditBody(p.body_markdown); setEditSeo(p.seo_description || ''); setEditSlug(p.slug || ''); setEditCategory(p.category || ''); setEditTags((p.tags || []).join(', '))
+    setShowPreview(true)
+  }
+  const newArticle = () => { setActivePost(null); setEditing(false); setShowPreview(false); setContext(''); setCreateMode('topic'); document.querySelector('#topic-input')?.focus() }
 
   const runDrip = async () => {
     if (!activePost) return; setDripRunning(true); setDripResult(null)
-    try {
-      const result = await api('/blog-drip/' + activePost.id, { method: 'POST', body: { count: dripCount, spread_days: dripSpread } })
-      setDripResult(result); toast.success('Scheduled ' + result.total + ' drip posts')
-    } catch (e) { toast.error(e.message) } finally { setDripRunning(false) }
+    try { const result = await api('/blog-drip/' + activePost.id, { method: 'POST', body: { count: dripCount, spread_days: dripSpread } }); setDripResult(result); toast.success('Scheduled ' + result.total + ' drip posts') }
+    catch (e) { toast.error(e.message) } finally { setDripRunning(false) }
   }
 
-  if (loading) return <div className="text-muted-foreground flex items-center gap-2 py-6"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+  const duplicatePost = async (p) => {
+    try {
+      const bp = await api('/blog/posts', { method: 'POST', body: { title: p.title + ' (copy)', body_markdown: p.body_markdown, seo_description: p.seo_description, status: 'draft' } })
+      toast.success('Duplicated'); refresh()
+      return bp
+    } catch (e) { toast.error(e.message) }
+  }
+  const deletePost = async (p) => {
+    if (!confirm(`Delete "${p.title?.slice(0, 40)}"?`)) return
+    try { await api('/blog/posts/' + p.id, { method: 'PUT', body: { status: 'rejected' } }); toast.success('Archived'); if (activePost?.id === p.id) setActivePost(null); refresh() }
+    catch (e) { toast.error(e.message) }
+  }
+  const bulkDelete = async () => { for (const id of selected) { try { await api('/blog/posts/' + id, { method: 'PUT', body: { status: 'rejected' } }) } catch {} } toast.success('Archived ' + selected.length); setSelected([]); refresh() }
+
+  const seo = blogSeo(editTitle, editBody, editSeo, editSlug, imagePreview)
+  const filtered = posts.filter(p => {
+    if (libraryFilter !== 'all' && p.status !== libraryFilter) return false
+    if (search && !(p.title || '').toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
+  const kpis = [
+    { l: 'Total Articles', v: fmt(posts.length), c: '#7C3AED' },
+    { l: 'Drafts', v: fmt(posts.filter(p => p.status === 'draft').length), c: '#8A8A96' },
+    { l: 'Scheduled', v: fmt(posts.filter(p => p.status === 'scheduled').length), c: '#3B82F6' },
+    { l: 'Published', v: fmt(posts.filter(p => p.status === 'published').length), c: '#0EA37A' },
+    { l: 'Avg SEO Score', v: `${posts.length ? Math.round(posts.reduce((a, p) => a + blogSeo(p.title, p.body_markdown, p.seo_description, p.slug).seo, 0) / posts.length) : 0}`, c: '#EC4899' },
+    { l: 'Total Views', v: fmt(posts.reduce((a, p) => a + (p.views || 0), 0)), c: '#14B8A6' },
+    { l: 'Categories', v: fmt(new Set(posts.map(p => p.category).filter(Boolean)).size), c: '#F59E0B' },
+    { l: 'Words Written', v: fmt(posts.reduce((a, p) => a + ((p.body_markdown || '').match(/[A-Za-z0-9]+/g) || []).length, 0)), c: '#8B5CF6' },
+  ]
+  const libraryActions = [['all', 'All'], ['draft', 'Drafts'], ['scheduled', 'Scheduled'], ['published', 'Published'], ['rejected', 'Archived']]
+
+  if (loading) return <div className="flex items-center justify-center py-24 gap-2 text-[#8A8A96]"><Loader2 className="h-5 w-5 animate-spin" /> Loading Blog Studio…</div>
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
-        <div className="xl:col-span-2 space-y-4">
-          <div className="border border-border rounded-sm bg-card p-4 space-y-3 shadow-sm">
-            <h4 className="text-sm font-display font-semibold">New Article</h4>
-            <Textarea value={context} onChange={e => setContext(e.target.value)} rows={3} placeholder="Topic or context for the AI article..." className="text-sm bg-secondary/50 border-border" />
-            <div className="flex items-center gap-2">
-              <select value={styleId} onChange={e => setStyleId(e.target.value)} className="studio-mono text-[0.625rem] border border-border rounded-sm px-3 py-1.5 bg-card flex-1">
-                <option value="">Default style</option>
-                {styles.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-              <label className="cursor-pointer studio-mono text-[0.625rem] border border-border rounded-sm px-3 py-1.5 hover:bg-accent/50 text-muted-foreground flex items-center gap-1">
-                <ImageIcon className="h-3.5 w-3.5" /> {imageFile ? 'Set' : 'Cover'}
-                <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
-              </label>
-            </div>
-            {imagePreview && <img src={imagePreview} alt="" className="h-20 rounded-sm object-cover" />}
-            <Button onClick={generate} disabled={generating || !context.trim()} className="w-full studio-btn-gradient">
-              {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-              {generating ? 'Generating...' : 'Generate Article'}
-            </Button>
-          </div>
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8 space-y-6">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#0EA37A] to-[#14B8A6] flex items-center justify-center shadow-lg shadow-[#0EA37A]/25"><PenLine className="h-5 w-5 text-white" /></div>
+          <div><h1 className="text-xl font-bold text-[#16161D] tracking-tight">Blog Studio</h1><p className="text-sm text-[#8A8A96]">Create, optimize, schedule and publish professional SEO articles directly to INSIGHTS.</p></div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={newArticle} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] shadow-md hover:opacity-90"><Plus className="h-4 w-4" /> New Article</button>
+          <button onClick={refresh} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><RefreshCw className="h-4 w-4 text-[#8A8A96]" /></button>
+        </div>
+      </motion.div>
 
-          <TopicQueueSection />
+      {/* KPIs */}
+      <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+        {kpis.map(k => (
+          <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all`}>
+            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
+          </motion.div>
+        ))}
+      </motion.div>
 
-          <div className="border border-border rounded-sm bg-card shadow-sm">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <span className="text-sm font-display font-semibold">Articles ({posts.length})</span>
-              <RefreshCw className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-foreground" onClick={refresh} />
-            </div>
-            <div className="max-h-[400px] overflow-y-auto">
-              {posts.length === 0 ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">No articles yet.</div>
-              ) : posts.map(p => (
-                <div key={p.id} onClick={() => selectPost(p)}
-                  className={`px-4 py-3 border-b border-border/50 cursor-pointer hover:bg-accent/30 transition-colors ${activePost?.id === p.id ? 'bg-accent/50 border-l-2 border-l-primary' : ''}`}>
-                  <div className="text-sm font-medium truncate">{p.title || 'Untitled'}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StatusPill status={p.status} />
-                    <span className="studio-mono text-[0.5rem] text-muted-foreground">{p.created_at ? new Date(p.created_at).toLocaleDateString() : ''}</span>
-                  </div>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_330px] gap-5 items-start">
+        {/* ============ LEFT: Library ============ */}
+        <div className="space-y-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
+            <h4 className="text-sm font-bold text-[#16161D] mb-3 flex items-center gap-2"><LayoutDashboard className="h-4 w-4 text-[#7C3AED]" /> Quick Actions</h4>
+            <div className="space-y-1">
+              {[
+                { l: 'New Article', a: newArticle, i: <Plus className="h-3.5 w-3.5" />, c: '#0EA37A' },
+                { l: 'Drafts', a: () => setLibraryFilter('draft'), i: <FileText className="h-3.5 w-3.5" />, c: '#8A8A96' },
+                { l: 'Scheduled', a: () => setLibraryFilter('scheduled'), i: <CalendarDays className="h-3.5 w-3.5" />, c: '#3B82F6' },
+                { l: 'Published', a: () => setLibraryFilter('published'), i: <CheckCircle className="h-3.5 w-3.5" />, c: '#0EA37A' },
+                { l: 'Templates', a: () => setCreateMode('template'), i: <Sparkles className="h-3.5 w-3.5" />, c: '#EC4899' },
+              ].map(qa => (
+                <button key={qa.l} onClick={qa.a} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.7rem] font-semibold text-[#16161D] hover:bg-[#F8F9FC] hover:text-[#7C3AED] transition-colors">
+                  <span className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: qa.c + '12', color: qa.c }}>{qa.i}</span>{qa.l}
+                </button>
               ))}
             </div>
-          </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} overflow-hidden`}>
+            <div className="px-4 pt-4">
+              <div className="flex items-center gap-2 mb-3"><h4 className="text-sm font-bold text-[#16161D] flex-1">Article Library</h4>
+                {selected.length > 0 && <button onClick={bulkDelete} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-red-50 text-red-500">Archive {selected.length}</button>}
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] px-3 py-2 mb-2.5">
+                <Search className="h-3.5 w-3.5 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search articles…" className="flex-1 bg-transparent text-xs focus:outline-none" />
+              </div>
+              <div className="flex gap-1 mb-3 flex-wrap">
+                {libraryActions.map(([k, l]) => (
+                  <button key={k} onClick={() => setLibraryFilter(k)} className={`text-[0.6rem] font-semibold px-2.5 py-1.5 rounded-full transition-all ${libraryFilter === k ? 'bg-[#7C3AED] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <div className="max-h-[560px] overflow-y-auto border-t border-[#F0F1F5]">
+              {filtered.length === 0 ? (
+                <div className="p-6 text-center text-[0.7rem] text-[#8A8A96]">No articles here yet. Generate your first article.</div>
+              ) : filtered.map(p => {
+                const s = blogSeo(p.title, p.body_markdown, p.seo_description, p.slug)
+                const statusColor = { draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[p.status] || '#8A8A96'
+                return (
+                  <div key={p.id} className={`px-4 py-3 border-b border-[#F0F1F5] cursor-pointer hover:bg-[#F8F9FC] transition-colors group ${activePost?.id === p.id ? 'bg-[#7C3AED]/5' : ''}`} onClick={() => selectPost(p)}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <input type="checkbox" checked={selected.includes(p.id)} onChange={e => { e.stopPropagation(); setSelected(sel => e.target.checked ? [...sel, p.id] : sel.filter(x => x !== p.id)) }} className="accent-[#7C3AED] shrink-0" onClick={e => e.stopPropagation()} />
+                      <span className="text-xs font-semibold text-[#16161D] truncate flex-1">{p.title || 'Untitled'}</span>
+                      <span className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: statusColor + '15', color: statusColor }}>{p.status}</span>
+                    </div>
+                    <div className="flex items-center gap-2 pl-6">
+                      <span className="text-[0.55rem] text-[#8A8A96]">{p.category || 'uncategorized'}</span>
+                      <span className="text-[0.55rem] font-bold text-[#7C3AED]">{s.seo}</span>
+                      <span className="text-[0.55rem] text-[#8A8A96] font-mono">{s.readTime}m</span>
+                      <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {p.status === 'published' && p.published_url && <a href={p.published_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[0.6rem] text-[#0EA37A]"><ExternalLink className="h-3 w-3" /></a>}
+                        <button onClick={e => { e.stopPropagation(); duplicatePost(p) }} className="text-[0.6rem] text-[#8A8A96] hover:text-[#7C3AED]"><Copy className="h-3 w-3" /></button>
+                        <button onClick={e => { e.stopPropagation(); deletePost(p) }} className="text-[0.6rem] text-[#8A8A96] hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
         </div>
 
-        <div className="xl:col-span-3">
-          {!showPreview || !activePost ? (
-            <div className="border border-dashed border-border rounded-sm p-12 text-center bg-secondary/30 h-full flex items-center justify-center">
-              <div>
-                <Globe className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                <div className="text-foreground font-display font-semibold">Review your article</div>
-                <div className="text-sm text-muted-foreground mt-1">Generate an article, then review and publish here.</div>
+        {/* ============ CENTER: Editor ============ */}
+        <div className="space-y-4">
+          {!activePost ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-6`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#0EA37A]/10 to-[#14B8A6]/10 flex items-center justify-center"><PenLine className="h-5 w-5 text-[#0EA37A]" /></div>
+                <div><h3 className="text-lg font-bold text-[#16161D]">New Article</h3><p className="text-sm text-[#8A8A96]">Generate a full SEO article from any source.</p></div>
               </div>
-            </div>
+              <div className="flex gap-1 bg-[#F4F5F9] rounded-xl p-1 mb-4 flex-wrap">
+                {[['topic', 'Topic'], ['keywords', 'Keywords'], ['url', 'URL'], ['research', 'Research Paper'], ['pdf', 'PDF'], ['youtube', 'YouTube'], ['markdown', 'Markdown'], ['notes', 'Notes'], ['prompt', 'AI Prompt']].map(([k, l]) => (
+                  <button key={k} onClick={() => setCreateMode(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${createMode === k ? 'bg-white shadow-sm text-[#0EA37A]' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>{l}</button>
+                ))}
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 space-y-3">
+                  <textarea id="topic-input" value={context} onChange={e => setContext(e.target.value)} rows={4}
+                    placeholder={createMode === 'topic' ? 'Topic: "How AI is transforming HR recruitment in 2026"…' : createMode === 'keywords' ? 'Paste target keywords, one per line…' : createMode === 'url' ? 'Paste an article/blog URL to rewrite…' : createMode === 'prompt' ? 'Describe the article you want, in detail…' : `Paste ${createMode.replace('_', ' ')} content here…`}
+                    className="w-full rounded-xl border border-[#EBECF2] px-4 py-3.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#0EA37A]/20" />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select value={styleId} onChange={e => setStyleId(e.target.value)} className="rounded-xl border border-[#EBECF2] px-3 py-2.5 text-xs bg-white">
+                      <option value="">Default writing style</option>{styles.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                    <label className="cursor-pointer flex items-center gap-1.5 rounded-xl border border-[#EBECF2] px-3 py-2.5 text-xs font-semibold text-[#8A8A96] hover:border-[#D8C8FB]">
+                      <ImageIcon className="h-3.5 w-3.5" />{imageFile ? 'Cover set' : 'Cover image'}<input type="file" accept="image/*" onChange={handleImage} className="hidden" />
+                    </label>
+                    <span className="text-[0.6rem] text-[#8A8A96]">Vision AI reads your cover image for context</span>
+                  </div>
+                  {imagePreview && <img src={imagePreview} alt="" className="h-24 rounded-xl object-cover" />}
+                  <button onClick={generate} disabled={generating || !context.trim()} className="w-full py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] shadow-md disabled:opacity-50">
+                    {generating ? <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> : <Wand2 className="h-4 w-4 inline mr-2" />}{generating ? 'Writing your article…' : 'Generate SEO Article'}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+                <div className="rounded-xl bg-gradient-to-br from-[#0EA37A]/8 to-[#14B8A6]/8 border border-[#EBECF2] p-4">
+                  <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Bot className="h-3.5 w-3.5 text-[#0EA37A]" /> AI does everything</div>
+                  <p className="text-[0.7rem] text-[#8A8A96] leading-relaxed">Title, meta description, slug, headings, FAQ, internal links and schema — generated and optimized automatically.</p>
+                </div>
+                <div className="rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-4">
+                  <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Gauge className="h-3.5 w-3.5 text-[#7C3AED]" /> SEO Center</div>
+                  <p className="text-[0.7rem] text-[#8A8A96] leading-relaxed">Real-time scores for title, meta, headings, keywords, readability, links and alt tags — with fixes.</p>
+                </div>
+                <div className="rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-4">
+                  <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Send className="h-3.5 w-3.5 text-[#EC4899]" /> One-click publish</div>
+                  <p className="text-[0.7rem] text-[#8A8A96] leading-relaxed">Schedule, publish live to INSIGHTS, or drip the article into a 5-day social campaign.</p>
+                </div>
+              </div>
+            </motion.div>
           ) : (
-            <div className="border border-border rounded-sm bg-card overflow-hidden shadow-sm">
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-wrap gap-2">
+            <>
+              {/* Editor toolbar */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ({ draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[activePost.status] || '#8A8A96') + '15', color: { draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[activePost.status] || '#8A8A96' }}>{activePost.status}</span>
+                  <span className="text-[0.6rem] text-[#8A8A96] font-mono">{seo.words} words · {seo.readTime}m read</span>
+                  {autoSaved && <span className="text-[0.6rem] text-[#0EA37A] font-semibold flex items-center gap-1"><Check className="h-3 w-3" /> Auto-saved</span>}
+                  {activePost.published_url && <a href={activePost.published_url} target="_blank" rel="noreferrer" className="text-[0.65rem] text-[#0EA37A] hover:underline flex items-center gap-1"><ExternalLink className="h-3 w-3" /> View live</a>}
+                  <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                    <button onClick={saveEdit} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6]"><Save className="h-3.5 w-3.5" /> Save</button>
+                    <button onClick={() => setDripOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Dribbble className="h-3.5 w-3.5 text-[#7C3AED]" /> Drip</button>
+                    {activePost.status !== 'published' && <button onClick={publishNow} disabled={publishing} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">{publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Publish</button>}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Editor */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} overflow-hidden`}>
+                <div className="p-5 space-y-3">
+                  <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Article title…" className="w-full text-xl font-bold text-[#16161D] rounded-xl border border-[#EBECF2] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input value={editSeo} onChange={e => setEditSeo(e.target.value)} placeholder="Meta description (120-165 chars)…" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                    <input value={editSlug} onChange={e => setEditSlug(e.target.value)} placeholder="slug-auto-generated" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input value={editCategory} onChange={e => setEditCategory(e.target.value)} placeholder="Category (ai, tech, business…)" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                    <input value={editTags} onChange={e => setEditTags(e.target.value)} placeholder="Tags (comma separated)" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                  </div>
+                  <textarea ref={bodyRef} value={editBody} onChange={e => setEditBody(e.target.value)} rows={26} placeholder="Write in Markdown — ## headings, > quotes, [links](url), ![alt](image)…" className="w-full text-sm leading-relaxed font-mono rounded-xl border border-[#EBECF2] px-4 py-3.5 resize-y focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                  <div className="flex gap-2 flex-wrap text-[0.6rem] text-[#8A8A96]">
+                    <span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">## Heading</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">**bold**</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">[text](url)</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">![alt](img)</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">{'>'} quote</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">- list</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Assistant + repurpose */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AssistantPanel title={editTitle} body={editBody} onInsert={(chunk) => setEditBody(b => b + '\n\n' + chunk)} />
+                <RepurposePanel title={editTitle} body={editBody} onDrip={() => setDripOpen(true)} />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ============ RIGHT: SEO & Preview ============ */}
+        <div className="space-y-4">
+          {activePost ? (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><SeoPanel post={{ title: editTitle, body_markdown: editBody, seo_description: editSeo, slug: editSlug, image_ref: imagePreview }} /></motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><GooglePreview post={{ title: editTitle, seo_description: editSeo, slug: editSlug }} /></motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><SeoSuggestions post={{ title: editTitle, body_markdown: editBody, seo_description: editSeo, slug: editSlug }} onApply={() => {
+                const s = blogSeo(editTitle, editBody, editSeo, editSlug)
+                const fixes = []
+                if ((editTitle || '').length < 30) fixes.push((e) => e + ' — The Complete Guide')
+                if (s.h2s < 3) fixes.push((e) => e + '\n\n## What You Need to Know\n\n(Add your first key insight here.)')
+                if (!/## FAQ/i.test(editBody)) fixes.push((e) => e + '\n\n## FAQ\n\n**Question 1?**\nAnswer here.\n\n**Question 2?**\nAnswer here.')
+                let b = editBody
+                fixes.forEach(f => { b = f(b) })
+                setEditBody(b)
+                if ((editSeo || '').length < 120) setEditSeo(editSeo || (editTitle + ' — practical insights and strategies explained clearly. Read the full guide.').slice(0, 160))
+                toast.success('Improvements applied')
+              }} /></motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
+                <h4 className="text-sm font-semibold text-[#16161D] mb-3 flex items-center gap-2"><Clock className="h-4 w-4 text-[#3B82F6]" /> Scheduling</h4>
                 <div className="flex items-center gap-2">
-                  <StatusPill status={activePost.status} />
-                  {activePost.published_url && (
-                    <a href={activePost.published_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
-                      <ExternalLink className="h-3 w-3" /> View
-                    </a>
-                  )}
+                  <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="flex-1 rounded-xl border border-[#EBECF2] px-3 py-2.5 text-xs min-w-0" />
+                  <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="rounded-xl border border-[#EBECF2] px-3 py-2.5 text-xs" />
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {activePost.status !== 'published' && activePost.status !== 'rejected' && (
-                    <>
-                      <Button size="sm" onClick={publishNow} disabled={publishing} className="studio-btn-gradient h-7 text-xs">
-                        {publishing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
-                        Publish Now
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-28 text-[0.6rem] bg-secondary/50 border border-border rounded-sm px-1.5 py-1" />
-                        <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-20 text-[0.6rem] bg-secondary/50 border border-border rounded-sm px-1.5 py-1" />
-                        <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={scheduleForLater}>
-                          <Clock className="h-3 w-3 mr-1" /> Set
-                        </Button>
-                      </div>
-                      <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={() => { setEditing(v => !v); if (!v) { setEditTitle(activePost.title); setEditBody(activePost.body_markdown); setEditSeo(activePost.seo_description || '') } }}>
-                        <Pencil className="h-3 w-3 mr-1" /> {editing ? 'Preview' : 'Edit'}
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={regenerate} disabled={generating}>
-                        <RotateCcw className="h-3 w-3 mr-1" /> Regenerate
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-border h-7 text-xs" onClick={skipDraft}>
-                        <X className="h-3 w-3 mr-1" /> Skip
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-flag/50 text-flag h-7 text-xs hover:bg-red-50" onClick={rejectArticle}>
-                        <X className="h-3 w-3 mr-1" /> Reject
-                      </Button>
-                    </>
-                  )}
-                  {activePost.status === 'published' && (
-                    <Dialog open={dripOpen} onOpenChange={setDripOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" variant="outline" className="border-border h-7 text-xs"><Dribbble className="h-3 w-3 mr-1" /> Drip to Social</Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader><DialogTitle>Drip to Social</DialogTitle><DialogDescription>Break into {dripCount} posts across {dripSpread} days, each posted to all platforms.</DialogDescription></DialogHeader>
-                        <div className="space-y-5 py-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm"><Label>Number of posts</Label><span className="font-medium">{dripCount}</span></div>
-                            <Slider min={3} max={5} step={1} value={[dripCount]} onValueChange={v => setDripCount(v[0])} />
-                            <div className="flex justify-between text-xs text-muted-foreground"><span>3</span><span>5</span></div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm"><Label>Spread across (days)</Label><span className="font-medium">{dripSpread}</span></div>
-                            <Slider min={3} max={7} step={1} value={[dripSpread]} onValueChange={v => setDripSpread(v[0])} />
-                            <div className="flex justify-between text-xs text-muted-foreground"><span>3</span><span>7</span></div>
-                          </div>
-                          <div className="bg-secondary/50 rounded-sm p-3 text-xs space-y-1.5 border border-border">
-                            <div className="font-semibold text-foreground/80 mb-1">Schedule preview</div>
-                            {Array.from({ length: dripCount }, (_, i) => {
-                              const d = new Date(); d.setDate(d.getDate() + Math.floor((dripSpread / dripCount) * i) + 1); d.setHours(10 + (i % 8), 0, 0, 0)
-                              return (
-                                <div key={i} className="flex items-center gap-2 text-muted-foreground">
-                                  <span className="w-5 text-right font-medium text-foreground/60">#{i + 1}</span>
-                                  <span>{d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                  <span className="ml-auto flex gap-0.5">{PLATFORMS.slice(0, 4).map(p => <span key={p.key} className="text-[0.45rem] bg-secondary border border-border rounded-sm px-1">{p.letter}</span>)}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                          {dripResult && (
-                            <div className="space-y-2">
-                              <div className="font-medium text-primary text-sm">Scheduled! 🎉</div>
-                              <div className="grid gap-2">
-                                {dripResult.posts?.map(p => {
-                                  const icons = { linkedin: '💼', instagram: '📷', facebook: '👥', threads: '🧵', twitter: '🐦' }
-                                  return (
-                                    <div key={p.id} className="border border-border rounded-sm p-2.5 bg-card text-xs space-y-1">
-                                      <div className="flex items-center gap-1.5 font-medium">
-                                        <span>{icons[p.platform] || '🌐'}</span>
-                                        <span className="capitalize">{p.platform}</span>
-                                        <span className="ml-auto text-muted-foreground font-normal">{new Date(p.scheduled_for).toLocaleDateString()} {new Date(p.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                      </div>
-                                      <div className="text-muted-foreground line-clamp-2">{p.caption}</div>
-                                      <div className="text-[0.45rem] text-muted-foreground">#{p.index} of {dripCount}</div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          )}
-                          <Button onClick={runDrip} disabled={dripRunning} className="w-full studio-btn-gradient">
-                            {dripRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Dribbble className="h-4 w-4 mr-2" />}
-                            {dripRunning ? 'Generating...' : 'Generate & Schedule'}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4 max-h-[600px] overflow-y-auto">
-                {editing ? (
-                  <div className="space-y-3">
-                    <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Title" className="text-lg font-semibold bg-secondary/50 border-border" />
-                    <Input value={editSeo} onChange={e => setEditSeo(e.target.value)} placeholder="SEO description" className="text-sm text-muted-foreground bg-secondary/50 border-border" />
-                    <Textarea value={editBody} onChange={e => setEditBody(e.target.value)} rows={20} className="text-sm studio-mono leading-relaxed bg-secondary/50 border-border" />
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" className="border-border" onClick={() => setEditing(false)}>Cancel</Button>
-                      <Button size="sm" onClick={saveEdit} className="studio-btn-gradient"><Save className="h-3 w-3 mr-1" /> Save</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="bg-card border border-border rounded-sm p-4">
-                      <div className="studio-eyebrow mb-2">Article</div>
-                      <h2 className="studio-title text-lg mb-1">{activePost.title}</h2>
-                      <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-sm max-h-60 overflow-y-auto">{activePost.body_markdown}</div>
-                    </div>
-
-                    <div className="bg-card border border-border rounded-sm p-4">
-                      <div className="studio-eyebrow mb-2">SEO</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Meta Description</div>
-                          <div className="text-foreground/80">{activePost.seo_description || '—'}</div>
-                        </div>
-                        <div>
-                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Keywords</div>
-                          <div className="text-foreground/80">{activePost.keywords || activePost.tags?.join(', ') || '—'}</div>
-                        </div>
-                        <div>
-                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Tags</div>
-                          <div className="flex flex-wrap gap-1 mt-0.5">{(activePost.tags || []).slice(0, 6).map((t, i) => <span key={i} className="text-[0.5rem] bg-secondary border border-border rounded-sm px-1.5 py-0.5">{t}</span>)}</div>
-                        </div>
-                        <div>
-                          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-0.5">Slug</div>
-                          <div className="text-foreground/80 font-mono text-[0.6rem]">{activePost.slug || '—'}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-card border border-border rounded-sm p-4">
-                      <div className="studio-eyebrow mb-2">Platform Previews</div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {PLATFORMS.slice(0, 4).map(p => (
-                          <div key={p.key} className="border border-border rounded-sm p-3 bg-secondary/20 text-xs space-y-1">
-                            <div className="font-semibold text-foreground/80 uppercase tracking-wider">{p.label}</div>
-                            <div className="text-muted-foreground line-clamp-3">{activePost.seo_description || activePost.title}</div>
-                            <div className="text-[0.5rem] text-muted-foreground">Max {p.limit} chars</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {activePost.published_url && (
-                      <div className="bg-card border border-border rounded-sm p-4">
-                        <a href={activePost.published_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
-                          <ExternalLink className="h-3 w-3" /> Published at {activePost.published_url}
-                        </a>
-                      </div>
-                    )}
-                    {activePost.publish_error && (
-                      <div className="text-sm text-flag bg-flag/5 p-3 rounded-sm border border-flag/30">Error: {activePost.publish_error}</div>
-                    )}
-                    {activePost.status === 'published' && <DripManagement blogId={activePost.id} />}
-                  </div>
-                )}
-              </div>
-            </div>
+                <button onClick={scheduleForLater} className="mt-2 w-full py-2.5 rounded-xl text-xs font-bold bg-[#3B82F6] text-white">Schedule for later</button>
+              </motion.div>
+            </>
+          ) : (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-6 text-center`}>
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-[#0EA37A]/10 to-[#14B8A6]/10 flex items-center justify-center mb-3"><Gauge className="h-5 w-5 text-[#0EA37A]" /></div>
+              <h4 className="text-sm font-bold text-[#16161D]">SEO & preview panel</h4>
+              <p className="text-[0.7rem] text-[#8A8A96] mt-1.5 leading-relaxed">Select or generate an article — real-time SEO scores, Google preview, AI review and scheduling appear here.</p>
+            </motion.div>
           )}
         </div>
       </div>
-    </div>
-  )
-}
 
-function TopicQueueSection() {
-  const [open, setOpen] = useState(false)
-  const [topics, setTopics] = useState([])
-  const [newTopic, setNewTopic] = useState('')
-  const [bulkText, setBulkText] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [copied, setCopied] = useState(false)
-
-  const load = async () => { try { setTopics(await api('/topic-queue')) } catch {} finally { setLoading(false) } }
-  useEffect(() => { if (open) load() }, [open])
-
-  const addTopic = async () => {
-    if (!newTopic.trim()) return
-    await api('/topic-queue', { method: 'POST', body: { topic: newTopic.trim() } })
-    setNewTopic(''); await load()
-  }
-
-  const addBulk = async () => {
-    const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean)
-    if (lines.length === 0) return
-    await api('/topic-queue', { method: 'POST', body: { topics: lines, bulk: true } })
-    setBulkText(''); toast.success(`Added ${lines.length} topics`); await load()
-  }
-
-  const removeTopic = async (id) => { await api('/topic-queue/' + id, { method: 'DELETE' }); await load() }
-
-  const generateNext = async () => {
-    setGenerating(true)
-    try { const r = await api('/topic-queue/generate-next', { method: 'POST' }); toast.success('Generated: ' + r.title); await load() }
-    catch (e) { toast.error(e.message) } finally { setGenerating(false) }
-  }
-
-  const copyQueue = async () => {
-    const text = topics.filter(t => t.status === 'pending').map(t => t.topic).join('\n')
-    await navigator.clipboard.writeText(text)
-    setCopied(true); setTimeout(() => setCopied(false), 2000)
-  }
-
-  const pending = topics.filter(t => t.status === 'pending').length
-
-  return (
-    <div className="border border-border rounded-sm bg-card shadow-sm mt-3">
-      <button onClick={() => setOpen(!open)} className="w-full px-4 py-3 flex items-center gap-2 text-sm font-display font-semibold">
-        <List className="h-4 w-4 text-primary" />
-        Topic Queue {pending > 0 && <span className="studio-mono text-[0.5rem] bg-primary text-primary-foreground rounded-full px-1.5 py-0.5">{pending}</span>}
-        <span className="ml-auto">{open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}</span>
-      </button>
-      {open && (
-        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-          <div className="flex gap-2">
-            <input value={newTopic} onChange={e => setNewTopic(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTopic()} placeholder="Add a topic..." className="flex-1 text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1.5" />
-            <button onClick={addTopic} className="text-xs bg-primary text-primary-foreground rounded-sm px-2 py-1.5 hover:bg-primary/90"><Plus className="h-3 w-3" /></button>
-          </div>
-          <div className="flex gap-2">
-            <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} rows={3} placeholder="Paste 50+ topics, one per line..." className="flex-1 text-xs bg-secondary/50 border border-border rounded-sm p-2 resize-none" />
-            <button onClick={addBulk} className="text-xs bg-primary text-primary-foreground rounded-sm px-2 py-1 self-end hover:bg-primary/90"><Plus className="h-3 w-3 mr-1" /> Bulk</button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={generateNext} disabled={generating || pending === 0} className="text-xs studio-btn-gradient rounded-sm px-3 py-1.5">
-              {generating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
-              Generate Next
-            </button>
-            <button onClick={copyQueue} className="text-xs border border-border rounded-sm px-3 py-1.5 hover:bg-secondary/50">
-              {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
-              {copied ? 'Copied' : 'Copy All'}
-            </button>
-            <span className="text-[0.5rem] text-muted-foreground ml-auto">{topics.length} total, {pending} pending</span>
-          </div>
-          <div className="max-h-40 overflow-y-auto space-y-0.5">
-            {topics.filter(t => t.status === 'pending').map(t => (
-              <div key={t.id} className="flex items-center gap-2 text-xs px-2 py-1 rounded-sm hover:bg-secondary/20 group">
-                <span className="flex-1 truncate">{t.topic}</span>
-                <span className="text-[0.45rem] text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</span>
-                <button onClick={() => removeTopic(t.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100"><X className="h-3 w-3" /></button>
+      {/* Drip dialog */}
+      <AnimatePresence>
+        {dripOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDripOpen(false)}>
+            <motion.div initial={{ scale: 0.96, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 10 }} className={`${C} w-full max-w-md rounded-3xl p-5`} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5"><div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center"><Dribbble className="h-4 w-4 text-white" /></div>
+                  <div><h3 className="text-base font-bold text-[#16161D]">Drip to Social</h3><p className="text-[0.65rem] text-[#8A8A96]">Break into {dripCount} posts across {dripSpread} days</p></div></div>
+                <button onClick={() => setDripOpen(false)} className="h-8 w-8 rounded-full bg-[#F4F5F9] flex items-center justify-center hover:bg-[#EDE9FE]"><X className="h-4 w-4 text-[#8A8A96]" /></button>
               </div>
-            ))}
-          </div>
-          <div className="text-[0.5rem] text-muted-foreground">Use /nexttopic in Telegram to auto-generate from this queue</div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function DripManagement({ blogId }) {
-  const [dripJobs, setDripJobs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [expandedPost, setExpandedPost] = useState(null)
-  const [expandedPlatform, setExpandedPlatform] = useState(null)
-  const [editValues, setEditValues] = useState({})
-  const [regenerating, setRegenerating] = useState(null)
-
-  const loadDrips = async () => {
-    setLoading(true)
-    try {
-      const jobs = await api('/jobs')
-      const drips = jobs.filter(j => j.campaign_id === `drip_${blogId}`)
-      setDripJobs(drips)
-    } catch (e) { toast.error(e.message) } finally { setLoading(false) }
-  }
-  useEffect(() => { if (blogId) loadDrips() }, [blogId])
-
-  const savePlatform = async (jobId, platform) => {
-    try {
-      const job = dripJobs.find(j => j.id === jobId)
-      const posts = { ...(job.platform_posts || {}) }
-      posts[platform] = { ...(posts[platform] || {}), caption: editValues[`${jobId}_${platform}`] || posts[platform]?.caption, hashtags: editValues[`${jobId}_${platform}_tags`]?.split(',').map(t => t.trim()).filter(Boolean) || posts[platform]?.hashtags }
-      await api('/jobs/' + jobId, { method: 'PUT', body: { platform_posts: posts } })
-      toast.success('Saved')
-      setExpandedPlatform(null)
-      await loadDrips()
-    } catch (e) { toast.error(e.message) }
-  }
-
-  const regeneratePlatform = async (jobId, platform) => {
-    setRegenerating(`${jobId}_${platform}`)
-    try {
-      const job = dripJobs.find(j => j.id === jobId)
-      const result = await api('/regenerate/' + jobId, { method: 'POST', body: { platform, styleId: '' } })
-      const posts = { ...(job.platform_posts || {}) }
-      posts[platform] = { ...result, hashtags: result.hashtags || [] }
-      await api('/jobs/' + jobId, { method: 'PUT', body: { platform_posts: posts } })
-      toast.success('Regenerated ' + platform)
-      await loadDrips()
-    } catch (e) { toast.error(e.message) } finally { setRegenerating(null) }
-  }
-
-  const platformMeta = { linkedin: { emoji: '💼', label: 'LinkedIn', color: '#0A66C2' }, instagram: { emoji: '📷', label: 'Instagram', color: '#E4405F' }, facebook: { emoji: '👥', label: 'Facebook', color: '#1877F2' }, threads: { emoji: '🧵', label: 'Threads', color: '#000000' }, twitter: { emoji: '🐦', label: 'X', color: '#000000' } }
-
-  if (loading) return <div className="mt-4 text-sm text-muted-foreground">Loading drip posts…</div>
-  if (dripJobs.length === 0) return null
-
-  return (
-    <div className="mt-6 pt-4 border-t border-border">
-      <div className="flex items-center gap-2 mb-3">
-        <Dribbble className="h-4 w-4 text-primary" />
-        <span className="studio-eyebrow">Social Drip ({dripJobs.length} posts)</span>
-      </div>
-      <div className="space-y-2">
-        {dripJobs.map((job, pi) => {
-          const platforms = Object.keys(job.platform_posts || {})
-          return (
-            <div key={job.id} className="border border-border rounded-sm bg-card overflow-hidden">
-              <button onClick={() => setExpandedPost(expandedPost === job.id ? null : job.id)} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-secondary/20 transition-colors">
-                <span className="font-medium text-muted-foreground">#{pi + 1}</span>
-                <span className="flex-1 text-left truncate">{job.topic?.replace(/^Drip \d+\/\d+: /, '') || 'Drip post'}</span>
-                <span className="studio-mono text-[0.5rem] text-muted-foreground">{job.scheduled_for ? new Date(job.scheduled_for).toLocaleDateString() : ''}</span>
-                <span className="flex gap-1">{platforms.map(p => {
-                  const m = platformMeta[p]
-                  return m ? <span key={p} style={{ color: m.color }} className="text-xs">{m.emoji}</span> : null
-                })}</span>
-                {expandedPost === job.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </button>
-              {expandedPost === job.id && (
-                <div className="px-3 pb-3 space-y-2 border-t border-border pt-2">
-                  {platforms.map(p => {
-                    const m = platformMeta[p]
-                    const post = job.platform_posts[p] || {}
-                    const isOpen = expandedPlatform === `${job.id}_${p}`
-                    return (
-                      <div key={p} className="border border-border rounded-sm bg-secondary/10">
-                        <button onClick={() => setExpandedPlatform(isOpen ? null : `${job.id}_${p}`)} className="w-full flex items-center gap-2 px-2.5 py-2 text-xs hover:bg-secondary/20 transition-colors">
-                          <span>{m?.emoji || '🌐'}</span>
-                          <span className="font-medium">{m?.label || p}</span>
-                          <span className="ml-auto text-muted-foreground">{post.caption?.length || 0} chars</span>
-                          {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                        </button>
-                        {isOpen && (
-                          <div className="p-2.5 border-t border-border space-y-2">
-                            <div>
-                              <div className="studio-eyebrow mb-1">Caption</div>
-                              <textarea value={editValues[`${job.id}_${p}`] !== undefined ? editValues[`${job.id}_${p}`] : (post.caption || '')} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}`]: e.target.value }))} rows={3} className="w-full text-xs bg-secondary/50 border border-border rounded-sm p-2 resize-none" />
-                            </div>
-                            <div>
-                              <div className="studio-eyebrow mb-1">Hashtags (comma separated)</div>
-                              <input value={editValues[`${job.id}_${p}_tags`] !== undefined ? editValues[`${job.id}_${p}_tags`] : (post.hashtags || []).join(', ')} onChange={e => setEditValues(v => ({ ...v, [`${job.id}_${p}_tags`]: e.target.value }))} className="w-full text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1.5" />
-                            </div>
-                            <div className="flex gap-1.5">
-                              <Button size="sm" onClick={() => savePlatform(job.id, p)} className="studio-btn-gradient h-6 text-[0.6rem]"><Save className="h-2.5 w-2.5 mr-1" /> Save</Button>
-                              <Button size="sm" variant="outline" className="border-border h-6 text-[0.6rem]" onClick={() => regeneratePlatform(job.id, p)} disabled={regenerating === `${job.id}_${p}`}>
-                                {regenerating === `${job.id}_${p}` ? <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" /> : <RotateCcw className="h-2.5 w-2.5 mr-1" />}
-                                Regenerate
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+              <div className="space-y-3">
+                <div><div className="flex justify-between text-xs mb-1"><span className="text-[#8A8A96]">Number of posts</span><span className="font-bold text-[#16161D]">{dripCount}</span></div><input type="range" min="3" max="5" value={dripCount} onChange={e => setDripCount(Number(e.target.value))} className="w-full accent-[#7C3AED] h-1.5" /></div>
+                <div><div className="flex justify-between text-xs mb-1"><span className="text-[#8A8A96]">Spread across (days)</span><span className="font-bold text-[#16161D]">{dripSpread}</span></div><input type="range" min="3" max="7" value={dripSpread} onChange={e => setDripSpread(Number(e.target.value))} className="w-full accent-[#7C3AED] h-1.5" /></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3 space-y-1.5">
+                  <div className="text-xs font-bold text-[#16161D] mb-1">Schedule preview</div>
+                  {Array.from({ length: dripCount }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + Math.floor((dripSpread / dripCount) * i) + 1); d.setHours(10 + (i % 8), 0, 0, 0); return (
+                    <div key={i} className="flex items-center gap-2 text-[0.65rem] text-[#8A8A96]"><span className="font-bold text-[#16161D] w-5">#{i + 1}</span><span>{d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><span className="ml-auto text-[0.5rem]">LinkedIn · IG · FB · Threads</span></div>
+                  ) })}
                 </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+                {dripResult && <div className="rounded-xl bg-[#0EA37A]/8 border border-[#0EA37A]/20 p-3 text-[0.7rem] text-[#0EA37A] font-semibold">Scheduled {dripResult.total} drip posts!</div>}
+                <button onClick={runDrip} disabled={dripRunning} className="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-md disabled:opacity-50">{dripRunning ? <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> : <Send className="h-4 w-4 inline mr-2" />}{dripRunning ? 'Generating…' : 'Generate & Schedule'}</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-
-export default BlogPage
