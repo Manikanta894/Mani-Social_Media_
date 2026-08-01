@@ -8,6 +8,7 @@ import { api, PLATFORMS, resizeImageToBase64 } from '@/components/shared'
 import { DEFAULT_PILLARS } from '@/lib/content-pillars'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AnalysisPanel, PlatformPreview, ContentLibrary, SuggestionPanel, AIChat, QUICK_ACTIONS, runQuickAction, M, TYPES, REAL_KEYS } from './studio-components'
+import { QuickStartCanvas, ProcessingCanvas, VersionPanel, PromptHistory, GenTimeline, AIPack, EXTRA_ACTIONS, runStudioAction, ScoreBadge } from './canvas-components'
 
 const C = 'rounded-2xl border border-[#EBECF2] bg-white shadow-sm'
 const fade = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }
@@ -87,6 +88,10 @@ export default function ComposePage() {
   const [schedTime, setSchedTime] = useState('')
   const [inputTab, setInputTab] = useState('images')
   const [library, setLibrary] = useState(() => { try { return JSON.parse(localStorage.getItem('sf_studio_library')) || [] } catch { return [] } })
+  const [versions, setVersions] = useState([])
+  const [promptHistory, setPromptHistory] = useState(() => { try { return JSON.parse(localStorage.getItem('sf_prompt_history')) || [] } catch { return [] } })
+  const [timeline, setTimeline] = useState([])
+  const [packOpen, setPackOpen] = useState(null)
   const fileInputRef = useRef(null)
   const dropRef = useRef(null)
 
@@ -190,11 +195,26 @@ export default function ComposePage() {
       const data = await api('/generate', { method: 'POST', body: payload })
       setResult({ ...data, ms: Date.now() - started, topic: (context || pastedArticle || 'AI Content').slice(0, 80) })
       setActiveTab('linkedin')
+      const now = new Date().toISOString()
+      setVersions([{ time: now, caption: data.posts?.linkedin?.caption || '', hashtags: data.posts?.linkedin?.hashtags || [] }])
+      const ph = [{ time: now, kind, text: (context || pastedArticle || 'AI Content').slice(0, 80), platforms: selPlatforms.join('+') }, ...promptHistory].slice(0, 12)
+      setPromptHistory(ph); localStorage.setItem('sf_prompt_history', JSON.stringify(ph))
+      setTimeline([
+        { label: 'Input analyzed', time: '0.0s', detail: `${images.length} image(s) · ${selPlatforms.length} platforms`, color: '#7C3AED' },
+        { label: 'Vision understanding complete', time: `${((started) / 1000).toFixed(1)}s`, detail: 'objects · OCR · scene · mood', color: '#8B5CF6' },
+        { label: 'Content generated', time: `${((Date.now() - started) / 1000).toFixed(1)}s`, detail: 'unique copy per platform', color: '#0EA37A' },
+        { label: 'Optimization ready', time: `${((Date.now() - started + 500) / 1000).toFixed(1)}s`, detail: 'hashtags · CTA · scores', color: '#EC4899' },
+      ])
       toast.success(`Generated in ${((Date.now() - started) / 1000).toFixed(1)}s`)
     } catch (e) { toast.error(e.message) } finally { setGenerating(false) }
   }, [activeText, context, pastedArticle, buildInstruction, styleId, tone, pillar, emojiEnabled, emojiDensity, images, router])
 
-  const updatePost = (platform, patch) => { setResult(prev => prev && ({ ...prev, posts: { ...prev.posts, [platform]: { ...prev.posts[platform], ...patch } } })) }
+  const updatePost = (platform, patch) => {
+    setResult(prev => prev && ({ ...prev, posts: { ...prev.posts, [platform]: { ...prev.posts[platform], ...patch } } }))
+    if (patch.caption && platform === (activeTab || 'linkedin')) {
+      setVersions(vs => [{ time: new Date().toISOString(), caption: patch.caption, hashtags: patch.hashtags || [] }, ...vs].slice(0, 10))
+    }
+  }
 
   const regenerate = useCallback(async (platform) => {
     setRegenerating(platform)
@@ -456,75 +476,55 @@ export default function ComposePage() {
         {/* ================= CENTER ================= */}
         <div className="space-y-4">
           {!result && !generating && (
-            <>
-              <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-6`}>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center"><Sparkles className="h-5 w-5 text-[#7C3AED]" /></div>
-                  <div><h3 className="text-lg font-bold text-[#16161D]">Your AI workspace</h3><p className="text-sm text-[#8A8A96]">Everything you need to create, optimize and publish — in one place.</p></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="rounded-xl bg-gradient-to-br from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#EBECF2] p-4">
-                    <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-[#7C3AED]" /> Quick start</div>
-                    <ol className="space-y-1.5 text-[0.7rem] text-[#8A8A96] list-decimal list-inside">
-                      <li>Pick a content type & platforms</li>
-                      <li>Add an image, URL, or topic</li>
-                      <li>Tune tone, length & language</li>
-                      <li>Generate → preview → publish</li>
-                    </ol>
-                  </div>
-                  <div className="rounded-xl border border-[#EBECF2] p-4 bg-[#FAFAFD]">
-                    <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><PenLine className="h-3.5 w-3.5 text-[#0EA37A]" /> Try these prompts</div>
-                    <div className="space-y-1.5">
-                      {EXAMPLE_PROMPTS.map(p => <button key={p.t} onClick={() => applyExample(p)} className="block w-full text-left text-[0.7rem] text-[#7C3AED] hover:underline">{p.t}</button>)}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-[#EBECF2] p-4 bg-[#FAFAFD]">
-                    <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-[#EC4899]" /> Recent work</div>
-                    {library.length === 0 ? <div className="text-[0.7rem] text-[#8A8A96]">Your saved drafts will appear here.</div> : library.slice(0, 3).map(i => (
-                      <button key={i.id} onClick={() => { setResult({ posts: i.posts, topic: i.title }); setActiveTab('linkedin') }} className="block w-full text-left text-[0.7rem] text-[#16161D] truncate hover:text-[#7C3AED] py-0.5">• {i.title}</button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-              <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-6`}>
-                <div className="text-xs font-bold text-[#16161D] mb-3 uppercase tracking-wider text-[#8A8A96]">What one input can produce</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {['LinkedIn Post', 'Instagram Caption', 'Facebook Post', 'Threads Post', 'Twitter Thread', 'SEO Blog', 'Newsletter', 'Carousel', 'Story', 'Reel Caption', 'YouTube Description', 'Image Prompt', 'Poll', 'Comments', 'Replies'].map(l => (
-                    <span key={l} className="text-[0.65rem] px-3 py-1.5 rounded-full bg-[#F4F5F9] border border-[#EBECF2] text-[#16161D]">{l}</span>
-                  ))}
-                </div>
-              </motion.div>
-            </>
+            <QuickStartCanvas
+              onFiles={(files) => files && handleFile(files)}
+              examplePrompts={EXAMPLE_PROMPTS}
+              onExample={(p) => applyExample(p)}
+              onApplyTemplate={(t) => { setKind('social'); setContext(t.context || ''); if (t.style_id) setStyleId(t.style_id); if (t.tone_adjustment) setTone((t.tone_adjustment + 1) * 50); toast.success(`Template "${t.name}" applied`) }}
+              onQuickAction={{
+                recent: library,
+                restore: (i) => { setResult({ posts: i.posts, topic: i.title }); setActiveTab('linkedin'); toast.success('Restored from library') },
+                analyze: () => { setInputTab('images'); document.querySelector('#canvas-file-input')?.click() },
+                ideas: () => { setKind('social'); setContext('Generate 5 post ideas about [your topic]'); setInputTab('topic'); toast.info('Type your topic, then Generate') },
+                templates: templates,
+              }}
+              libCount={library.length}
+            />
           )}
 
           {generating && !result && (
-            <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-6`}>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="relative">
-                  <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center"><Wand2 className="h-5 w-5 text-white" /></div>
-                  <span className="absolute -top-1 -right-1 h-3 w-3"><span className="absolute inset-0 rounded-full bg-[#0EA37A] animate-ping" /><span className="absolute inset-0 rounded-full bg-[#0EA37A]" /></span>
-                </div>
-                <div><h3 className="text-lg font-bold text-[#16161D]">AI is thinking…</h3><p className="text-sm text-[#8A8A96]">Understanding your input · optimizing per platform · writing</p></div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { t: 'Analyzing image & extracting context', w: 100 },
-                  { t: 'Detecting objects, scene, mood, colors', w: 88 },
-                  { t: 'Writing LinkedIn version', w: 72 },
-                  { t: 'Writing Instagram with hashtags', w: 55 },
-                  { t: 'Writing Facebook & Threads variants', w: 38 },
-                  { t: 'Optimizing engagement & CTA', w: 20 },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${s.w}%` }} transition={{ duration: 0.5, delay: i * 0.35 }} className="h-1.5 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" />
-                    <span className="text-[0.65rem] text-[#8A8A96] whitespace-nowrap">{s.t}</span>
+            <>
+              <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-5`}>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="relative">
+                    <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center"><Wand2 className="h-5 w-5 text-white" /></div>
+                    <span className="absolute -top-1 -right-1 h-3 w-3"><span className="absolute inset-0 rounded-full bg-[#0EA37A] animate-ping" /><span className="absolute inset-0 rounded-full bg-[#0EA37A]" /></span>
                   </div>
-                ))}
-              </div>
-              <div className="mt-5 flex items-center gap-2 text-xs text-[#8A8A96]">
-                <Bot className="h-4 w-4 text-[#7C3AED] animate-bounce" /> Every platform gets its own optimized content — never a generic caption.
-              </div>
-            </motion.div>
+                  <div><h3 className="text-lg font-bold text-[#16161D]">AI is thinking…</h3><p className="text-sm text-[#8A8A96]">Understanding your input · optimizing per platform · writing</p></div>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { t: 'Analyzing image & extracting context', w: 100 },
+                    { t: 'Detecting objects, scene, mood, colors', w: 88 },
+                    { t: 'Writing LinkedIn version', w: 72 },
+                    { t: 'Writing Instagram with hashtags', w: 55 },
+                    { t: 'Writing Facebook & Threads variants', w: 38 },
+                    { t: 'Optimizing engagement & CTA', w: 20 },
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${s.w}%` }} transition={{ duration: 0.5, delay: i * 0.35 }} className="h-1.5 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" />
+                      <span className="text-[0.65rem] text-[#8A8A96] whitespace-nowrap">{s.t}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 flex items-center gap-2 text-xs text-[#8A8A96]">
+                  <Bot className="h-4 w-4 text-[#7C3AED] animate-bounce" /> Every platform gets its own optimized content — never a generic caption.
+                </div>
+              </motion.div>
+              <motion.div variants={fade} initial="initial" animate="animate">
+                <ProcessingCanvas images={images} context={context} pastedArticle={pastedArticle} url={url} hasStarted />
+              </motion.div>
+            </>
           )}
 
           {result && (
@@ -535,7 +535,8 @@ export default function ComposePage() {
                     <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center"><CheckIcon /></div>
                     <div><h3 className="text-base font-bold text-[#16161D]">{result.topic || 'Generated content'}</h3><p className="text-xs text-[#8A8A96]">{(result.ms / 1000).toFixed(1)}s · {allTabs.length} platform variants · {libCount} in library</p></div>
                   </div>
-                  <div className="flex gap-1.5 overflow-x-auto max-w-full pb-0.5">
+                  <ScoreBadge text={result.posts?.[activeTab]?.caption || activePost?.caption || ''} />
+                  <div className="flex gap-1.5 overflow-x-auto max-w-full pb-0.5 w-full lg:w-auto">
                     {allTabs.map(t => (
                       <button key={t} onClick={() => setActiveTab(t)} className={`px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${activeTab === t ? 'text-white shadow-sm' : 'bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96] hover:text-[#16161D]'}`} style={activeTab === t ? { backgroundColor: M[t]?.color, borderColor: M[t]?.color } : {}}>{M[t]?.label || t}</button>
                     ))}
@@ -566,6 +567,14 @@ export default function ComposePage() {
                     <button onClick={() => { localStorage.setItem('sf_studio_draft', JSON.stringify(result)); toast.success('Draft saved') }} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors"><Save className="h-3.5 w-3.5" /> Save Draft</button>
                     <button onClick={() => { const name = prompt('Template name:'); if (!name) return; api('/templates', { method: 'POST', body: { name, context: result.topic || '', style_id: styleId, tone_adjustment: (tone - 50) / 50 } }).then(async () => { setTemplates(await api('/templates')); toast.success('Template saved') }).catch(() => {}) }} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors"><FolderPlus className="h-3.5 w-3.5" /> Save Template</button>
                   </div>
+                  <div className="mt-3 pt-3 border-t border-[#F0F1F5]">
+                    <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">AI actions</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {EXTRA_ACTIONS.map(a => (
+                        <button key={a.key} onClick={() => runStudioAction(a.key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: (patch) => result.posts?.[activeTab] ? updatePost(activeTab, patch) : null, rewrite: () => regenerate(activeTab), setLang, openPack: setPackOpen })} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{a.icon}{a.label}</button>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               </AnimatePresence>
 
@@ -590,8 +599,24 @@ export default function ComposePage() {
                   )}
                 </AnimatePresence>
               </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <VersionPanel
+                  versions={versions}
+                  onRestore={(v) => { if (result.posts?.[activeTab]) updatePost(activeTab, { caption: v.caption, hashtags: v.hashtags }); toast.success('Version restored') }}
+                  onClear={() => setVersions([])}
+                />
+                <PromptHistory
+                  history={promptHistory}
+                  onApply={(h) => { setKind(h.kind || 'social'); setContext(h.text || ''); toast.success('Prompt applied — hit Generate') }}
+                  onClear={() => { setPromptHistory([]); localStorage.removeItem('sf_prompt_history') }}
+                />
+              </div>
+              <GenTimeline events={timeline} />
             </>
           )}
+
+          <AIPack open={!!packOpen} kind={packOpen} caption={activePost?.caption} hashtags={activeHashtags} onClose={() => setPackOpen(null)} />
         </div>
 
         {/* ================= RIGHT ================= */}
