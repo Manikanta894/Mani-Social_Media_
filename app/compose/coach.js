@@ -176,7 +176,7 @@ export function AnalysisPanel({ text, hashtags, onAction }) {
 
       <ScoreCard title="Content Quality" icon={<Gauge className="h-3.5 w-3.5" />} color="#7C3AED" score={a.quality}
         problems={a.hookScore < 60 ? ['Hook is weak — first line doesn\u2019t grab attention'] : []}
-        fixes={[{ key: 'hook-question', label: 'Generate stronger hook' }, { key: 'cta-question', label: 'Add CTA' }, { key: 'humanize', label: 'Improve readability' }]}
+        fixes={[{ key: 'hook-question', label: 'Generate stronger hook' }, { key: 'cta-question', label: 'Add stronger CTA' }, { key: 'humanize', label: 'Increase readability' }, { key: 'hook-story', label: 'Add storytelling' }, { key: 'rewrite-professional', label: 'Improve quality' }]}
         onFix={fix} />
 
       <ScoreCard title="SEO Score" icon={<Gauge className="h-3.5 w-3.5" />} color="#3B82F6" score={a.seo}
