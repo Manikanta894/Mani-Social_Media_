@@ -14,6 +14,7 @@ import './globals.css'
 const NAV_ITEMS = [
   { key: '/',                label: 'Dashboard',    icon: ImageIcon },
   { key: '/compose',         label: 'Compose',      icon: Sparkles },
+  { key: '/commcenter',      label: 'Comm Center',  icon: MessageSquare },
   { key: '/calendar',        label: 'Schedule',     icon: CalendarIcon },
   { key: '/automation',      label: 'Automation',   icon: Wand2 },
   { key: '/blog-automation', label: 'Blog Engine',  icon: FileText },
@@ -34,6 +35,15 @@ export default function RootLayout({ children }) {
   const [activeStyle, setActiveStyle] = useState(null)
   const [textProvider, setTextProvider] = useState(null)
   const [providersConfigured, setProvidersConfigured] = useState(false)
+  const [commUnread, setCommUnread] = useState(0)
+
+  useEffect(() => {
+    const read = () => { try { setCommUnread(parseInt(localStorage.getItem('sf_comm_unread_count') || '0', 10) || 0) } catch {} }
+    read()
+    const iv = setInterval(read, 15000)
+    window.addEventListener('storage', read)
+    return () => { clearInterval(iv); window.removeEventListener('storage', read) }
+  }, [])
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -143,7 +153,10 @@ export default function RootLayout({ children }) {
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${pathname === key ? 'text-[#7C3AED]' : ''}`} />
-                  {label}
+                  <span className="flex-1 text-left">{label}</span>
+                  {key === '/commcenter' && commUnread > 0 && (
+                    <span className="h-5 min-w-5 px-1 rounded-full bg-[#EF4444] text-white text-[0.55rem] font-bold flex items-center justify-center">{commUnread}</span>
+                  )}
                 </button>
               ))}
             </nav>
