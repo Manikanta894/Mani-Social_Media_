@@ -178,7 +178,7 @@ export default function SeasonalDashboard() {
           {/* Window switcher */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex bg-white border border-[#EBECF2] rounded-xl p-1 shadow-sm">
-              {[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This Week'], ['month', 'This Month'], ['ninetyDays', 'Next 90 Days']].map(([k, l]) => (
+              {[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This Week'], ['month', 'This Month'], ['ninetyDays', 'Next 90 Days'], ['recent', 'Recently Finished']].map(([k, l]) => (
                 <button key={k} onClick={() => setDiscWindow(k)} className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${discWindow === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>{l} <span className="opacity-70">({discovery?.windows?.[k]?.length || 0})</span></button>
               ))}
             </div>
@@ -195,51 +195,101 @@ export default function SeasonalDashboard() {
             ))}
           </div>
 
-          {/* Events grid */}
+          {/* Events grid — NEVER empty */}
           {!discovery ? (
             <div className={`${C} p-10 text-center text-sm text-[#8A8A96] flex items-center justify-center gap-2`}><Loader2 className="h-4 w-4 animate-spin" /> Scanning the global event database…</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {(discovery.windows?.[discWindow] || []).filter(e => discCat === 'all' || e.type === discCat).filter(e => !search || e.name.toLowerCase().includes(search.toLowerCase())).map((e, i) => {
-                const pr = eventPriority(e)
+            (() => {
+              const windowEvents = (discovery.windows?.[discWindow] || []).filter(e => discCat === 'all' || e.type === discCat).filter(e => !search || e.name.toLowerCase().includes(search.toLowerCase()))
+              const fallbackSections = [
+                { title: 'Today\u2019s events', icon: <Sun className="h-4 w-4 text-[#F59E0B]" />, list: discovery.windows?.today || [] },
+                { title: 'Upcoming festivals', icon: <Sparkles className="h-4 w-4 text-[#EC4899]" />, list: (discovery.windows?.month || []).filter(e => e.type === 'festival' || e.type === 'religion' || e.type === 'regional') },
+                { title: 'Awareness days', icon: <ShieldCheck className="h-4 w-4 text-[#0EA37A]" />, list: (discovery.windows?.month || []).filter(e => ['observance', 'health', 'global'].includes(e.type)) },
+                { title: 'Industry & tech events', icon: <Zap className="h-4 w-4 text-[#7C3AED]" />, list: (discovery.windows?.ninetyDays || []).filter(e => ['tech', 'industry', 'startup', 'business', 'finance'].includes(e.type)) },
+                { title: 'Recently finished', icon: <Clock className="h-4 w-4 text-[#8A8A96]" />, list: discovery.windows?.recent || [] },
+              ]
+              if (windowEvents.length > 0) {
                 return (
-                  <motion.div key={`${e.name}-${e.month}-${e.day}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer ${e.isDrafted ? 'ring-1 ring-[#7C3AED]/30' : ''}`} onClick={() => setSelEvent(e)}>
-                    <div className="h-16 bg-gradient-to-r from-[#1A1037] to-[#6B21A8] relative overflow-hidden">
-                      <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[#EC4899]/25 blur-2xl" />
-                      <div className="absolute bottom-2 left-4 flex items-center gap-2">
-                        <span className="text-2xl">{e.emoji}</span>
-                        <div><div className="text-sm font-bold text-white leading-tight">{e.name}</div><div className="text-[0.55rem] text-white/60">{e.country || 'Global'}{e.region && e.region !== 'Global' ? ` · ${e.region}` : ''} · {e.type}</div></div>
-                      </div>
-                      <div className="absolute top-2 right-2.5">
-                        <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: e.isDrafted ? '#0EA37A22' : '#FFFFFF15', color: e.isDrafted ? '#6EE7B7' : '#C4B5FD' }}>{e.isDrafted ? '✓ Draft ready' : 'Not started'}</span>
-                      </div>
-                    </div>
-                    <div className="p-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
-                        <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${e.daysUntil === 0 ? 'bg-red-50 text-red-600' : e.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{e.daysUntil === 0 ? 'TODAY' : `${e.daysUntil}d left`}</span>
-                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l}</span>
-                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(e))} reach</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 mb-2.5">
-                        {[['Popularity', e.popularity, '#EC4899'], ['Trend', e.trend, '#7C3AED'], ['Difficulty', Math.min(10, e.difficulty || 3), '#F59E0B']].map(([l, v, c]) => (
-                          <div key={l}><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}{l === 'Difficulty' ? '/10' : '%'}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min(100, v * (l === 'Difficulty' ? 10 : 1))}%`, backgroundColor: c }} /></div></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {windowEvents.map((e, i) => {
+                      const pr = eventPriority(e)
+                      return (
+                        <motion.div key={`${e.name}-${e.month}-${e.day}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer ${e.isDrafted ? 'ring-1 ring-[#7C3AED]/30' : ''}`} onClick={() => setSelEvent(e)}>
+                          <div className="h-16 bg-gradient-to-r from-[#1A1037] to-[#6B21A8] relative overflow-hidden">
+                            <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[#EC4899]/25 blur-2xl" />
+                            <div className="absolute bottom-2 left-4 flex items-center gap-2">
+                              <span className="text-2xl">{e.emoji}</span>
+                              <div><div className="text-sm font-bold text-white leading-tight">{e.name}</div><div className="text-[0.55rem] text-white/60">{e.country || 'Global'}{e.region && e.region !== 'Global' ? ` · ${e.region}` : ''} · {e.type}</div></div>
+                            </div>
+                            <div className="absolute top-2 right-2.5">
+                              <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: e.isDrafted ? '#0EA37A22' : '#FFFFFF15', color: e.isDrafted ? '#6EE7B7' : '#C4B5FD' }}>{e.isDrafted ? '✓ Draft ready' : 'Not started'}</span>
+                            </div>
+                          </div>
+                          <div className="p-3.5">
+                            <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+                              <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${e.daysUntil === 0 ? 'bg-red-50 text-red-600' : e.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{e.daysUntil === 0 ? 'TODAY' : `${e.daysUntil}d left`}</span>
+                              <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l}</span>
+                              <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(e))} reach</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 mb-2.5">
+                              {[['Popularity', e.popularity, '#EC4899'], ['Trend', e.trend, '#7C3AED'], ['Difficulty', Math.min(10, e.difficulty || 3), '#F59E0B']].map(([l, v, c]) => (
+                                <div key={l}><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}{l === 'Difficulty' ? '/10' : '%'}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min(100, v * (l === 'Difficulty' ? 10 : 1))}%`, backgroundColor: c }} /></div></div>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                              {eventPlatforms(e).slice(0, 4).map(p => M[p] ? <span key={p} className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                              <span className="ml-auto text-[0.55rem] text-[#8A8A96]">{e.month}/{e.day}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {(e.contentTypes || []).slice(0, 3).map(ct => <span key={ct} className="text-[0.5rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{ct}</span>)}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                )
+              }
+              // Fallback — always show useful opportunities, never an empty message
+              return (
+                <div className="space-y-5">
+                  <div className="rounded-xl bg-gradient-to-r from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#EBECF2] p-4">
+                    <div className="text-sm font-bold text-[#16161D] mb-1 flex items-center gap-2"><Sparkles className="h-4 w-4 text-[#7C3AED]" /> More opportunities are always ready</div>
+                    <p className="text-[0.7rem] text-[#8A8A96]">No events in this exact window/filter — here's what the global event intelligence engine found everywhere else:</p>
+                  </div>
+                  {fallbackSections.map(sec => sec.list.length > 0 ? (
+                    <div key={sec.title}>
+                      <div className="flex items-center gap-2 mb-2.5"><span className="h-7 w-7 rounded-lg bg-[#F4F5F9] flex items-center justify-center shrink-0">{sec.icon}</span><h4 className="text-sm font-bold text-[#16161D]">{sec.title} <span className="text-[0.6rem] font-semibold text-[#8A8A96]">({sec.list.length})</span></h4></div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {sec.list.slice(0, 6).map(e => (
+                          <div key={`${sec.title}-${e.name}`} className="rounded-xl border border-[#EBECF2] p-3 hover:border-[#D8C8FB] hover:shadow-md transition-all cursor-pointer bg-[#FAFAFD]" onClick={() => setSelEvent(e)}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-xl">{e.emoji}</span>
+                              <span className="text-xs font-bold text-[#16161D] truncate flex-1">{e.name}</span>
+                              {e.daysAgo ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{e.daysAgo}d ago</span> : <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{e.daysUntil}d</span>}
+                            </div>
+                            <div className="text-[0.6rem] text-[#8A8A96] mb-2">{e.country || 'Global'} · {e.type} · trend {e.trend}%</div>
+                            <div className="flex items-center gap-1.5">
+                              {eventPlatforms(e).slice(0, 3).map(p => M[p] ? <span key={p} className="text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                              {!e.isDrafted && <button onClick={ev => { ev.stopPropagation(); generate(e) }} className="ml-auto text-[0.55rem] font-bold px-2 py-1 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">{generating === e.name ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : '⚡ Generate'}</button>}
+                              {e.isDrafted && <span className="ml-auto text-[0.55rem] font-bold px-2 py-1 rounded-lg bg-emerald-50 text-[#0EA37A]">✓ Ready</span>}
+                            </div>
+                          </div>
                         ))}
                       </div>
-                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                        {eventPlatforms(e).slice(0, 4).map(p => M[p] ? <span key={p} className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
-                        <span className="ml-auto text-[0.55rem] text-[#8A8A96]">{e.month}/{e.day}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {(e.contentTypes || []).slice(0, 3).map(ct => <span key={ct} className="text-[0.5rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{ct}</span>)}
-                      </div>
                     </div>
-                  </motion.div>
-                )
-              })}
-              {(discovery.windows?.[discWindow] || []).filter(e => discCat === 'all' || e.type === discCat).length === 0 && (
-                <div className="col-span-full ${C} p-10 text-center text-sm text-[#8A8A96]">No events in this window for the selected category.</div>
-              )}
-            </div>
+                  ) : null)}
+                  {!fallbackSections.some(s => s.list.length > 0) && (
+                    <div className={`${C} p-8 text-center`}>
+                      <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center mb-3"><Sun className="h-5 w-5 text-[#7C3AED]" /></div>
+                      <h4 className="text-sm font-bold text-[#16161D]">The engine found {discovery.total_events} recurring events globally</h4>
+                      <p className="text-[0.7rem] text-[#8A8A96] mt-1 max-w-md mx-auto">All events reappear yearly — every festival, awareness day, conference and holiday is tracked in the permanent database.</p>
+                      <button onClick={() => { setDiscWindow('ninetyDays'); setDiscCat('all') }} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">Show next 90 days</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })()
           )}
         </motion.div>
       )}
@@ -257,11 +307,27 @@ export default function SeasonalDashboard() {
           </div>
 
           {filteredEvents.length === 0 ? (
-            <div className={`${C} p-14 text-center`}>
+            <div className={`${C} p-10 text-center`}>
               <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-[#F59E0B]/15 to-[#EC4899]/15 flex items-center justify-center mb-4"><Sun className="h-6 w-6 text-[#F59E0B]" /></div>
-              <h3 className="text-base font-bold text-[#16161D]">No events in view</h3>
-              <p className="text-sm text-[#8A8A96] mt-1.5 max-w-md mx-auto">Try scanning again or widening the detection window in Auto Mode. Campaigns auto-generate here the moment events are detected.</p>
-              <button onClick={refreshAll} className="mt-5 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">Scan for events</button>
+              <h3 className="text-base font-bold text-[#16161D]">No campaigns matching this filter</h3>
+              <p className="text-sm text-[#8A8A96] mt-1.5 max-w-md mx-auto">But {discovery?.total_events || 'many'} events are always in the radar. Here's what the engine recommends right now:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5 text-left max-w-3xl mx-auto">
+                {[
+                  { e: 'Friendship Day', em: '🤝', d: 'Universal bonding moment — high shareability', t: 'lifestyle' },
+                  { e: 'World Photography Day', em: '📸', d: 'Visual-first content wins across platforms', t: 'marketing' },
+                  { e: 'International Hashtag Day', em: '#️⃣', d: 'Perfect for a hashtag strategy post', t: 'social' },
+                  { e: 'World Emoji Day', em: '😀', d: 'Fun, low-effort, high-engagement content', t: 'social' },
+                  { e: 'National Technology Day', em: '🖥️', d: 'Authority content for tech audiences', t: 'tech' },
+                  { e: 'World HR Day', em: '🤝', d: 'Core audience event — thought leadership', t: 'hr' },
+                ].map(rec => (
+                  <div key={rec.e} className="rounded-xl border border-[#EBECF2] p-3.5 bg-[#FAFAFD]">
+                    <div className="flex items-center gap-2 mb-1.5"><span className="text-xl">{rec.em}</span><span className="text-sm font-bold text-[#16161D]">{rec.e}</span><span className="ml-auto text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{rec.t}</span></div>
+                    <p className="text-[0.65rem] text-[#8A8A96] mb-2.5">{rec.d}</p>
+                    <button onClick={() => { setDiscWindow('ninetyDays'); setDiscCat('all'); setTab('discovery') }} className="text-[0.6rem] font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">Find in radar →</button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={refreshAll} className="mt-6 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">Rescan events</button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
