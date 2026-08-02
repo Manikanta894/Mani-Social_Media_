@@ -52,7 +52,7 @@ export function applyCoachFix(key, ctx) {
     case 'hashtags-local': return set({ hashtags: [...new Set([...(hashtags || []), 'bengaluru', 'startupcity', 'localbusiness'])] }, 'Local hashtags added')
     case 'shorten': return set({ caption: c.split(/\n+/).filter(Boolean).slice(0, 3).join('\n\n').slice(0, Math.floor(c.length * 0.55) || 120) }, 'Shortened')
     case 'grammar-fix': return set({ caption: c.replace(GENERIC_WORDS, '').replace(/\s{2,}/g, ' ').replace(/(^|\.\s+)([a-z])/g, (m, p, l) => p + l.toUpperCase()).trim() }, 'Grammar cleaned')
-    case 'simplify': return set({ caption: c.replace(/!(2,})/g, '!').replace(/\b(utilize|leverage|facilitate|commence|subsequently|additionally|endeavor|ascertain|nevertheless)\b/gi, m => FANCY_WORDS[m.toLowerCase()] || m) }, 'Simplified for readability')
+    case 'simplify': return set({ caption: c.replace(/!{2,}/g, '!').replace(/\b(utilize|leverage|facilitate|commence|subsequently|additionally|endeavor|ascertain|nevertheless)\b/gi, m => FANCY_WORDS[m.toLowerCase()] || m) }, 'Simplified for readability')
     case 'linebreaks': return set({ caption: c.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean).join('\n\n') }, 'Broken into short lines')
     case 'seo-keywords': return set({ hashtags: [...new Set([...(hashtags || []), 'contentstrategy', 'digitalgrowth', 'brandbuilding'])] }, 'SEO keywords added')
     case 'seo-title': return set({ caption: `${topic.charAt(0).toUpperCase() + topic.slice(1)}: the complete guide\n\n${c}` }, 'SEO-style title added')

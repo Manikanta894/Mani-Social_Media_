@@ -6,6 +6,7 @@ import { Check, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusStamp, PLATFORMS } from '@/components/shared'
+import { toast } from 'sonner'
 
 export default function ApprovePage() {
   const searchParams = useSearchParams()
@@ -23,13 +24,16 @@ export default function ApprovePage() {
   }, [jobId])
 
   const handleAction = async (action) => {
-    const res = await fetch('/api/approve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ job_id: jobId, action }),
-    })
-    const data = await res.json()
-    if (data.ok) setActionTaken(action)
+    try {
+      const res = await fetch('/api/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, action }),
+      })
+      const data = await res.json()
+      if (data.ok) setActionTaken(action)
+      else toast.error(data.error || `Failed to ${action}`)
+    } catch (e) { toast.error(e.message || `Failed to ${action}`) }
   }
 
   if (loading) return <div className="flex items-center justify-center h-screen"><Loader2 className="h-4 w-4 animate-spin" /></div>

@@ -55,7 +55,7 @@ export default function NewsRadarPage() {
   useEffect(() => { refresh() }, [statusFilter])
 
   const persistTopics = (t) => { setTopics(t); localStorage.setItem('sf_news_topics', JSON.stringify(t)) }
-  const toggleAuto = () => { const v = !autoMode; setAutoMode(v); localStorage.setItem('sf_news_auto', v ? '1' : '0'); toast.success(v ? 'Autonomous News Mode ON — monitoring ' + topics.length + ' topics' : 'Autonomous News Mode OFF') }
+  const toggleAuto = () => { const v = !autoMode; setAutoMode(v); localStorage.setItem('sf_news_auto', v ? '1' : '0'); toast.success(v ? 'Autonomous News Mode ON — the engine scans your sources every 15 minutes' : 'Autonomous News Mode OFF') }
 
   const checkNow = async () => {
     setChecking(true)
@@ -109,8 +109,9 @@ export default function NewsRadarPage() {
   const setStatus = async (id, status, msg) => { try { await api('/news/' + id, { method: 'PUT', body: { status } }); toast.success(msg); refresh() } catch (e) { toast.error(e.message) } }
   const bulk = async (action) => {
     if (!selected.length) return toast.error('Select items first')
-    for (const id of selected) { try { await api('/news/' + id, { method: 'PUT', body: { status: action === 'approve' ? 'approved' : 'rejected' } }) } catch {} }
-    toast.success(`${action}: ${selected.length} updated`); setSelected([]); refresh()
+    let ok = 0, fail = 0
+    for (const id of selected) { try { await api('/news/' + id, { method: 'PUT', body: { status: action === 'approve' ? 'approved' : 'rejected' } }); ok++ } catch { fail++ } }
+    toast.success(`${action}: ${ok} updated${fail ? ` · ${fail} failed` : ''}`); setSelected([]); refresh()
   }
 
   const statuses = ['', 'new', 'ai_generated', 'pending_approval', 'approved', 'scheduled', 'published', 'rejected']

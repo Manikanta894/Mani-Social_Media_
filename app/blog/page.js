@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, Loader2, Wand2, Send, ImageIcon, Eye, Globe, Pencil, X, Save, ExternalLink, Clock, RotateCcw, ChevronDown, ChevronUp, List, Plus, Trash2, Copy, Check, LayoutDashboard, FileText, CalendarDays, CheckCircle, Search, Gauge, Sparkles, Zap, PenLine, Newspaper, Hash, Dribbble, Link, History, MoreHorizontal, AlertTriangle, Bot } from 'lucide-react'
 import { api } from '@/components/shared'
@@ -11,6 +12,7 @@ const C = 'rounded-2xl border border-[#EBECF2] bg-white shadow-sm'
 const fmt = n => (n || 0).toLocaleString()
 
 export default function BlogPage() {
+  const searchParams = useSearchParams()
   const [posts, setPosts] = useState([])
   const [activePost, setActivePost] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -44,11 +46,18 @@ export default function BlogPage() {
   const [autoSaved, setAutoSaved] = useState(false)
   const bodyRef = useRef(null)
 
+  const autoSelectRef = useRef(false)
   const refresh = async () => {
     setLoading(true)
     try {
       const [p, s] = await Promise.all([api('/blog/posts'), api('/prompt-styles')])
       setPosts(p || []); setStyles(s || [])
+      const wanted = searchParams?.get('post')
+      if (wanted && !autoSelectRef.current) {
+        autoSelectRef.current = true
+        const match = (p || []).find(x => x.id === wanted)
+        if (match) selectPost(match)
+      }
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refresh() }, [])
@@ -73,9 +82,17 @@ export default function BlogPage() {
     if (!context.trim()) return toast.error('Enter a topic or context first')
     setGenerating(true)
     try {
+      let ctx = context.trim()
+      if (createMode === 'url' && /^https?:\/\//i.test(ctx)) {
+        try { const ex = await api('/extract', { method: 'POST', body: { url: ctx } }); const parts = []; if (ex.title) parts.push(`Title: ${ex.title}`); if (ex.description) parts.push(ex.description); if (ex.body) parts.push(ex.body); if (parts.length) ctx = parts.join('\n\n') }
+        catch (e) { toast.error('URL extraction failed: ' + e.message) }
+      }
+      if (createMode !== 'topic' && createMode !== 'url') {
+        ctx = `Source type: ${createMode.replace(/\b\w/g, m => m.toUpperCase())}\n\n${ctx}`
+      }
       const result = await api('/blog/generate', {
         method: 'POST',
-        body: { context: context.trim(), style_id: styleId || undefined, imageBase64: imageBase64 || undefined, mimeType: 'image/jpeg', imageUrl: imagePreview || undefined },
+        body: { context: ctx, style_id: styleId || undefined, image_base64: imageBase64 || undefined, mime_type: 'image/jpeg' },
       })
       const bp = await api('/blog/posts', {
         method: 'POST',

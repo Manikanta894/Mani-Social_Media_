@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, RefreshCw, Sparkles, Download, FileText, TrendingUp, TrendingDown, BarChart3, Eye, Star, MessageSquare, Save, Share2, Users, MousePointerClick, Link2, BrainCircuit, Activity, X, Award, Send, CalendarDays, Zap, Search } from 'lucide-react'
+import { Loader2, RefreshCw, Sparkles, Download, FileText, TrendingUp, TrendingDown, BarChart3, Eye, Star, MessageSquare, Save, Share2, Users, MousePointerClick, Link2, BrainCircuit, Activity, X, Award, Send, CalendarDays, Zap, Search, AlertTriangle } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { api } from '@/components/shared'
@@ -28,10 +28,10 @@ function Icon({ p, size = 16 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill={M[p]?.color}><path d={d} /></svg>
 }
 
-function Kpi({ k }) {
+function Kpi({ k, onSelect }) {
   const up = (k.trend ?? 0) >= 0
   return (
-    <motion.div variants={fade} className={`${C} p-4 group relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)]`}>
+    <motion.button variants={fade} onClick={() => onSelect?.(k.label)} className={`${C} p-4 group relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] text-left w-full cursor-pointer`}>
       <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br from-[#7C3AED]/5 to-[#EC4899]/5 blur-xl" />
       <div className="flex items-start justify-between">
         <div className="min-w-0">
@@ -57,7 +57,7 @@ function Kpi({ k }) {
           </ResponsiveContainer>
         </div>
       )}
-    </motion.div>
+    </motion.button>
   )
 }
 
@@ -128,6 +128,7 @@ export default function AnalyticsPage() {
   const [coachOpen, setCoachOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [focusKpi, setFocusKpi] = useState(null)
   const [libStats, setLibStats] = useState(null)
 
   const refresh = async () => {
@@ -156,7 +157,10 @@ export default function AnalyticsPage() {
       const r = await api('/analytics/sync', { method: 'POST' })
       const parts = Object.entries(r).filter(([k]) => ['linkedin', 'facebook', 'instagram', 'threads', 'app_posts'].includes(k))
         .map(([k, v]) => `${k}: ${v.imported || 0} new, ${v.updated || 0} updated`).filter(s => !s.endsWith('0 new, 0 updated'))
-      toast.success(parts.length ? `Content Library synced — ${parts.join(' · ')}` : 'Library up to date — no new posts found')
+      const errored = Object.entries(r).filter(([k, v]) => v && typeof v === 'object' && v.error).map(([k, v]) => `${k}: ${v.error}`)
+      if (parts.length) toast.success(`Content Library synced — ${parts.join(' · ')}`)
+      else if (errored.length) toast.error(`Sync incomplete — ${errored.join(' · ')}. Check API credentials in Settings.`)
+      else toast.info('No new posts found — connect platform API keys in Settings to import history')
       if (r.library) setLibStats(r.library)
       await refresh()
     } catch (e) { toast.error(e.message) } finally { setSyncing(false) }
@@ -184,8 +188,11 @@ export default function AnalyticsPage() {
   }
 
   const genReport = async type => {
-    try { await api('/analytics/report', { method: 'POST', body: { type } }); toast.success(`${type} report sent to Telegram`) }
-    catch (e) { toast.error(e.message) }
+    try {
+      const r = await api('/analytics/report', { method: 'POST', body: { type } })
+      if (r?.sent) toast.success(`${type} report sent to Telegram`)
+      else toast.info(`${type} report generated — configure a Telegram admin chat in Settings to receive it`)
+    } catch (e) { toast.error(e.message) }
   }
 
   const { totals = {}, byPlatform = {}, engagement_rate = 0 } = stats || {}
@@ -214,6 +221,14 @@ export default function AnalyticsPage() {
     rPosts.forEach(p => { const d = new Date(p.checked_at); if (!isNaN(d)) h[d.getHours()]++ })
     return h
   }, [rPosts])
+
+  const dayHits = useMemo(() => {
+    const d = Array(7).fill(0)
+    rPosts.forEach(p => { const dt = new Date(p.checked_at); if (!isNaN(dt)) d[dt.getDay()]++ })
+    return d
+  }, [rPosts])
+
+  const bestHour = Math.max(...hourHits) > 0 ? hourHits.indexOf(Math.max(...hourHits)) : -1
 
   const pData = Object.entries(byPlatform || {}).map(([k, v]) => ({
     name: M[k]?.label || k, key: k, Impressions: v.impressions || 0, Reach: v.reach || 0,
@@ -340,8 +355,41 @@ export default function AnalyticsPage() {
       {hasData && (
         <>
           <motion.div variants={st} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {kpis.map(k => <Kpi key={k.label} k={k} />)}
+                {kpis.map(k => <Kpi key={k.label} k={k} onSelect={(label) => setFocusKpi(f => f === label ? null : label)} />)}
           </motion.div>
+
+          {/* KPI drill-down */}
+          <AnimatePresence>
+            {focusKpi && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className={`${C} p-5 border-l-4`} style={{ borderLeftColor: '#7C3AED' }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-[#16161D]">{focusKpi} — detail</h3>
+                  <button onClick={() => setFocusKpi(null)} className="text-[0.6rem] text-[#8A8A96] hover:text-[#7C3AED] font-medium">Close ✕</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {(() => {
+                    const isPerPlatform = ['Total Reach', 'Impressions', 'Likes', 'Comments', 'Shares', 'Saves', 'Followers'].includes(focusKpi)
+                    const rows = isPerPlatform
+                      ? Object.entries(byPlatform || {}).map(([p, d]) => ({
+                          t: M[p]?.label || p,
+                          v: focusKpi === 'Total Reach' ? d.reach : focusKpi === 'Impressions' ? d.impressions : focusKpi === 'Likes' ? d.likes : focusKpi === 'Comments' ? d.comments : focusKpi === 'Shares' ? d.shares : focusKpi === 'Saves' ? d.saves : d.followers || 0,
+                        }))
+                      : []
+                    if (rows.length === 0) {
+                      const totals = { 'Total Posts': totals.posts, 'Engagement Rate': engagement_rate + '%', 'Profile Visits': totals.profile_visits, 'Link Clicks': totals.clicks }
+                      rows.push({ t: focusKpi, v: totals[focusKpi] ?? '—' })
+                    }
+                    return rows.map((r, i) => (
+                      <div key={i} className="flex items-center justify-between rounded-xl border border-[#EBECF2] p-3 bg-[#FAFAFD]">
+                        <span className="text-xs font-semibold text-[#16161D]">{r.t}</span>
+                        <span className="text-sm font-bold text-[#7C3AED]">{r.v !== undefined && r.v !== null ? String(r.v) : '—'}</span>
+                      </div>
+                    ))
+                  })()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <motion.div variants={fade} initial="initial" animate="animate" className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className={`${C} p-5 lg:col-span-2`}>

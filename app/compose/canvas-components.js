@@ -241,6 +241,7 @@ export function AIPack({ open, kind, caption, hashtags, onClose }) {
     replies: ['“Great question! The short version: start with one platform and double down on consistency.”', '“Thanks! I\u2019ll cover that in next week\u2019s post — follow along.”', '“Happy to share more — DM me and I\u2019ll send the framework.”'],
     hooks: ['Question: “Ever posted 10x and felt like nobody saw it?”', 'Bold: “Your content isn\u2019t underperforming — your hook is.”', 'Stat: “80% of reach is decided in the first 3 seconds.”'],
     carousel: ['Slide 1 · The one problem everyone has', 'Slide 2 · Why it keeps happening', 'Slide 3 · The wrong way (and why it fails)', 'Slide 4 · The framework in one line', 'Slide 5 · Step 1 — audit your last 10 posts', 'Slide 6 · Step 2 — hook rewrite checklist', 'Slide 7 · Step 3 — CTA that converts', 'Slide 8 · Save this for your next post'],
+    cta: ['Soft CTA: “Would love to hear your thoughts — reply below.”', 'Community CTA: “Share this with someone who needs it.”', 'Save CTA: “Save this for your next planning session.”', 'Business CTA: “DM me the word GUIDE for the full breakdown.”', 'Sales CTA: “Join the waitlist — 200 spots left this month.”'],
   }[kind] || []
   if (!open) return null
   return (
@@ -289,12 +290,12 @@ export function runStudioAction(action, ctx) {
   switch (action) {
     case 'rewrite': case 'improve': rewrite(); return
     case 'humanize': setPost({ caption: (c.replace(/\b(utilize|leverage|facilitate|commence|subsequently|additionally)\b/gi, m => ({ utilize: 'use', leverage: 'use', facilitate: 'help', commence: 'start', subsequently: 'then', additionally: 'also' }[m.toLowerCase()] || m)) ).replace(/!{2,}/g, '!') }); toast.success('Humanized'); return
-    case 'expand': toast.info('For a longer version, set Length to Long/Very Long and hit AI Rewrite'); return
+    case 'expand': setPost({ caption: (c || '') + '\n\nHere\u2019s the deeper breakdown:\n\n• Start with the core idea\n• Add one real example\n• End with a practical takeaway' }); toast.success('Expanded with structure'); return
     case 'shorten': setPost({ caption: c.split(/\n+/).filter(Boolean).slice(0, 3).join('\n\n').slice(0, Math.floor(c.length * 0.55) || 120) }); toast.success('Shortened'); return
-    case 'translate': setLang(''); toast.info('Choose a language in AI Controls, then hit AI Rewrite to translate'); return
+    case 'translate': toast.info('Choose a language in AI Controls, then hit AI Rewrite to translate'); return
     case 'seo': setPost({ hashtags: [...new Set([...(hashtags || []), 'digitalmarketing', 'socialmedia', 'contentmarketing'])] }); toast.success('SEO hashtags added'); return
     case 'engage': setPost({ caption: c.trimEnd() + '\n\n👉 ' + 'What\u2019s your take? Drop a comment below — I reply to everyone.' }); toast.success('Engagement CTA added'); return
-    case 'cta': openPack('hooks' === 'cta' ? 'cta' : 'cta'); toast.info('CTA options added — see AI Pack'); return
+    case 'cta': openPack('cta'); return
     case 'hooks': openPack('hooks'); return
     case 'carousel': openPack('carousel'); return
     case 'comments': openPack('comments'); return

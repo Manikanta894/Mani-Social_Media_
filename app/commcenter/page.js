@@ -205,7 +205,7 @@ export default function CommCenterPage() {
       {/* KPIs */}
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
-          <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer`} onClick={() => { if (k.l === 'Unread') setFilter(f => f === 'unread' ? 'all' : 'unread'); if (k.l === 'Approvals Pending') setTab('approvals'); if (k.l === 'News Alerts') setTab('news'); if (k.l === 'Seasonal Campaigns') setTab('seasonal'); if (k.l === 'Failed / Errors') setTab('error') }}>
+          <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer`} onClick={() => { if (k.l === 'Unread') setFilter(f => f === 'unread' ? 'all' : 'unread'); if (k.l === 'Approvals Pending') setTab('approvals'); if (k.l === 'News Alerts') setTab('news'); if (k.l === 'Seasonal Campaigns') setTab('seasonal'); if (k.l === 'Failed / Errors') setTab('error'); if (k.l === 'Social Posts') setTab('social'); if (k.l === 'Blogs') setTab('blog'); if (k.l === 'System Events') setTab('system') }}>
             <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>

@@ -331,15 +331,15 @@ export default function SeasonalDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredEvents.map((e, i) => {
-                const pr = eventPriority(e); const st = eventStatus(e.name); const assets = assetCount(e.name); const plats = eventPlatforms(e)
+              {filteredEvents.map((ev, i) => {
+                const pr = eventPriority(ev); const st = eventStatus(ev.name); const assets = assetCount(ev.name); const plats = eventPlatforms(ev)
                 return (
-                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer ${e.isDrafted ? 'ring-1 ring-[#7C3AED]/30' : ''}`} onClick={() => setSelEvent(e)}>
+                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer ${ev.isDrafted ? 'ring-1 ring-[#7C3AED]/30' : ''}`} onClick={() => setSelEvent(ev)}>
                     <div className="h-20 bg-gradient-to-r from-[#1A1037] to-[#6B21A8] relative overflow-hidden">
                       <div className="absolute -top-8 -right-8 h-28 w-28 rounded-full bg-[#EC4899]/25 blur-2xl" />
                       <div className="absolute bottom-2 left-4 flex items-center gap-2">
-                        <span className="text-3xl drop-shadow">{e.emoji}</span>
-                        <div><div className="text-base font-bold text-white leading-tight">{e.name}</div><div className="text-[0.6rem] text-white/60">{e.country || 'Global'} · {e.type} · {e.industry || 'general'}</div></div>
+                        <span className="text-3xl drop-shadow">{ev.emoji}</span>
+                        <div><div className="text-base font-bold text-white leading-tight">{ev.name}</div><div className="text-[0.6rem] text-white/60">{ev.country || 'Global'} · {ev.type} · {ev.industry || 'general'}</div></div>
                       </div>
                       <div className="absolute top-2.5 right-2.5">
                         <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: st.c + '22', color: st.c === '#0EA37A' ? '#6EE7B7' : st.c }}>{st.l}</span>
@@ -347,13 +347,13 @@ export default function SeasonalDashboard() {
                     </div>
                     <div className="p-4">
                       <div className="flex items-center gap-2 flex-wrap mb-3">
-                        <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${e.daysUntil === 0 ? 'bg-red-50 text-red-600' : e.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{e.daysUntil === 0 ? 'TODAY' : `${e.daysUntil}d remaining`}</span>
+                        <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${ev.daysUntil === 0 ? 'bg-red-50 text-red-600' : ev.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{ev.daysUntil === 0 ? 'TODAY' : `${ev.daysUntil}d remaining`}</span>
                         <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l} priority</span>
-                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(e))} reach</span>
+                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(ev))} reach</span>
                       </div>
                       <div className="mb-3">
-                        <div className="flex justify-between text-[0.6rem] text-[#8A8A96] mb-1"><span className="font-semibold">Trend score</span><span className="font-bold text-[#EC4899]">{eventTrend(e)}%</span></div>
-                        <div className="h-2 rounded-full bg-[#F0F1F5] overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${eventTrend(e)}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" /></div>
+                        <div className="flex justify-between text-[0.6rem] text-[#8A8A96] mb-1"><span className="font-semibold">Trend score</span><span className="font-bold text-[#EC4899]">{eventTrend(ev)}%</span></div>
+                        <div className="h-2 rounded-full bg-[#F0F1F5] overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${eventTrend(ev)}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" /></div>
                       </div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-1.5">
@@ -363,10 +363,10 @@ export default function SeasonalDashboard() {
                       </div>
                       <div className="h-1.5 rounded-full bg-[#F0F1F5] overflow-hidden mb-4"><div className="h-full rounded-full bg-gradient-to-r from-[#0EA37A] to-[#14B8A6]" style={{ width: `${Math.min(100, assets * 9)}%` }} /></div>
                       <div className="flex gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); generate(e === undefined ? selEvent : e) }} className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1.5 hover:opacity-90">
-                          {generating === e.name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{e.isDrafted ? 'Regenerate' : 'Generate Campaign'}
+                        <button onClick={(evt) => { evt.stopPropagation(); generate(ev) }} className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1.5 hover:opacity-90">
+                          {generating === ev.name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{ev.isDrafted ? 'Regenerate' : 'Generate Campaign'}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setSelEvent(e === undefined ? selEvent : e) }} className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]">Details</button>
+                        <button onClick={(evt) => { evt.stopPropagation(); setSelEvent(ev) }} className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]">Details</button>
                       </div>
                     </div>
                   </motion.div>
@@ -496,7 +496,7 @@ export default function SeasonalDashboard() {
                   <div className="text-sm font-bold text-white">Auto Campaign Mode</div>
                   <div className="text-[0.65rem] text-white/60">Detect → Generate → Schedule → Notify. You only approve.</div>
                 </div>
-                <button onClick={() => { setSettings(s => ({ ...s, autoCampaign: !s.autoCampaign })); toast.success(!settings.autoCampaign ? 'Auto Campaign Mode ON' : 'Auto Campaign Mode OFF') }} className={`h-7 w-13 w-[52px] rounded-full transition-colors relative ${settings.autoCampaign ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-[#3A2A5C]'}`}>
+                <button onClick={() => { const v = !settings.autoCampaign; setSettings(s => ({ ...s, autoCampaign: v })); api('/seasonal/settings', { method: 'POST', body: { ...settings, autoCampaign: v } }).then(() => toast.success(v ? 'Auto Campaign Mode ON — saved' : 'Auto Campaign Mode OFF — saved')).catch(e => toast.error(e.message)) }} className={`h-7 w-13 w-[52px] rounded-full transition-colors relative ${settings.autoCampaign ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-[#3A2A5C]'}`}>
                   <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${settings.autoCampaign ? 'left-[26px]' : 'left-1'}`} />
                 </button>
               </div>
@@ -506,7 +506,7 @@ export default function SeasonalDashboard() {
                 ['autoDraft', 'Auto Generate Drafts'], ['autoImages', 'Auto Generate Images'], ['autoBlog', 'Auto Generate Blog'], ['autoCarousel', 'Auto Generate Carousel'], ['autoSchedule', 'Auto Schedule Drafts'], ['autoPublish', 'Auto Publish (with approval)'], ['autoHashtags', 'Auto Optimize Hashtags'], ['autoSEO', 'Auto SEO Optimization'], ['autoReview', 'Auto AI Review & Grammar'], ['telegramNotify', 'Telegram Approval Notifications']].map(([key, label]) => (
                 <div key={key} className="flex items-center justify-between rounded-xl bg-[#F8F9FC] border border-[#EBECF2] px-3.5 py-2.5">
                   <div className="text-sm font-medium text-[#16161D]">{label}</div>
-                  <button onClick={() => setSettings(s => ({ ...s, [key]: !s[key] }))} className={`h-6 w-11 rounded-full transition-colors relative ${settings[key] ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-[#E5E6EF]'}`}>
+                  <button onClick={() => { const v = !settings[key]; setSettings(s => ({ ...s, [key]: v })); api('/seasonal/settings', { method: 'POST', body: { ...settings, [key]: v } }).catch(e => toast.error(e.message)) }} className={`h-6 w-11 rounded-full transition-colors relative ${settings[key] ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-[#E5E6EF]'}`}>
                     <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${settings[key] ? 'left-[22px]' : 'left-0.5'}`} />
                   </button>
                 </div>

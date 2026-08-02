@@ -495,7 +495,7 @@ async function route(request, method) {
         return ok(await seedNewsSources())
       }
       // Posts
-      if (!action && (!id || id === 'all')) {
+      if (!action && (!id || id === 'all' || id === 'posts')) {
         if (method === 'GET') {
           const status = request.nextUrl.searchParams.get('status')
           return ok(await storage.newsPosts.list(status))

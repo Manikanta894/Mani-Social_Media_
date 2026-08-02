@@ -184,12 +184,8 @@ function InboxPage() {
                               </Button>
                             )}
                           </div>
-                          <button onClick={() => { 
-                            let existing = []
-                            try { existing = JSON.parse(localStorage.getItem('sf_ideas')) || [] } catch { existing = [] }
-                            existing.unshift({ id: Date.now(), text: c.comment_text || c.dm_content || '', created_at: new Date().toISOString(), source: c.platform })
-                            localStorage.setItem('sf_ideas', JSON.stringify(existing))
-                            toast.success('Added to idea backlog')
+                          <button onClick={async () => { 
+                            try { await api('/comments/' + c.id + '/to-idea', { method: 'POST', body: {} }); toast.success('Added to idea backlog') } catch (e) { toast.error(e.message) }
                           }} className="text-xs text-muted-foreground hover:text-accent px-2 py-1">
                             📝 Idea
                           </button>
@@ -202,12 +198,8 @@ function InboxPage() {
                           <button onClick={() => setReplyingId(replyingId === c.id ? null : c.id)} className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent" title="Reply">
                             <Reply className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => { 
-                            let existing = []
-                            try { existing = JSON.parse(localStorage.getItem('sf_ideas')) || [] } catch { existing = [] }
-                            existing.unshift({ id: Date.now(), text: c.comment_text || c.dm_content || '', created_at: new Date().toISOString(), source: c.platform })
-                            localStorage.setItem('sf_ideas', JSON.stringify(existing))
-                            toast.success('Added to idea backlog')
+                          <button onClick={async () => { 
+                            try { await api('/comments/' + c.id + '/to-idea', { method: 'POST', body: {} }); toast.success('Added to idea backlog') } catch (e) { toast.error(e.message) }
                           }} className="text-muted-foreground hover:text-accent p-1 rounded-sm hover:bg-accent" title="Convert to idea">
                             <span className="text-xs">📝</span>
                           </button>

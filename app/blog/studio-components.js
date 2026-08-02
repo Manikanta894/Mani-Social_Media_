@@ -126,8 +126,9 @@ export function AssistantPanel({ title, body, onInsert }) {
       cta: `Want more breakdowns like this? Subscribe to the newsletter — one actionable insight every week.`,
       quote: `> "${t} is not about doing more — it's about doing what matters, consistently."`,
       takeaways: `## Key Takeaways\n\n- Start with one focused approach\n- Measure results weekly, not daily\n- Double down on what works\n- Document the process as you go`,
-      image_prompt: `Professional editorial illustration for "${t}": clean minimalist composition, warm modern palette (deep purple and coral accents), subtle depth of field, premium SaaS blog cover style, no text overlay`,
-    }
+    image_prompt: `Professional editorial illustration for "${t}": clean minimalist composition, warm modern palette (deep purple and coral accents), subtle depth of field, premium SaaS blog cover style, no text overlay`,
+    table: `## Comparison Table\n\n| Aspect | Option A | Option B |\n| --- | --- | --- |\n| Best for | Quick wins | Long-term growth |\n| Time to results | Days | Months |\n| Effort | Low | High |\n| Risk | Low | Moderate |`,
+  }
     setGen({ kind, items: Array.isArray(out[kind]) ? out[kind] : [out[kind]], list: Array.isArray(out[kind]) })
   }
   const actions = [

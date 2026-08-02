@@ -882,12 +882,12 @@ function BioLinksTab() {
   const save = async () => {
     if (!form.title || !form.url) return toast.error('Title and URL required')
     try {
-      if (editId) await api('/bio-links', { method: 'PUT', body: form }).then(() => { setEditId(null); setForm({ title: '', url: '', icon: 'link' }); load() })
+      if (editId) await api(`/bio-links/${editId}`, { method: 'PUT', body: form }).then(() => { setEditId(null); setForm({ title: '', url: '', icon: 'link' }); load() })
       else await api('/bio-links', { method: 'POST', body: form }).then(() => { setForm({ title: '', url: '', icon: 'link' }); load() })
       toast.success('Saved')
     } catch (e) { toast.error(e.message) }
   }
-  const remove = async (id) => { await api('/bio-links', { method: 'DELETE', body: { id } }); load() }
+  const remove = async (id) => { try { await api(`/bio-links/${id}`, { method: 'DELETE' }); load() } catch (e) { toast.error(e.message) } }
   return (
     <div className="space-y-4">
       <div><h3 className="font-serif font-semibold text-lg">Bio Links</h3><p className="text-sm text-muted-foreground">Manage links for your public bio page at /bio.</p></div>

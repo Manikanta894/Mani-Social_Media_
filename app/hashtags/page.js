@@ -123,6 +123,16 @@ export default function HashtagsPage() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hashtag-collections.json'; a.click()
     toast.success('Exported')
   }
+  const [createOpen, setCreateOpen] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newTags, setNewTags] = useState('')
+  const createCollection = async () => {
+    if (!newName.trim()) return toast.error('Name required')
+    const list = newTags.split(/[\s,]+/).filter(Boolean).map(t => t.startsWith('#') ? t : `#${t}`)
+    if (!list.length) return toast.error('Add at least one tag')
+    try { await api('/hashtag-sets', { method: 'POST', body: { name: newName.trim(), tags: list } }); toast.success('Collection created'); setCreateOpen(false); setNewName(''); setNewTags(''); refresh() }
+    catch (e) { toast.error(e.message) }
+  }
   const importJSON = (file) => {
     const reader = new FileReader()
     reader.onload = async () => {
@@ -156,7 +166,7 @@ export default function HashtagsPage() {
   }
 
   const pendingSug = suggestions.filter(s => s.status === 'pending')
-  const actSug = async (id, action) => { try { await api('/hashtag-suggestions', { method: 'POST', body: { action, id } }); toast.success(action === 'accept' ? 'Accepted' : 'Rejected'); refresh() } catch (e) { toast.error(e.message) } }
+  const actSug = async (id, action) => { try { await api(`/hashtag-suggestions/${id}`, { method: 'POST', body: { action } }); toast.success(action === 'accept' ? 'Accepted' : 'Rejected'); refresh() } catch (e) { toast.error(e.message) } }
 
   // Analytics-derived insights
   const allTags = useMemo(() => {
@@ -187,6 +197,7 @@ export default function HashtagsPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={exportCSV} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] transition-colors"><Download className="h-3.5 w-3.5 text-[#0EA37A]" /> Export CSV</button>
+          <button onClick={exportJSON} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] transition-colors"><Download className="h-3.5 w-3.5 text-[#3B82F6]" /> Export JSON</button>
           <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] transition-colors cursor-pointer"><Upload className="h-3.5 w-3.5 text-[#3B82F6]" /> Import<input type="file" accept=".json" className="hidden" onChange={e => e.target.files[0] && importJSON(e.target.files[0])} /></label>
           {selected.length > 0 && <button onClick={bulkDelete} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-500 border border-red-200">Delete {selected.length}</button>}
         </div>
@@ -298,8 +309,21 @@ export default function HashtagsPage() {
             <div className="flex-1 min-w-[220px] flex items-center gap-2 rounded-xl bg-white border border-[#EBECF2] px-3.5 py-2.5">
               <Search className="h-4 w-4 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search collections & tags…" className="flex-1 bg-transparent text-sm focus:outline-none" />
             </div>
-            <button onClick={() => { document.querySelector('#new-set-name')?.scrollIntoView({ behavior: 'smooth' }); setView('collections'); toast.info('Use the New Collection card below') }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md"><Plus className="h-4 w-4" /> New Collection</button>
+            <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md"><Plus className="h-4 w-4" /> New Collection</button>
           </motion.div>
+          {createOpen && (
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-5 border-l-4`} style={{ borderLeftColor: '#7C3AED' }}>
+              <h4 className="text-sm font-bold text-[#16161D] mb-3 flex items-center gap-2"><Plus className="h-4 w-4 text-[#7C3AED]" /> New collection</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Collection name…" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+                <input value={newTags} onChange={e => setNewTags(e.target.value)} onKeyDown={e => e.key === 'Enter' && createCollection()} placeholder="#ai #marketing (space or comma separated)" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={createCollection} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">Create</button>
+                <button onClick={() => setCreateOpen(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2]">Cancel</button>
+              </div>
+            </motion.div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredSets.map((s, si) => {
               const fav = favorites.includes(s.id)

@@ -206,7 +206,7 @@ export function AIChat({ post, onUpdate, onRegenerate, disabled }) {
   const scrollRef = useRef(null)
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }) }, [log])
   const chips = [
-    { label: 'Make professional', fn: (c) => c },
+    { label: 'Make professional', fn: (c) => c.replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}])/gu, '').replace(/!{2,}/g, '!').replace(/\s{2,}/g, ' ').trim() },
     { label: 'Shorten', fn: (c) => c.split(/\n+/).filter(Boolean).slice(0, 3).join('\n\n').slice(0, Math.floor(c.length * 0.55)) },
     { label: 'Add CTA', fn: (c) => c.trimEnd() + '\n\n👉 What\u2019s your take? Drop a comment below.' },
     { label: 'No emojis', fn: (c) => c.replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}])/gu, '').replace(/\s{2,}/g, ' ').trim() },
@@ -221,12 +221,12 @@ export function AIChat({ post, onUpdate, onRegenerate, disabled }) {
     if (lower.includes('shorten')) applied = chips[1]
     else if (lower.includes('emoji')) applied = chips[3]
     else if (lower.includes('cta')) applied = chips[2]
-    else if (lower.includes('professional') || lower.includes('ceo') || lower.includes('formal')) applied = { label: 'Made professional', fn: (c) => c }
+    else if (lower.includes('professional') || lower.includes('ceo') || lower.includes('formal')) applied = { label: 'Made professional', fn: (c) => c.replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}])/gu, '').replace(/!{2,}/g, '!').replace(/\s{2,}/g, ' ').trim() }
     const userMsg = { role: 'user', text }
     if (applied) {
       const next = applied.fn(c)
-      if (next !== c) onUpdate({ caption: next })
-      setLog([...log, userMsg, { role: 'ai', text: `Done — ${applied.label}.` }])
+      if (next !== c) { onUpdate({ caption: next }); setLog([...log, userMsg, { role: 'ai', text: `Done — ${applied.label}.` }]) }
+      else setLog([...log, userMsg, { role: 'ai', text: 'Your content is already professional — try "Shorten" or "Add CTA" instead.' }])
     } else if (lower.includes('rewrite') || lower.includes('improve') || lower.includes('translate') || lower.includes('kannada') || lower.includes('hindi')) {
       setLog([...log, userMsg, { role: 'ai', text: 'Rewriting with AI… this regenerates the current platform.' }])
       onRegenerate()
@@ -269,12 +269,13 @@ export const QUICK_ACTIONS = [
   { key: 'seo', label: 'SEO', icon: <Gauge className="h-3.5 w-3.5" /> },
 ]
 
-export function runQuickAction(action, caption, hashtags, setPost) {
+export function runQuickAction(action, caption, hashtags, setPost, onRewrite) {
   const join = () => caption + (hashtags?.length ? '\n\n' + hashtags.join(' ') : '')
   switch (action) {
     case 'copy': navigator.clipboard.writeText(join()); toast.success('Copied to clipboard'); return
+    case 'rewrite': onRewrite ? onRewrite() : toast.info('Use AI Rewrite for a fresh version'); return
     case 'shorten': setPost({ caption: caption.split(/\n+/).filter(Boolean).slice(0, 3).join('\n\n').slice(0, Math.floor((caption || '').length * 0.55) || 120) }); toast.success('Shortened'); return
-    case 'expand': toast.info('Expand uses AI — use Rewrite for a fuller version'); return
+    case 'expand': setPost({ caption: (caption || '') + '\n\nHere\u2019s the deeper breakdown:\n\n• Start with the core idea\n• Add one real example\n• End with a practical takeaway' }); toast.success('Expanded with structure'); return
     case 'emoji': setPost({ caption: (caption || '').replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}])/gu, '').replace(/\s{2,}/g, ' ').trim() }); toast.success('Emojis removed'); return
     case 'cta': setPost({ caption: (caption || '').trimEnd() + '\n\n👉 ' + 'What\u2019s your take? Drop a comment below — I reply to everyone.' }); toast.success('CTA added'); return
     case 'seo': setPost({ hashtags: [...new Set([...(hashtags || []), 'digitalmarketing', 'socialmedia', 'contentmarketing'])] }); toast.success('SEO hashtags added'); return

@@ -181,6 +181,12 @@ export default function ComposePage() {
     } catch (e) { toast.error(e.message) } finally { setExtracting(false) }
   }
 
+  const safeSetPost = (patch) => { if (!result?.posts?.[activeTab]) { toast.error('This platform is auto-derived — switch to LinkedIn/Instagram/Facebook/Threads to edit'); return false } updatePost(activeTab, patch); return true }
+  const saveDraft = () => { if (!result) return toast.error('Generate content first'); localStorage.setItem('sf_studio_draft', JSON.stringify(result)); toast.success('Draft saved locally') }
+  const [savedDraft, setSavedDraft] = useState(null)
+  useEffect(() => { try { const d = JSON.parse(localStorage.getItem('sf_studio_draft') || 'null'); if (d?.posts) setSavedDraft(d) } catch {} }, [])
+  const restoreDraft = () => { if (!savedDraft) return; setResult(savedDraft); setActiveTab('linkedin'); setSavedDraft(null); toast.success('Draft restored — review before publishing') }
+
   const generate = useCallback(async () => {
     if (!activeText) { toast.error('Set a text provider active in Settings first.'); router.push('/settings'); return }
     setGenerating(true); setResult(null)
@@ -476,6 +482,14 @@ export default function ComposePage() {
 
         {/* ================= CENTER ================= */}
         <div className="space-y-4">
+          {savedDraft && (
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 flex items-center gap-3 border-l-4`} style={{ borderLeftColor: '#0EA37A' }}>
+              <Save className="h-4 w-4 text-[#0EA37A] shrink-0" />
+              <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-[#16161D]">Unsaved draft found</div><div className="text-[0.65rem] text-[#8A8A96] truncate">{(savedDraft.topic || 'Generated content').slice(0, 60)} — saved locally earlier</div></div>
+              <button onClick={restoreDraft} className="text-[0.7rem] font-bold px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] text-white">Restore</button>
+              <button onClick={() => { localStorage.removeItem('sf_studio_draft'); setSavedDraft(null) }} className="text-[0.7rem] font-semibold px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">Discard</button>
+            </motion.div>
+          )}
           {!result && !generating && (
             <QuickStartCanvas
               onFiles={(files) => files && handleFile(files)}
@@ -560,7 +574,7 @@ export default function ComposePage() {
                       {inlineIssues(activePost?.caption).map((iss, i) => (
                         <span key={i} className="flex items-center gap-1.5 text-[0.6rem] px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium">
                           <AlertTriangle className="h-3 w-3 shrink-0" />{iss.label}
-                          <button onClick={() => applyCoachFix(iss.fix, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: (patch) => result.posts?.[activeTab] ? updatePost(activeTab, patch) : null })} className="text-[0.55rem] font-bold text-[#7C3AED] hover:underline">Fix</button>
+                          <button onClick={() => applyCoachFix(iss.fix, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: safeSetPost })} className="text-[0.55rem] font-bold text-[#7C3AED] hover:underline">Fix</button>
                         </span>
                       ))}
                     </div>
@@ -573,17 +587,17 @@ export default function ComposePage() {
                   </div>
                   <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#F0F1F5] flex-wrap">
                     {QUICK_ACTIONS.map(a => (
-                      <button key={a.key} onClick={() => runQuickAction(a.key, activePost?.caption || '', activeHashtags, (patch) => result.posts?.[activeTab] ? updatePost(activeTab, patch) : null)} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{a.icon}{a.label}</button>
+                      <button key={a.key} onClick={() => runQuickAction(a.key, activePost?.caption || '', activeHashtags, safeSetPost, () => regenerate(activeTab))} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{a.icon}{a.label}</button>
                     ))}
                     <button onClick={() => regenerate(activeTab)} disabled={regenerating === activeTab} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{regenerating === activeTab ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} AI Rewrite</button>
-                    <button onClick={() => { localStorage.setItem('sf_studio_draft', JSON.stringify(result)); toast.success('Draft saved') }} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors"><Save className="h-3.5 w-3.5" /> Save Draft</button>
+                    <button onClick={saveDraft} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors"><Save className="h-3.5 w-3.5" /> Save Draft</button>
                     <button onClick={() => { const name = prompt('Template name:'); if (!name) return; api('/templates', { method: 'POST', body: { name, context: result.topic || '', style_id: styleId, tone_adjustment: (tone - 50) / 50 } }).then(async () => { setTemplates(await api('/templates')); toast.success('Template saved') }).catch(() => {}) }} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors"><FolderPlus className="h-3.5 w-3.5" /> Save Template</button>
                   </div>
                   <div className="mt-3 pt-3 border-t border-[#F0F1F5]">
                     <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">AI actions</div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {EXTRA_ACTIONS.map(a => (
-                        <button key={a.key} onClick={() => runStudioAction(a.key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: (patch) => result.posts?.[activeTab] ? updatePost(activeTab, patch) : null, rewrite: () => regenerate(activeTab), setLang, openPack: setPackOpen })} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{a.icon}{a.label}</button>
+                        <button key={a.key} onClick={() => runStudioAction(a.key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: safeSetPost, rewrite: () => regenerate(activeTab), setLang, openPack: setPackOpen })} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{a.icon}{a.label}</button>
                       ))}
                     </div>
                   </div>
@@ -596,7 +610,7 @@ export default function ComposePage() {
                   <button onClick={() => saveJob({ publishNow: true })} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-md hover:opacity-90"><Send className="h-4 w-4" /> Publish Now <span className="text-[0.55rem] font-mono opacity-60">⌘P</span></button>
                   <button onClick={() => setSchedOpen(v => !v)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><Clock className="h-4 w-4 text-[#F59E0B]" /> Schedule</button>
                   <button onClick={() => saveJob({})} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><List className="h-4 w-4 text-[#3B82F6]" /> Approval Queue <span className="text-[0.55rem] font-mono opacity-60">⌘S</span></button>
-                  <button onClick={() => { localStorage.setItem('sf_studio_draft', JSON.stringify(result)); toast.success('Draft saved locally') }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><Save className="h-4 w-4 text-[#0EA37A]" /> Draft</button>
+                  <button onClick={saveDraft} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><Save className="h-4 w-4 text-[#0EA37A]" /> Draft</button>
                   <button onClick={() => { navigator.clipboard.writeText(JSON.stringify({ topic: result.topic, posts: result.posts }, null, 2)); toast.success('Export JSON copied') }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><FolderPlus className="h-4 w-4 text-[#14B8A6]" /> Export</button>
                 </div>
                 <AnimatePresence>
@@ -637,7 +651,7 @@ export default function ComposePage() {
             <h4 className="text-sm font-semibold text-[#16161D] mb-2 flex items-center gap-2"><Copy className="h-4 w-4 text-[#7C3AED]" /> Live Preview · {M[activeTab]?.label || activeTab}</h4>
             <PlatformPreview platform={activeTab} caption={activePost?.caption} hashtags={activeHashtags} imageUrl={images[0]?.previewUrl} />
           </motion.div>
-          <motion.div variants={fade} initial="initial" animate="animate"><CoachPanel text={activePost?.caption || ''} hashtags={activeHashtags} onAction={(key) => applyCoachFix(key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: (patch) => result?.posts?.[activeTab] ? updatePost(activeTab, patch) : null, rewrite: () => regenerate(activeTab) })} /></motion.div>
+          <motion.div variants={fade} initial="initial" animate="animate"><CoachPanel text={activePost?.caption || ''} hashtags={activeHashtags} onAction={(key) => applyCoachFix(key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: safeSetPost, rewrite: () => regenerate(activeTab) })} /></motion.div>
           <motion.div variants={fade} initial="initial" animate="animate"><SuggestionPanel posts={result?.posts} /></motion.div>
           <motion.div variants={fade} initial="initial" animate="animate">
             <AIChat post={activePost} onUpdate={(patch) => result?.posts?.[activeTab] && updatePost(activeTab, patch)} onRegenerate={() => regenerate(activeTab)} disabled={!result} />
