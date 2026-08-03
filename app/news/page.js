@@ -140,15 +140,19 @@ export default function NewsRadarPage() {
   }, [posts])
 
   const todayCount = posts.filter(p => new Date(p.created_at || p.published_at || 0).toDateString() === new Date().toDateString()).length
+  const highOpp = posts.filter(p => p.ai_analysis?.opportunity_score >= 85).length
+  const avgScore = posts.filter(p => p.ai_analysis?.opportunity_score != null).length
+    ? Math.round(posts.filter(p => p.ai_analysis?.opportunity_score != null).reduce((a, p) => a + p.ai_analysis.opportunity_score, 0) / posts.filter(p => p.ai_analysis?.opportunity_score != null).length)
+    : 0
   const kpis = [
     { l: 'Breaking Today', v: fmt(todayCount), c: '#EF4444' },
-    { l: 'AI Ready', v: fmt(posts.filter(p => p.status === 'ai_generated').length), c: '#7C3AED' },
+    { l: 'High Opportunity', v: fmt(highOpp), c: '#7C3AED' },
     { l: 'Awaiting Approval', v: fmt(posts.filter(p => p.status === 'pending_approval').length), c: '#F59E0B' },
-    { l: 'Scheduled', v: fmt(posts.filter(p => p.status === 'scheduled').length), c: '#8B5CF6' },
+    { l: 'Generated', v: fmt(posts.filter(p => p.generated_posts && Object.keys(p.generated_posts).length).length), c: '#8B5CF6' },
     { l: 'Published', v: fmt(posts.filter(p => p.status === 'published').length), c: '#0EA37A' },
-    { l: 'Rejected', v: fmt(posts.filter(p => p.status === 'rejected').length), c: '#EF4444' },
-    { l: 'Sources', v: fmt(sources.length), c: '#3B82F6' },
-    { l: 'Topics Monitored', v: fmt(topics.length), c: '#EC4899' },
+    { l: 'AI Ignored', v: fmt(posts.filter(p => p.status === 'ignored_by_ai').length), c: '#8A8A96' },
+    { l: 'Avg AI Score', v: avgScore ? `${avgScore}/100` : '—', c: '#EC4899' },
+    { l: 'Scheduled', v: fmt(posts.filter(p => p.status === 'scheduled').length), c: '#3B82F6' },
   ]
 
   if (loading) return <div className="flex items-center justify-center py-24 gap-2 text-[#8A8A96]"><Loader2 className="h-5 w-5 animate-spin" /> Loading News Radar…</div>
@@ -314,6 +318,13 @@ export default function NewsRadarPage() {
                     ) : null}
                     <span className="ml-auto text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: pr + '12', color: pr }}>{a.priority}</span>
                   </div>
+                  {item.ai_analysis && (
+                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                      {[['MBA', item.ai_analysis.mba_score], ['HR', item.ai_analysis.hr_score], ['BA', item.ai_analysis.business_analytics_score], ['Mkt', item.ai_analysis.marketing_score], ['Tech', item.ai_analysis.technology_score], ['Viral', item.ai_analysis.virality_score], ['SEO', item.ai_analysis.seo_opportunity]].map(([l, v]) => v != null ? (
+                        <span key={l} title={`${l} relevance`} className={`text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full ${v >= 70 ? 'bg-emerald-50 text-[#0EA37A]' : v >= 45 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l} {v}</span>
+                      ) : null)}
+                    </div>
+                  )}
                   <h4 className="text-sm font-bold text-[#16161D] leading-snug mb-1.5">{item.title}</h4>
                   {item.summary && <p className="text-[0.7rem] text-[#8A8A96] line-clamp-2 leading-relaxed">{item.summary}</p>}
                   <div className="grid grid-cols-3 gap-2 mt-3">
