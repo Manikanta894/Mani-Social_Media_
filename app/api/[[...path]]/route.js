@@ -760,19 +760,35 @@ async function route(request, method) {
         const { runNewsCheck } = await import('@/lib/news')
         const r = await runNewsCheck(20000)
         await sb.from('app_settings').upsert({ key: 'news_last_check', value: { at: new Date().toISOString() } }, { onConflict: 'key' })
-        if (r.new > 0) {
-          storage.audit.log('news', 'news_radar', 'job', null, `${r.new} new item(s) detected`).catch(() => {})
-          try {
-            const { emitEvent } = await import('@/lib/event-engine')
-            emitEvent({ type: 'breaking_news', source: 'news_radar', payload: { new: r.new }, notify: true }).catch(() => {})
-          } catch {}
-          try {
-            const { sendMessage } = await import('@/lib/telegram/client')
-            const s2 = await storage.settings.get()
-            if (s2.telegram_admin_chat_id) sendMessage({ chatId: s2.telegram_admin_chat_id, text: `📡 News Radar found <b>${r.new}</b> new article(s) — review in the app.` }).catch(() => {})
-          } catch {}
-        }
-        return ok(r)
+        // AI Decision Engine — analyze BEFORE notifying; only high-value items reach Telegram
+        const { runNewsDecisionPipeline } = await import('@/lib/news/ai-decision')
+        const decision = await runNewsDecisionPipeline(6)
+        storage.audit.log('news', 'news_ai', 'job', null, `checked ${r.checked || 0}, analyzed ${decision.analyzed || 0}, notified ${decision.notified || 0}`).catch(() => {})
+        return ok({ ...r, decision })
+      }
+      if (id === 'analyze' && action && method === 'POST') {
+        const { supabase: sb2 } = await import('@/lib/supabase')
+        const s = sb2()
+        const { data: item } = await s.from('news_posts').select('*').eq('id', action).maybeSingle()
+        if (!item) return err('News item not found', 404)
+        const { analyzeNewsItem, getNewsTopics, getLearning, buildNewsCard } = await import('@/lib/news/ai-decision')
+        const analysis = await analyzeNewsItem(item, await getNewsTopics(), await getLearning())
+        await s.from('news_posts').update({ ai_analysis: analysis }).eq('id', action)
+        return ok({ analysis })
+      }
+      if (id === 'feedback' && action && method === 'POST') {
+        const body = await request.json()
+        const { recordFeedback } = await import('@/lib/news/ai-decision')
+        const learning = await recordFeedback(action, body.action || 'approve')
+        return ok({ learning })
+      }
+      if (id === 'topics' && method === 'GET') {
+        const { getNewsTopics } = await import('@/lib/news/ai-decision')
+        return ok(await getNewsTopics())
+      }
+      if (id === 'topics' && method === 'PUT') {
+        const { saveNewsTopics } = await import('@/lib/news/ai-decision')
+        return ok(await saveNewsTopics((await request.json()).topics || []))
       }
       if (id === 'queue-settings' && method === 'PUT') {
         const body = await request.json()

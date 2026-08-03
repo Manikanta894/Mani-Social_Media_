@@ -48,13 +48,14 @@ export default function NewsRadarPage() {
   const refresh = async () => {
     setLoading(true)
     try {
-      const [s, p] = await Promise.all([api('/news/sources').catch(() => []), api('/news/all?status=' + statusFilter).catch(() => [])])
+      const [s, p, t] = await Promise.all([api('/news/sources').catch(() => []), api('/news/all?status=' + statusFilter).catch(() => []), api('/news/topics').catch(() => null)])
       setSources(s || []); setPosts(p || [])
+      if (t && Array.isArray(t) && t.length) setTopics(t)
     } catch (e) { toast.error(e.message) } finally { setLoading(false) }
   }
   useEffect(() => { refresh() }, [statusFilter])
 
-  const persistTopics = (t) => { setTopics(t); localStorage.setItem('sf_news_topics', JSON.stringify(t)) }
+  const persistTopics = (t) => { setTopics(t); localStorage.setItem('sf_news_topics', JSON.stringify(t)); api('/news/topics', { method: 'PUT', body: { topics: t } }).catch(() => {}) }
   const toggleAuto = () => { const v = !autoMode; setAutoMode(v); localStorage.setItem('sf_news_auto', v ? '1' : '0'); toast.success(v ? 'Autonomous News Mode ON — the engine scans your sources every 15 minutes' : 'Autonomous News Mode OFF') }
 
   const checkNow = async () => {
@@ -308,6 +309,9 @@ export default function NewsRadarPage() {
                     {item.is_urgent && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 flex items-center gap-1"><ZapIcon className="h-2.5 w-2.5" /> BREAKING</span>}
                     {item.is_trending && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><Flame className="h-2.5 w-2.5" /> TRENDING</span>}
                     <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span>
+                    {item.ai_analysis?.opportunity_score ? (
+                      <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.opportunity_score >= 85 ? 'bg-red-50 text-red-600' : item.ai_analysis.opportunity_score >= 70 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>AI {item.ai_analysis.opportunity_score}/100</span>
+                    ) : null}
                     <span className="ml-auto text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: pr + '12', color: pr }}>{a.priority}</span>
                   </div>
                   <h4 className="text-sm font-bold text-[#16161D] leading-snug mb-1.5">{item.title}</h4>
