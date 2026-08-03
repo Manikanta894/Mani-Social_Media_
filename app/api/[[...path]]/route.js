@@ -34,7 +34,7 @@ async function route(request, method) {
   const PUBLIC_API = ['auth', 'health', 'telegram', 'approve']
   const PUBLIC_RESOURCES = ['health', 'telegram', 'approve']
   const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
-  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick'
+  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news'
   if (!isPublic && !isTick) {
     const cookieName = 'sb-socialforge-auth-auth-token'
     const token = request.cookies.get(cookieName)?.value

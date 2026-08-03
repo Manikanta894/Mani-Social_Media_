@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AUTOMATION_SECRET: ${{ secrets.AUTOMATION_SECRET }}
+      BLOG_SECRET: ${{ secrets.BLOG_SECRET }}
     steps:
       - name: Social automation tick
         run: |
@@ -32,7 +33,7 @@ jobs:
 
       - name: Blog automation tick
         run: |
-          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          SECRET="${BLOG_SECRET:-41d663cb3ea84dd9abd1e3beeee5af9b}"
           curl -sS -o /tmp/blog_tick.json -w "blog: %{http_code}\n" \
             -X POST "https://social.manikantar.in/api/blog/tick" \
             -H "x-automation-secret: ${SECRET}" || true
