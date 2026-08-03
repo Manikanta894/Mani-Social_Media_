@@ -218,7 +218,15 @@ async function route(request, method) {
       }
       if (method === 'PUT' && id) {
         const body = await request.json()
-        return ok(await storage.jobs.update(id, body))
+        const job = await storage.jobs.update(id, body)
+        // Approving in the app should publish (respects auto_publish_after_approve setting)
+        if (body.status === 'approved') {
+          try {
+            const { onApprove } = await import('@/lib/automation')
+            await onApprove(job)
+          } catch (e) { console.warn('[approve] auto-publish failed:', e.message) }
+        }
+        return ok(job)
       }
       if (method === 'POST' && id && action === 'retry') {
         const job = await storage.jobs.get(id)
@@ -1131,7 +1139,11 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       const job = await storage.jobs.get(body.job_id)
       if (!job) return err('Job not found', 404)
       if (body.action === 'approve') {
-        await storage.jobs.update(body.job_id, { status: 'approved' })
+        const job = await storage.jobs.update(body.job_id, { status: 'approved' })
+        try {
+          const { onApprove } = await import('@/lib/automation')
+          await onApprove(job)
+        } catch (e) { console.warn('[approve] auto-publish failed:', e.message) }
         return ok({ approved: true })
       }
       if (body.action === 'reject') {
