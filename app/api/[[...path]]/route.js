@@ -694,6 +694,25 @@ async function route(request, method) {
         const limit = parseInt(url.searchParams.get('limit') || '50', 10)
         return ok(await getActivityFeed(limit))
       }
+      if (id === 'news' && method === 'POST') {
+        // Dedicated news check job (called by the scheduler) — throttled to once per 15 min
+        const sb = supabase()
+        const { data: newsLast } = await sb.from('app_settings').select('value').eq('key', 'news_last_check').maybeSingle()
+        const last = newsLast?.value?.at ? new Date(newsLast.value.at).getTime() : 0
+        if (Date.now() - last < 15 * 60 * 1000) return ok({ skipped: 'throttled' })
+        const { runNewsCheck } = await import('@/lib/news')
+        const r = await runNewsCheck(20000)
+        await sb.from('app_settings').upsert({ key: 'news_last_check', value: { at: new Date().toISOString() } }, { onConflict: 'key' })
+        if (r.new > 0) {
+          storage.audit.log('news', 'news_radar', 'job', null, `${r.new} new item(s) detected`).catch(() => {})
+          try {
+            const { sendMessage } = await import('@/lib/telegram/client')
+            const s2 = await storage.settings.get()
+            if (s2.telegram_admin_chat_id) sendMessage({ chatId: s2.telegram_admin_chat_id, text: `📡 News Radar found <b>${r.new}</b> new article(s) — review in the app.` }).catch(() => {})
+          } catch {}
+        }
+        return ok(r)
+      }
       if (id === 'queue-settings' && method === 'PUT') {
         const body = await request.json()
         return ok(await automation.patch(body))

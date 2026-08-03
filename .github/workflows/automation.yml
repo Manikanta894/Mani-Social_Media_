@@ -37,3 +37,11 @@ jobs:
             -X POST "https://social.manikantar.in/api/blog/tick" \
             -H "x-automation-secret: ${SECRET}" || true
           cat /tmp/blog_tick.json || true
+
+      - name: News Radar scan (throttled to 15 min server-side)
+        run: |
+          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          curl -sS -o /tmp/news_tick.json -w "news: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/automation/news" \
+            -H "x-automation-secret: ${SECRET}" || true
+          cat /tmp/news_tick.json || true
