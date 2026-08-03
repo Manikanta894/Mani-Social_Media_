@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { key: '/automation',      label: 'Automation',   icon: Wand2 },
   { key: '/blog-automation', label: 'Blog Engine',  icon: FileText },
   { key: '/analytics',       label: 'Analytics',    icon: BarChart3 },
+  { key: '/events',          label: 'Event Engine', icon: Radio },
   { key: '/bulk',            label: 'Bulk Posts',   icon: List },
   { key: '/comments',        label: 'Inbox',        icon: MessageSquare },
   { key: '/news',            label: 'News Radar',   icon: Radio },

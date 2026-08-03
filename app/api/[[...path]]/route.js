@@ -555,6 +555,47 @@ async function route(request, method) {
       }
     }
 
+    // --- Event Engine -------------------------------------------------------
+    if (resource === 'events') {
+      if (id === 'webhook' && action && method === 'POST') {
+        const { handleWebhook } = await import('@/lib/event-engine')
+        const body = await request.json().catch(() => ({}))
+        return ok(await handleWebhook(action, body, request.headers, url.searchParams))
+      }
+      if (!id && method === 'GET') {
+        const { listEvents } = await import('@/lib/event-engine')
+        return ok(await listEvents({
+          limit: parseInt(url.searchParams.get('limit') || '100', 10),
+          type: url.searchParams.get('type') || null,
+          source: url.searchParams.get('source') || null,
+        }))
+      }
+      if (id === 'stats' && method === 'GET') {
+        const { eventStats } = await import('@/lib/event-engine')
+        return ok(await eventStats())
+      }
+      if (id === 'webhooks' && method === 'GET') {
+        const { listWebhooks } = await import('@/lib/event-engine')
+        return ok(await listWebhooks())
+      }
+      if (id === 'webhooks' && method === 'POST') {
+        const { saveWebhook } = await import('@/lib/event-engine')
+        return ok(await saveWebhook(await request.json()))
+      }
+      if (id === 'webhooks' && action && method === 'PUT') {
+        const { saveWebhook } = await import('@/lib/event-engine')
+        return ok(await saveWebhook({ id: action, ...(await request.json()) }))
+      }
+      if (id === 'webhooks' && action && method === 'DELETE') {
+        const { removeWebhook } = await import('@/lib/event-engine')
+        return ok(await removeWebhook(action))
+      }
+      if (id === 'retry' && action && method === 'POST') {
+        const { retryWebhookEvent } = await import('@/lib/event-engine')
+        return ok(await retryWebhookEvent(action))
+      }
+    }
+
     // --- Comments ---------------------------------------------------------
     if (resource === 'comments') {
       if (method === 'GET' && !id) {
@@ -631,10 +672,18 @@ async function route(request, method) {
             await storage.blogPosts.update(blog.id, {
               status: 'published', published_url: result.url, published_at: new Date().toISOString(),
             })
+            try {
+              const { emitEvent } = await import('@/lib/event-engine')
+              emitEvent({ type: 'blog_published', source: 'blog', payload: { id: blog.id, title: (blog.title || '').slice(0, 100) }, notify: true }).catch(() => {})
+            } catch {}
           }
           return ok(result)
         } catch (e) {
           await storage.blogPosts.update(blog.id, { status: 'failed', publish_error: e.message })
+          try {
+            const { emitEvent } = await import('@/lib/event-engine')
+            emitEvent({ type: 'ai_generation_failed', source: 'blog', payload: { id: blog.id, error: e.message.slice(0, 200) }, notify: true }).catch(() => {})
+          } catch {}
           return err(e.message, 400)
         }
       }
@@ -713,6 +762,10 @@ async function route(request, method) {
         await sb.from('app_settings').upsert({ key: 'news_last_check', value: { at: new Date().toISOString() } }, { onConflict: 'key' })
         if (r.new > 0) {
           storage.audit.log('news', 'news_radar', 'job', null, `${r.new} new item(s) detected`).catch(() => {})
+          try {
+            const { emitEvent } = await import('@/lib/event-engine')
+            emitEvent({ type: 'breaking_news', source: 'news_radar', payload: { new: r.new }, notify: true }).catch(() => {})
+          } catch {}
           try {
             const { sendMessage } = await import('@/lib/telegram/client')
             const s2 = await storage.settings.get()
@@ -924,7 +977,12 @@ async function route(request, method) {
       if (method === 'POST' && id === 'generate') {
         const body = await request.json()
         const { generateSeasonalDraft } = await import('@/lib/seasonal-engine')
-        return ok(await generateSeasonalDraft(body.event, body.context || {}))
+        const created = await generateSeasonalDraft(body.event, body.context || {})
+        try {
+          const { emitEvent } = await import('@/lib/event-engine')
+          emitEvent({ type: 'campaign_generated', source: 'seasonal', payload: { event: body.event?.name || 'event', id: created?.id } }).catch(() => {})
+        } catch {}
+        return ok(created)
       }
       if (method === 'POST' && id === 'settings') {
         const body = await request.json()
@@ -1140,6 +1198,10 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       if (!job) return err('Job not found', 404)
       if (body.action === 'approve') {
         const job = await storage.jobs.update(body.job_id, { status: 'approved' })
+        try {
+          const { emitEvent } = await import('@/lib/event-engine')
+          emitEvent({ type: 'dashboard_approved', source: 'approval', payload: { job_id: body.job_id, topic: (job?.topic || '').slice(0, 100) } }).catch(() => {})
+        } catch {}
         try {
           const { onApprove } = await import('@/lib/automation')
           await onApprove(job)

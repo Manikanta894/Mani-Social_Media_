@@ -97,10 +97,11 @@ function SentimentBadge({ text }) {
 export function ContentTable({ posts }) {
   const [q, setQ] = useState('')
   const [plat, setPlat] = useState('all')
+  const [src, setSrc] = useState('all')
   const [sort, setSort] = useState('engagement')
   const [limit, setLimit] = useState(25)
   const list = useMemo(() => {
-    let l = posts.filter(p => (plat === 'all' || p.platform === plat) && (!q || (p.caption || '').toLowerCase().includes(q.toLowerCase())))
+    let l = posts.filter(p => (plat === 'all' || p.platform === plat) && (src === 'all' || (p.source || 'app') === src) && (!q || (p.caption || '').toLowerCase().includes(q.toLowerCase())))
     l = [...l].sort((a, b) => {
       if (sort === 'engagement') return eng(b) - eng(a)
       if (sort === 'reach') return (b.reach || 0) - (a.reach || 0)
@@ -118,6 +119,7 @@ export function ContentTable({ posts }) {
         <h3 className="text-base font-bold text-[#16161D]">Content Performance</h3>
         <div className="flex-1 min-w-[180px] flex items-center gap-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] px-3 py-1.5 ml-2"><Search className="h-3.5 w-3.5 text-[#8A8A96]" /><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search captions…" className="flex-1 bg-transparent text-xs focus:outline-none" /></div>
         <select value={plat} onChange={e => setPlat(e.target.value)} className="rounded-xl border border-[#EBECF2] px-2.5 py-1.5 text-xs bg-white"><option value="all">All platforms</option>{Object.entries(M).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>
+        <select value={src} onChange={e => setSrc(e.target.value)} className="rounded-xl border border-[#EBECF2] px-2.5 py-1.5 text-xs bg-white"><option value="all">All sources</option><option value="import">Historical (imported)</option><option value="app">App published</option></select>
         <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-xl border border-[#EBECF2] px-2.5 py-1.5 text-xs bg-white">
           {[['engagement', 'Best engagement'], ['reach', 'Best reach'], ['likes', 'Most likes'], ['comments', 'Most comments'], ['shares', 'Most shares'], ['saves', 'Most saves'], ['date', 'Newest']].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
@@ -132,7 +134,7 @@ export function ContentTable({ posts }) {
             {list.map((p, i) => (
               <tr key={i} className="border-b border-[#F0F1F5] last:border-0 hover:bg-[#F8F9FC] transition-colors">
                 <td className="py-2.5 px-3 max-w-[240px]"><div className="flex items-center gap-2.5">{p.thumbnail_url ? <img src={p.thumbnail_url} alt="" className="h-9 w-9 rounded-lg object-cover shrink-0" onError={e => { e.currentTarget.style.display = 'none' }} /> : <span className="h-9 w-9 rounded-lg bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center shrink-0 text-[#7C3AED]"><BarChart3 className="h-3.5 w-3.5" /></span>}<div className="min-w-0"><div className="font-medium text-[#16161D] truncate">{p.caption?.slice(0, 50) || 'Untitled'}</div>{p.url && <a href={p.url} target="_blank" rel="noreferrer" className="text-[0.5rem] text-[#7C3AED] hover:underline">open original →</a>}</div></div></td>
-                <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: (M[p.platform]?.color || '#7C3AED') + '12', color: M[p.platform]?.color || '#7C3AED' }}>{M[p.platform]?.label || p.platform}</span></td>
+                <td className="py-2.5 px-3"><div className="flex flex-col gap-1"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full w-fit" style={{ backgroundColor: (M[p.platform]?.color || '#7C3AED') + '12', color: M[p.platform]?.color || '#7C3AED' }}>{M[p.platform]?.label || p.platform}</span>{(p.source || 'app') === 'import' && <span className="text-[0.5rem] font-bold px-2 py-0.5 rounded-full w-fit bg-[#3B82F6]/10 text-[#3B82F6]">imported</span>}</div></td>
                 <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{(p.published_at || p.checked_at || '').slice(0, 10) || '—'}</td>
                 <td className="py-2.5 px-3 text-right font-mono">{short(p.reach || 0)}</td>
                 <td className="py-2.5 px-3 text-right font-mono">{short(p.impressions || 0)}</td>

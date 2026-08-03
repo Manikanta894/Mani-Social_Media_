@@ -339,6 +339,35 @@ export default function AnalyticsPage() {
         </motion.div>
       )}
 
+      {/* Account Sync — hybrid engine status */}
+      <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-4`}>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="text-sm font-bold text-[#16161D] flex items-center gap-2"><RefreshCw className="h-4 w-4 text-[#3B82F6]" /> Account Sync — Hybrid Analytics Engine</h3>
+          <span className="text-[0.6rem] text-[#8A8A96]">Official APIs + Historical import · auto-syncs every 6h</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+          {[['linkedin', 'LinkedIn'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['threads', 'Threads']].map(([k, label]) => {
+            const imported = libStats?.byPlatform?.[k] || 0
+            const hasData = byPlatform[k] || posts.some(p => p.platform === k)
+            return (
+              <div key={k} className={`rounded-xl border p-3 ${hasData ? 'border-[#D8C8FB] bg-[#FAFAFD]' : 'border-[#EBECF2] bg-[#F8F9FC] opacity-70'}`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Icon p={k} size={15} />
+                  <span className="text-xs font-bold text-[#16161D]">{label}</span>
+                  <span className={`ml-auto h-2 w-2 rounded-full ${hasData ? 'bg-[#0EA37A]' : 'bg-[#C4C5CE]'}`} title={hasData ? 'Connected' : 'Not connected'} />
+                </div>
+                <div className="text-[0.6rem] text-[#8A8A96] mb-2">Imported: <b className="text-[#16161D]">{imported}</b> posts · Last sync: {hasData ? 'auto' : '—'}</div>
+                <div className="flex gap-1.5">
+                  <button onClick={() => syncNow()} disabled={syncing} className="flex-1 text-[0.6rem] font-bold py-1.5 rounded-lg bg-[#3B82F6] text-white disabled:opacity-50">{syncing ? 'Syncing…' : 'Sync Now'}</button>
+                  <button onClick={() => toast.info('Platform credentials live in Settings → AI Providers → env')} className="text-[0.6rem] font-bold px-2 py-1.5 rounded-lg bg-[#F4F5F9] text-[#8A8A96]">Reconnect</button>
+                  <button onClick={() => toast.info('Disconnect removes this account from future syncs (dashboard data remains)')} className="text-[0.6rem] font-bold px-2 py-1.5 rounded-lg bg-red-50 text-red-500">Disconnect</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </motion.div>
+
       {!hasData && (
         <motion.div variants={fade} initial="initial" animate="animate" className="rounded-3xl border border-dashed border-[#D8D9E3] bg-white p-14 text-center">
           <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center mb-5"><BarChart3 className="h-8 w-8 text-[#7C3AED]" /></div>
