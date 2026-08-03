@@ -720,10 +720,10 @@ async function route(request, method) {
         delete body.tick_secret
         return ok(await automation.patch(body))
       }
-      if (id === 'tick' && method === 'POST') {
-        // Verify shared secret
+      if (id === 'tick' && (method === 'POST' || method === 'GET')) {
+        // Verify shared secret (header or query param for GET-based monitors)
         const s = await automation.get()
-        const provided = request.headers.get('x-automation-secret')
+        const provided = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
         if (s.tick_secret && provided !== s.tick_secret) {
           return err('Forbidden', 403)
         }
@@ -751,11 +751,15 @@ async function route(request, method) {
         const limit = parseInt(url.searchParams.get('limit') || '50', 10)
         return ok(await getActivityFeed(limit))
       }
-      if (id === 'news' && method === 'POST') {
-        // Dedicated news check job (called by the scheduler) — throttled to once per 15 min        const sb = supabase()
+      if (id === 'news' && (method === 'POST' || method === 'GET')) {
+        // Dedicated news check job (called by the scheduler) — throttled to once per 5 min
+        const sNews = await automation.get()
+        const newsSecret = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
+        if (sNews.tick_secret && newsSecret !== sNews.tick_secret) return err('Forbidden', 403)
+        const sb = supabase()
         const { data: newsLast } = await sb.from('app_settings').select('value').eq('key', 'news_last_check').maybeSingle()
         const last = newsLast?.value?.at ? new Date(newsLast.value.at).getTime() : 0
-        if (Date.now() - last < 15 * 60 * 1000) return ok({ skipped: 'throttled' })
+        if (Date.now() - last < 5 * 60 * 1000) return ok({ skipped: 'throttled' })
         const { runNewsCheck } = await import('@/lib/news')
         const r = await runNewsCheck(20000)
         await sb.from('app_settings').upsert({ key: 'news_last_check', value: { at: new Date().toISOString() } }, { onConflict: 'key' })
