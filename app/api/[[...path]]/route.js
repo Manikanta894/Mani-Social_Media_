@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { storage } from '@/lib/storage'
-import { supabase } from '@/lib/supabase'
 import { generateFromImage, regeneratePlatform, generateBulk, generateBlogPost } from '@/lib/ai/generate'
 import { testProvider } from '@/lib/ai/providers'
 import { handleUpdate, sendDraftToAdmin } from '@/lib/telegram/handler'
@@ -36,19 +35,10 @@ async function route(request, method) {
   const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
   const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief' || resource === 'automation' && id === 'news-publish'
   if (!isPublic && !isTick) {
-    const cookieName = 'sb-socialforge-auth-auth-token'
-    const token = request.cookies.get(cookieName)?.value
-    let authed = false
-    if (token) {
-      try {
-        const parts = token.split('.')
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
-          authed = payload.exp * 1000 > Date.now() - 30000
-        }
-      } catch {}
-    }
-    if (!authed) return err('Unauthorized', 401)
+    // Single-user session cookie (lib/auth) — defense in depth alongside middleware
+    const { verifySession, COOKIE_NAME } = await import('@/lib/auth')
+    const cookie = request.cookies.get(COOKIE_NAME)?.value
+    if (!verifySession(cookie)) return err('Unauthorized', 401)
   }
 
   try {
@@ -70,7 +60,39 @@ async function route(request, method) {
           recent_failures: failedJobs.map(j => ({ id: j.id, topic: j.topic, error: j.warnings?.[0] })),
         })
       }
-      return ok({ status: 'ok', ts: new Date().toISOString() })
+      return ok({ status: 'ok', ts: new Date().toISOString(), storage: 'google_sheets', sheets_configured: !!(process.env.GOOGLE_SPREADSHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) })
+    }
+
+    // --- Auth (single-user, env password + signed cookie) ----------------
+    if (resource === 'auth') {
+      const { verifyPassword, createSession, verifySession, COOKIE_NAME } = await import('@/lib/auth')
+      if (id === 'signin' && method === 'POST') {
+        const body = await request.json()
+        if (!verifyPassword(body.password)) return err('Invalid password', 401)
+        const cookie = createSession()
+        const res = NextResponse.json({ ok: true, data: { session: true } })
+        res.cookies.set(COOKIE_NAME, cookie, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 30 })
+        return res
+      }
+      if (id === 'signout' && method === 'POST') {
+        const res = NextResponse.json({ ok: true, data: {} })
+        res.cookies.set(COOKIE_NAME, '', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 0 })
+        return res
+      }
+      if (id === 'session' && method === 'GET') {
+        const cookie = request.cookies.get(COOKIE_NAME)?.value
+        return ok({ session: verifySession(cookie) })
+      }
+      if (id === 'login' && method === 'POST') return ok({}) // legacy audit ping
+      return err('Unknown auth action', 400)
+    }
+
+    // --- One-shot migration: Supabase → Google Sheets --------------------
+    if (resource === 'migration' && id === 'run' && method === 'POST') {
+      const { migrateAllToSheets } = await import('@/lib/migration')
+      const r = await migrateAllToSheets()
+      if (!r.ok) return ok(r)
+      return ok({ total_migrated: r.total_migrated, results: r.results.map(x => ({ table: x.table, migrated: x.migrated, error: x.error })) })
     }
 
     // --- Providers ----------------------------------------------------------
@@ -467,17 +489,18 @@ async function route(request, method) {
 
     // --- UTM analytics -----------------------------------------------
     if (resource === 'analytics' && id === 'utm' && method === 'GET') {
-      const sb = (await import('@/lib/supabase')).supabase()
-      const { data: details } = await sb.from('post_details').select('job_id, platform, caption, impressions, likes, comments, shares')
-        .like('caption', '%utm_source=socialforge%').order('checked_at', { ascending: false }).limit(100)
-      const results = (details || []).map(d => {
-        const match = d.caption?.match(/utm_source=socialforge&utm_medium=([^&]+)&utm_campaign=([^&\s]+)/)
-        return {
-          job_id: d.job_id, platform: d.platform,
-          utm_medium: match?.[1] || '', utm_campaign: match?.[2] || '',
-          impressions: d.impressions, likes: d.likes, comments: d.comments, shares: d.shares,
-        }
-      })
+      const details = await storage.postDetails.list()
+      const results = details
+        .filter(d => String(d.caption || '').includes('utm_source=socialforge'))
+        .slice(0, 100)
+        .map(d => {
+          const match = d.caption?.match(/utm_source=socialforge&utm_medium=([^&]+)&utm_campaign=([^&\s]+)/)
+          return {
+            job_id: d.job_id, platform: d.platform,
+            utm_medium: match?.[1] || '', utm_campaign: match?.[2] || '',
+            impressions: d.impressions, likes: d.likes, comments: d.comments, shares: d.shares,
+          }
+        })
       return ok(results)
     }
 
@@ -552,6 +575,38 @@ async function route(request, method) {
           conflict_warning: null,
         })
         return ok(r)
+      }
+      // --- News Campaign Engine (generate-all + per-platform control) ---
+      if (id === 'campaign') {
+        const sub = parts[3]
+        const sub2 = parts[4]
+        const { startOrContinueCampaign, getCampaignState, regenerateCampaignAsset, updateCampaignAsset, scheduleCampaignAssets, publishCampaignAssets } = await import('@/lib/news/campaign')
+        if (!action && method === 'POST') {
+          const body = await request.json()
+          return ok(await startOrContinueCampaign(body.news_id, { platforms: body.platforms, chat: body.chat || null, force: body.force || false }))
+        }
+        if (action && !sub && method === 'GET') {
+          return ok(await getCampaignState(action))
+        }
+        if (action && sub === 'continue' && method === 'POST') {
+          return ok(await startOrContinueCampaign(action))
+        }
+        if (action && sub === 'regenerate' && method === 'POST') {
+          const body = await request.json()
+          return ok(await regenerateCampaignAsset(action, body.platform))
+        }
+        if (action && sub === 'asset' && sub2 && method === 'PUT') {
+          return ok(await updateCampaignAsset(action, sub2, await request.json()))
+        }
+        if (action && sub === 'schedule' && method === 'POST') {
+          const body = await request.json()
+          return ok(await scheduleCampaignAssets(action, body.platforms, body.when))
+        }
+        if (action && sub === 'publish' && method === 'POST') {
+          const body = await request.json()
+          return ok(await publishCampaignAssets(action, body.platforms))
+        }
+        return err('Unknown campaign action', 400)
       }
     }
 
@@ -756,27 +811,29 @@ async function route(request, method) {
         const sNews = await automation.get()
         const newsSecret = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
         if (sNews.tick_secret && newsSecret !== sNews.tick_secret) return err('Forbidden', 403)
-        const sb = supabase()
-        const { data: newsLast } = await sb.from('app_settings').select('value').eq('key', 'news_last_check').maybeSingle()
-        const last = newsLast?.value?.at ? new Date(newsLast.value.at).getTime() : 0
+        const lastCheck = await storage.appState.get('news_last_check', null)
+        const last = lastCheck?.at ? new Date(lastCheck.at).getTime() : 0
         if (Date.now() - last < 5 * 60 * 1000) return ok({ skipped: 'throttled' })
         const { runNewsCheck } = await import('@/lib/news')
         const r = await runNewsCheck(20000)
-        await sb.from('app_settings').upsert({ key: 'news_last_check', value: { at: new Date().toISOString() } }, { onConflict: 'key' })
+        await storage.appState.set('news_last_check', { at: new Date().toISOString() })
         // AI Decision Engine — analyze BEFORE notifying; only high-value items reach Telegram
         const { runNewsDecisionPipeline } = await import('@/lib/news/ai-decision')
         const decision = await runNewsDecisionPipeline(6)
+        // Background resume: finish any running Telegram/dashboard campaigns (small budget)
+        try {
+          const { resumeRunningCampaigns } = await import('@/lib/news/campaign')
+          await resumeRunningCampaigns(9000)
+        } catch {}
         storage.audit.log('news', 'news_ai', 'job', null, `checked ${r.checked || 0}, analyzed ${decision.analyzed || 0}, notified ${decision.notified || 0}`).catch(() => {})
         return ok({ ...r, decision })
       }
       if (id === 'analyze' && action && method === 'POST') {
-        const { supabase: sb2 } = await import('@/lib/supabase')
-        const s = sb2()
-        const { data: item } = await s.from('news_posts').select('*').eq('id', action).maybeSingle()
+        const item = await storage.newsPosts.get(action)
         if (!item) return err('News item not found', 404)
         const { analyzeNewsItem, getNewsTopics, getLearning, buildNewsCard } = await import('@/lib/news/ai-decision')
         const analysis = await analyzeNewsItem(item, await getNewsTopics(), await getLearning())
-        await s.from('news_posts').update({ ai_analysis: analysis }).eq('id', action)
+        await storage.newsPosts.update(action, { ai_analysis: analysis })
         return ok({ analysis })
       }
       if (id === 'feedback' && action && method === 'POST') {
@@ -893,17 +950,12 @@ async function route(request, method) {
       const to = url.searchParams.get('to')
       if (!from || !to) return err('from and to params required')
       // Aggregate data
-      const sb = (await import('@/lib/supabase')).supabase()
-      const [statsRes, hashtagRes, detailsRes, postsRes] = await Promise.all([
-        sb.from('post_stats').select('*').gte('checked_at', from).lte('checked_at', to),
-        sb.from('hashtag_stats').select('*').order('total_impressions', { ascending: false }).limit(10),
-        sb.from('post_details').select('*').gte('checked_at', from).lte('checked_at', to),
-        sb.from('content_jobs').select('id,topic,published_at,publish_results').eq('status', 'published').gte('published_at', from).lte('published_at', to),
+      const [stats, hashtags, details, posts] = await Promise.all([
+        (await storage.postStats.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.hashtagStats.list()).slice(0, 10),
+        (await storage.postDetails.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.jobs.list({ status: 'published' })).filter(r => r.published_at_actual && r.published_at_actual >= from && r.published_at_actual <= to),
       ])
-      const stats = statsRes.data || []
-      const hashtags = hashtagRes.data || []
-      const details = detailsRes.data || []
-      const posts = postsRes.data || []
       // Compute top by engagement
       const topPosts = [...posts].sort((a, b) => {
         const aEng = Object.values(a.publish_results || {}).reduce((s, r) => s + (r.impressions || 0), 0)
@@ -1041,17 +1093,12 @@ async function route(request, method) {
       const from = url.searchParams.get('from')
       const to = url.searchParams.get('to')
       if (!from || !to) return err('from and to params required')
-      const sb = (await import('@/lib/supabase')).supabase()
-      const [statsRes, hashtagRes, detailsRes, postsRes] = await Promise.all([
-        sb.from('post_stats').select('*').gte('checked_at', from).lte('checked_at', to),
-        sb.from('hashtag_stats').select('*').order('total_impressions', { ascending: false }).limit(10),
-        sb.from('post_details').select('*').gte('checked_at', from).lte('checked_at', to),
-        sb.from('content_jobs').select('id,topic,published_at,publish_results,platform_posts').eq('status', 'published').gte('published_at', from).lte('published_at', to),
+      const [stats, hashtags, details, posts] = await Promise.all([
+        (await storage.postStats.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.hashtagStats.list()).slice(0, 10),
+        (await storage.postDetails.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.jobs.list({ status: 'published' })).filter(r => r.published_at_actual && r.published_at_actual >= from && r.published_at_actual <= to),
       ])
-      const stats = statsRes.data || []
-      const hashtags = hashtagRes.data || []
-      const details = detailsRes.data || []
-      const posts = postsRes.data || []
 
       const totalImpressions = stats.reduce((s, r) => s + (r.impressions || 0), 0)
       const totalLikes = stats.reduce((s, r) => s + (r.likes || 0), 0)
@@ -1334,14 +1381,12 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
 
     // --- Notification settings ---
     if (resource === 'notification-settings' && method === 'GET') {
-      const sb = supabase()
-      const { data } = await sb.from('app_settings').select('value').eq('key', 'notification_level').maybeSingle()
-      return ok({ level: data?.value?.level || 'failures_only' })
+      const lvl = await storage.appState.get('notification_level', null)
+      return ok({ level: lvl?.level || 'failures_only' })
     }
     if (resource === 'notification-settings' && method === 'PUT') {
       const body = await request.json()
-      const sb = supabase()
-      await sb.from('app_settings').upsert({ key: 'notification_level', value: { level: body.level || 'failures_only' } }, { onConflict: 'key' })
+      await storage.appState.set('notification_level', { level: body.level || 'failures_only' })
       return ok({ saved: true })
     }
 
@@ -1388,9 +1433,7 @@ JSON only, no markdown fences.`
 
     // --- Campaign rollup ---
     if (resource === 'campaign-rollup' && id && method === 'GET') {
-      const sb = supabase()
-      const { data } = await sb.from('content_jobs').select('*').eq('campaign_id', id)
-      const posts = data || []
+      const posts = await storage.jobs.list({ campaign_id: id })
       const totalImp = posts.reduce((s, p) => s + (p.platform_posts?.stats?.impressions || 0), 0)
       const totalEng = posts.reduce((s, p) => s + (p.platform_posts?.stats?.engagement || 0), 0)
       return ok({ campaign_id: id, total_posts: posts.length, total_impressions: totalImp, total_engagement: totalEng, posts })
@@ -1398,7 +1441,6 @@ JSON only, no markdown fences.`
 
     // --- Pipeline status (automation visual) ---
     if (resource === 'pipeline-status' && method === 'GET') {
-      const sb = supabase()
       const jobs = await storage.jobs.list({})
       const stages = { fetch: 0, generate: 0, validate: 0, approve: 0, publish: 0 }
       jobs.forEach(j => {
@@ -1413,32 +1455,29 @@ JSON only, no markdown fences.`
 
     // --- Live automation stats (social + blog dashboards) ---
     if (resource === 'automation-stats' && method === 'GET') {
-      const sb = supabase()
       const today = new Date().toISOString().slice(0, 10)
-      const [settings, dqStats, jobs, pending, failed, publishedToday, blogPending, blogPublishedToday] = await Promise.all([
+      const [settings, dqRows, jobs, blogRows] = await Promise.all([
         automation.get().catch(() => ({})),
-        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'queued'),
+        storage.driveQueue.list({}).catch(() => []),
         storage.jobs.list({}).catch(() => []),
-        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
-        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'failed'),
-        sb.from('drive_queue').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-        sb.from('blog_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
-        sb.from('blog_queue').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+        storage.blogQueue.list().catch(() => []),
       ])
+      const dqStats = { queued: dqRows.filter(r => r.status === 'queued').length, pending_approval: dqRows.filter(r => r.status === 'pending_approval').length, failed: dqRows.filter(r => r.status === 'failed').length, published: dqRows.filter(r => r.status === 'published').length }
+      const blogStats = { pending_approval: blogRows.filter(r => r.status === 'pending_approval').length, published: blogRows.filter(r => r.status === 'published').length }
       const totalJobs = jobs.length
       const published = jobs.filter(j => j.status === 'published').length
       const failedJobs = jobs.filter(j => j.status === 'failed').length
       const successRate = totalJobs > 0 ? Math.round(((totalJobs - failedJobs) / totalJobs) * 100) : 0
       return ok({
         status: settings.kill_switch ? 'Stopped' : settings.pause_queue ? 'Paused' : settings.enabled ? 'Running' : 'Disabled',
-        queue_size: dqStats.count || 0,
-        waiting_approval: (pending.count || 0),
-        failed: (failed.count || 0) + failedJobs,
+        queue_size: dqStats.queued,
+        waiting_approval: dqStats.pending_approval,
+        failed: dqStats.failed + failedJobs,
         posts_generated_today: jobs.filter(j => j.created_at?.startsWith(today)).length,
-        posts_published_today: (publishedToday.count || 0),
+        posts_published_today: dqStats.published,
         success_rate: successRate,
-        blog_waiting_approval: blogPending.count || 0,
-        blogs_published_today: blogPublishedToday.count || 0,
+        blog_waiting_approval: blogStats.pending_approval,
+        blogs_published_today: blogStats.published,
         next_slot: settings.posting_times?.find(t => t >= (new Date().toISOString().slice(11, 16))) || settings.posting_times?.[0] || null,
         timezone: settings.timezone,
         last_tick_at: settings.last_tick_at,

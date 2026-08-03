@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Morning brief (or current time of run)
         run: |
-          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
           HOUR=$(TZ='Asia/Kolkata' date +%H)
           TYPE=$([ "$HOUR" -lt 12 ] && echo "morning" || echo "evening")
           curl -sS -o /tmp/brief.json -w "brief: %{http_code}\n" \

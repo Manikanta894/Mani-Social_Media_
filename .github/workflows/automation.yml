@@ -3,10 +3,9 @@
 # Runs the automation + blog ticks every 5 minutes, 24/7, free via GitHub
 # Actions. No pg_cron or external cron needed.
 #
-# SECURITY: the tick secret below is a fallback so automation works out of
-# the box. To rotate it: Settings -> Secrets and variables -> Actions ->
-# New repository secret -> Name: AUTOMATION_SECRET, Value: <tick secret>.
-# The secret automatically overrides the fallback once set.
+# SECURITY: the tick secret below is DERIVED from APP_SESSION_SECRET
+# (HMAC-SHA256) — automation keeps working with zero stored secrets.
+# To rotate: change APP_SESSION_SECRET in Vercel, then update the fallbacks.
 # ============================================================================
 name: SocialForge Automation
 
@@ -25,7 +24,7 @@ jobs:
     steps:
       - name: Social automation tick
         run: |
-          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
           curl -sS -o /tmp/social_tick.json -w "social: %{http_code}\n" \
             -X POST "https://social.manikantar.in/api/automation/tick" \
             -H "x-automation-secret: ${SECRET}" || true
@@ -33,15 +32,15 @@ jobs:
 
       - name: Blog automation tick
         run: |
-          SECRET="${BLOG_SECRET:-41d663cb3ea84dd9abd1e3beeee5af9b}"
+          SECRET="${BLOG_SECRET:-3c9e3ddcdfd5e427262a8fd2ee5f2bd383254b743072a86ecbffcf0b46e57f48}"
           curl -sS -o /tmp/blog_tick.json -w "blog: %{http_code}\n" \
             -X POST "https://social.manikantar.in/api/blog/tick" \
             -H "x-automation-secret: ${SECRET}" || true
           cat /tmp/blog_tick.json || true
 
-      - name: News Radar scan (throttled to 15 min server-side)
+      - name: News Radar scan (throttled to 5 min server-side)
         run: |
-          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
           curl -sS -o /tmp/news_tick.json -w "news: %{http_code}\n" \
             -X POST "https://social.manikantar.in/api/automation/news" \
             -H "x-automation-secret: ${SECRET}" || true

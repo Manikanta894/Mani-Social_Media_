@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Loader2, Wand2, Send, X, List, Plus, Globe, Trash2, AlertTriangle, Radio, ExternalLink, Zap, Bot, Check, Clock, TrendingUp, ShieldCheck, Target, Search, Flame, BrainCircuit, Newspaper, Eye, Star, CalendarDays, Filter, Zap as ZapIcon, PlayCircle } from 'lucide-react'
+import { RefreshCw, Loader2, Wand2, Send, X, List, Plus, Globe, Trash2, AlertTriangle, Radio, ExternalLink, Zap, Bot, Check, Clock, TrendingUp, ShieldCheck, Target, Search, Flame, BrainCircuit, Newspaper, Eye, Star, CalendarDays, Filter, Zap as ZapIcon, PlayCircle, Layers, Pencil, Rocket, RefreshCcw, ChevronDown, CalendarClock } from 'lucide-react'
 import { api } from '@/components/shared'
 import { toast } from 'sonner'
 
@@ -11,6 +11,22 @@ const fmt = n => (n || 0).toLocaleString()
 const short = n => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : fmt(n)
 const STATUS_COLORS = { new: '#8A8A96', ai_generated: '#7C3AED', pending_approval: '#F59E0B', approved: '#3B82F6', scheduled: '#8B5CF6', published: '#0EA37A', rejected: '#EF4444' }
 const seed = (str) => { let h = 0; for (let i = 0; i < (str || '').length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0; return Math.abs(h) }
+
+// Client mirror of lib/news/campaign.js platform metadata
+const PLATFORMS = [
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'blog', label: 'SEO Blog' },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'threads', label: 'Threads' },
+  { key: 'newsletter', label: 'Newsletter' },
+  { key: 'telegram_summary', label: 'Telegram Summary' },
+  { key: 'carousel', label: 'Carousel' },
+  { key: 'image_prompt', label: 'Image Prompt' },
+]
+const P_ICON = { linkedin: '💼', blog: '📝', instagram: '📷', facebook: '👥', threads: '🧵', newsletter: '✉️', telegram_summary: '📢', carousel: '🎠', image_prompt: '🎨' }
+const STEP_IDS = ['reading', 'researching', 'sources', ...PLATFORMS.map(p => 'gen_' + p.key), 'qa', 'complete']
+const STEP_ICON = { done: '✅', active: '🟡', error: '❌', pending: '⬜', skipped: '➖' }
 
 function analyzeItem(item) {
   const s = seed(item.id || item.title)
@@ -26,6 +42,24 @@ function analyzeItem(item) {
 }
 
 const TOPIC_SUGGESTIONS = ['Artificial Intelligence', 'HR', 'Recruitment', 'People Analytics', 'Startups', 'Technology', 'Marketing', 'Finance', 'Productivity', 'Leadership', 'Data Science', 'Machine Learning', 'Cybersecurity', 'Cloud', 'OpenAI', 'Google', 'Microsoft', 'NVIDIA', 'Economics', 'Stock Market']
+
+// ---- Asset helpers: flatten an asset to editable text + save back ----
+function assetText(asset) {
+  if (!asset) return ''
+  if (asset.text) return asset.text
+  if (asset.body_markdown) return asset.body_markdown
+  if (asset.caption) return asset.caption
+  if (asset.subject) return `${asset.subject}\n\n${(asset.sections || []).map(s => `## ${s.heading}\n${s.body}`).join('\n\n')}\n\n${asset.closing || ''}\n\nCTA: ${asset.cta || ''}`
+  if (asset.slides) return `# ${asset.title || ''}\n\n${asset.slides.map((s, i) => `## Slide ${i + 1}: ${s.heading}\n${(s.points || []).map(p => `- ${p}`).join('\n')}\n🖼 ${s.image_prompt || ''}`).join('\n\n')}`
+  if (asset.prompt) return asset.prompt
+  return JSON.stringify(asset, null, 2)
+}
+function assetHashtags(asset) {
+  return Array.isArray(asset?.hashtags) ? asset.hashtags.join(' ') : ''
+}
+function assetTitle(asset) {
+  return asset?.title || ''
+}
 
 export default function NewsRadarPage() {
   const [sources, setSources] = useState([])
@@ -44,6 +78,19 @@ export default function NewsRadarPage() {
   const [autoMode, setAutoMode] = useState(() => localStorage.getItem('sf_news_auto') === '1')
   const [topics, setTopics] = useState(() => { try { return JSON.parse(localStorage.getItem('sf_news_topics')) || ['Artificial Intelligence', 'HR', 'Technology'] } catch { return ['Artificial Intelligence', 'HR', 'Technology'] } })
   const [newTopic, setNewTopic] = useState('')
+
+  // ---- Campaign state ----
+  const [campaign, setCampaign] = useState(null)
+  const [campaignNewsId, setCampaignNewsId] = useState(null)
+  const [campaignRunning, setCampaignRunning] = useState(false)
+  const [genPlatforms, setGenPlatforms] = useState(PLATFORMS.map(p => p.key))
+  const [expandedAsset, setExpandedAsset] = useState(null)
+  const [editText, setEditText] = useState('')
+  const [editTitle, setEditTitle] = useState('')
+  const [editTags, setEditTags] = useState('')
+  const [scheduleWhen, setScheduleWhen] = useState('')
+  const [busyAsset, setBusyAsset] = useState(null)
+  const runRef = useRef(false)
 
   const refresh = async () => {
     setLoading(true)
@@ -79,6 +126,132 @@ export default function NewsRadarPage() {
     catch (e) { toast.error(e.message) }
   }
 
+  // ---- Campaign driver: never blocks; loops GET+continue until done ----
+  const loadCampaign = async (item) => {
+    setSelItem(item)
+    setCampaignNewsId(item.id)
+    setExpandedAsset(null)
+    const st = await api('/news/campaign/' + item.id).catch(() => null)
+    setCampaign(st)
+    if (st && st.status === 'running' && !runRef.current) startPolling(item.id)
+  }
+
+  const startCampaign = async (item, platforms) => {
+    setCampaignRunning(true)
+    try {
+      const r = await api('/news/campaign', { method: 'POST', body: { news_id: item.id, platforms } })
+      setCampaign(r.state)
+      setCampaignNewsId(item.id)
+      toast.success(`Campaign started — generating ${platforms.length} content type(s)`)
+      if (!runRef.current) startPolling(item.id)
+      else runRef.current = false // signal loop to continue with the new job
+    } catch (e) { toast.error(e.message); setCampaignRunning(false) }
+  }
+
+  const startPolling = (newsId) => {
+    runRef.current = true
+    const loop = async () => {
+      try {
+        while (runRef.current) {
+          const st = await api('/news/campaign/' + newsId).catch(() => null)
+          if (st) setCampaign(st)
+          if (!st || st.status === 'done' || st.status === 'error') { runRef.current = false; setCampaignRunning(false); refresh(); return }
+          const cont = await api('/news/campaign/' + newsId + '/continue', { method: 'POST' }).catch(() => null)
+          if (cont?.state) setCampaign(cont.state)
+          if (cont?.complete) { runRef.current = false; setCampaignRunning(false); toast.success('Campaign complete — all platforms ready'); refresh(); return }
+          if (!cont?.ok) { runRef.current = false; setCampaignRunning(false); return }
+          await new Promise(r => setTimeout(r, 2200))
+        }
+      } catch (e) { runRef.current = false; setCampaignRunning(false) }
+    }
+    loop()
+  }
+
+  const stopCampaignPolling = () => { runRef.current = false; setCampaignRunning(false) }
+
+  const openAssetEditor = (key) => {
+    const asset = campaign?.assets?.[key]
+    if (!asset) return
+    setExpandedAsset(expandedAsset === key ? null : key)
+    setEditText(assetText(asset))
+    setEditTitle(assetTitle(asset))
+    setEditTags(assetHashtags(asset))
+  }
+
+  const saveAsset = async (key) => {
+    const asset = campaign?.assets?.[key]
+    if (!asset) return
+    setBusyAsset(key)
+    const patch = {}
+    if (key === 'blog') { patch.body_markdown = editText; if (editTitle.trim()) patch.title = editTitle.trim(); if (editTags.trim()) patch.tags = editTags.trim().split(/[\s,]+/).filter(Boolean) }
+    else if (key === 'telegram_summary') { patch.text = editText }
+    else if (key === 'image_prompt') { patch.prompt = editText; if (editTitle.trim()) patch.title = editTitle.trim() }
+    else if (key === 'newsletter') { const [subj, ...rest] = editText.split(/\n+/); patch.subject = (subj || '').replace(/^#\s*/, ''); patch.body_flat = rest.join('\n').trim(); if (asset.sections?.length) patch.sections = asset.sections }
+    else if (key === 'carousel') { patch.carousel_flat = editText }
+    else { patch.caption = editText; if (editTitle.trim()) patch.title = editTitle.trim(); if (editTags.trim()) patch.hashtags = editTags.trim().split(/[\s,]+/).filter(Boolean); if (editTags.trim() && !patch.hashtags.length) patch.hashtags = [] }
+    try {
+      const r = await api('/news/campaign/' + campaign.news_id + '/asset/' + key, { method: 'PUT', body: patch })
+      setCampaign(r.state)
+      toast.success(`${PLATFORMS.find(p => p.key === key)?.label} saved`)
+    } catch (e) { toast.error(e.message) } finally { setBusyAsset(null) }
+  }
+
+  const scheduleAsset = async (key, when) => {
+    setBusyAsset(key)
+    try {
+      const r = await api('/news/campaign/' + campaign.news_id + '/schedule', { method: 'POST', body: { platforms: [key], when: when || null } })
+      setCampaign(r.state)
+      toast.success(when ? `${PLATFORMS.find(p => p.key === key)?.label} scheduled` : 'Schedule cleared')
+    } catch (e) { toast.error(e.message) } finally { setBusyAsset(null) }
+  }
+
+  const scheduleAll = async () => {
+    if (!scheduleWhen) return toast.error('Pick a date & time first')
+    setBusyAsset('all')
+    try {
+      const r = await api('/news/campaign/' + campaign.news_id + '/schedule', { method: 'POST', body: { when: scheduleWhen } })
+      setCampaign(r.state)
+      toast.success('All platforms scheduled')
+    } catch (e) { toast.error(e.message) } finally { setBusyAsset(null) }
+  }
+
+  const publishAsset = async (key) => {
+    setBusyAsset(key)
+    try {
+      const r = await api('/news/campaign/' + campaign.news_id + '/publish', { method: 'POST', body: { platforms: [key] } })
+      setCampaign(await api('/news/campaign/' + campaign.news_id).catch(() => null))
+      const res = r.results?.[0]
+      if (res?.ok) toast.success(res.url ? `${PLATFORMS.find(p => p.key === key)?.label} published — ${res.url}` : `${PLATFORMS.find(p => p.key === key)?.label} published`)
+      else toast.error(`${PLATFORMS.find(p => p.key === key)?.label}: ${res?.error || 'publish failed'}`)
+      refresh()
+    } catch (e) { toast.error(e.message) } finally { setBusyAsset(null) }
+  }
+
+  const publishAll = async () => {
+    setPublishing('all')
+    try {
+      const r = await api('/news/campaign/' + campaign.news_id + '/publish', { method: 'POST' })
+      const oks = (r.results || []).filter(x => x.ok)
+      const fails = (r.results || []).filter(x => !x.ok)
+      if (oks.length) toast.success(`${oks.length} published`)
+      if (fails.length) toast.error(`${fails.length} failed: ${fails[0].error || ''}`)
+      setCampaign(await api('/news/campaign/' + campaign.news_id).catch(() => null))
+      refresh()
+    } catch (e) { toast.error(e.message) } finally { setPublishing(null) }
+  }
+
+  const retryAsset = async (key) => {
+    setBusyAsset(key)
+    try {
+      const r = await api('/news/campaign/' + campaign.news_id + '/regenerate', { method: 'POST', body: { platform: key } })
+      setCampaign(r.state)
+      const a = r.state?.assets?.[key]
+      if (a?.status === 'done') toast.success(`${PLATFORMS.find(p => p.key === key)?.label} regenerated`)
+      else toast.error(`${PLATFORMS.find(p => p.key === key)?.label} still failing: ${a?.error || ''}`)
+    } catch (e) { toast.error(e.message) } finally { setBusyAsset(null) }
+  }
+
+  // ---- Legacy quick actions ----
   const generateAi = async (newsId) => {
     setGenerating(newsId)
     try { await api('/news/generate', { method: 'POST', body: { news_id: newsId } }); toast.success('AI content generated'); await refresh() }
@@ -156,6 +329,9 @@ export default function NewsRadarPage() {
   ]
 
   if (loading) return <div className="flex items-center justify-center py-24 gap-2 text-[#8A8A96]"><Loader2 className="h-5 w-5 animate-spin" /> Loading News Radar…</div>
+
+  const campaignProgress = campaign ? Math.round(campaign.steps.filter(s => s.status === 'done').length / Math.max(1, campaign.steps.length) * 100) : 0
+  const currentStep = campaign?.steps.find(s => s.status === 'active')?.label || (campaign?.status === 'done' ? 'Complete' : '')
 
   return (
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -332,8 +508,9 @@ export default function NewsRadarPage() {
           {filtered.map((item, i) => {
             const a = analyzeItem(item)
             const pr = a.priority === 'High' ? '#EF4444' : a.priority === 'Medium' ? '#F59E0B' : '#8A8A96'
+            const generatedCount = item.generated_posts ? Object.keys(item.generated_posts).length : 0
             return (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer relative ${item.is_urgent ? 'ring-1 ring-red-300' : ''}`} onClick={() => setSelItem(item)}>
+              <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer relative ${item.is_urgent ? 'ring-1 ring-red-300' : ''}`} onClick={() => loadCampaign(item)}>
                 {item.image_url ? <img src={item.image_url} alt="" className="h-32 w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} /> : <div className="h-16 bg-gradient-to-r from-[#1A1037] to-[#4C1D63] flex items-center px-4"><Newspaper className="h-5 w-5 text-[#C4B5FD]" /><span className="text-[0.6rem] text-white/50 ml-2">News Radar · {item.source_name}</span></div>}
                 <div className="p-4">
                   <div className="flex items-center gap-1.5 mb-2 flex-wrap">
@@ -368,10 +545,11 @@ export default function NewsRadarPage() {
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#F0F1F5]">
                     <span className="text-[0.55rem] font-semibold text-[#8A8A96]">{item.source_name || '—'} · {item.published_at ? new Date(item.published_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</span>
                     <span className="text-[0.55rem] font-bold text-[#0EA37A]">~{short(a.reach)} reach</span>
+                    {generatedCount > 0 && <span className="text-[0.55rem] font-bold text-[#7C3AED]">⚡ {generatedCount} ready</span>}
                     <span className="ml-auto flex items-center gap-1 text-[0.55rem] font-semibold text-[#8A8A96]">{a.sentiment}</span>
                   </div>
                   <div className="flex gap-1.5 mt-3" onClick={e => e.stopPropagation()}>
-                    {item.status === 'new' && <button onClick={() => generateAi(item.id)} disabled={generating === item.id} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1 hover:opacity-90">{generating === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}Generate AI</button>}
+                    {item.status === 'new' && <button onClick={() => loadCampaign(item)} disabled={generating === item.id} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1 hover:opacity-90">{generating === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Layers className="h-3 w-3" />}Generate All</button>}
                     {(item.status === 'pending_approval' || item.status === 'approved') && <button onClick={() => approveAndSchedule(item)} disabled={publishing === item.id} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] flex items-center justify-center gap-1 hover:opacity-90">{publishing === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}Approve & Publish</button>}
                     {(item.status === 'new' || item.status === 'pending_approval') && <button onClick={() => setStatus(item.id, 'rejected', 'Rejected')} className="px-3 py-2 rounded-xl text-xs font-semibold bg-red-50 text-red-500 hover:bg-red-100"><X className="h-3 w-3" /></button>}
                     {item.url && <a href={item.url} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96] hover:text-[#7C3AED]"><ExternalLink className="h-3 w-3" /></a>}
@@ -397,7 +575,7 @@ export default function NewsRadarPage() {
                 {filtered.slice(0, 12).map(item => {
                   const a = analyzeItem(item)
                   return (
-                    <tr key={item.id} className="border-b border-[#F0F1F5] hover:bg-[#F8F9FC] transition-colors cursor-pointer" onClick={() => setSelItem(item)}>
+                    <tr key={item.id} className="border-b border-[#F0F1F5] hover:bg-[#F8F9FC] transition-colors cursor-pointer" onClick={() => loadCampaign(item)}>
                       <td className="py-2.5 px-3 max-w-[260px]"><span className="font-semibold text-[#16161D] truncate block">{item.title}</span><span className="text-[0.55rem] text-[#8A8A96]">{item.summary?.slice(0, 60)}</span></td>
                       <td className="py-2.5 px-3 text-[#8A8A96]">{item.source_name || '—'}</td>
                       <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{item.category || 'general'}</span></td>
@@ -408,9 +586,9 @@ export default function NewsRadarPage() {
                       <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{item.created_at ? new Date(item.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
                       <td className="py-2.5 px-3" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
-                          {item.status === 'new' && <button onClick={() => generateAi(item.id)} className="h-7 w-7 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white flex items-center justify-center" title="Generate AI"><Wand2 className="h-3 w-3" /></button>}
+                          {item.status === 'new' && <button onClick={() => loadCampaign(item)} className="h-7 w-7 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white flex items-center justify-center" title="Generate All"><Layers className="h-3 w-3" /></button>}
                           {(item.status === 'pending_approval' || item.status === 'approved') && <button onClick={() => approveAndSchedule(item)} className="h-7 w-7 rounded-lg bg-[#0EA37A]/10 text-[#0EA37A] flex items-center justify-center" title="Approve & publish"><Send className="h-3 w-3" /></button>}
-                          <button onClick={() => setSelItem(item)} className="h-7 w-7 rounded-lg bg-[#F4F5F9] text-[#8A8A96] flex items-center justify-center hover:text-[#7C3AED]" title="Analysis"><Eye className="h-3 w-3" /></button>
+                          <button onClick={() => loadCampaign(item)} className="h-7 w-7 rounded-lg bg-[#F4F5F9] text-[#8A8A96] flex items-center justify-center hover:text-[#7C3AED]" title="Analysis"><Eye className="h-3 w-3" /></button>
                         </div>
                       </td>
                     </tr>
@@ -442,13 +620,13 @@ export default function NewsRadarPage() {
       {/* Drawer */}
       <AnimatePresence>
         {selItem && (
-          <motion.div initial={{ x: 480 }} animate={{ x: 0 }} exit={{ x: 480 }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed right-0 top-0 bottom-0 w-full max-w-[420px] bg-white z-50 shadow-2xl flex flex-col">
+          <motion.div initial={{ x: 480 }} animate={{ x: 0 }} exit={{ x: 480 }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed right-0 top-0 bottom-0 w-full max-w-[620px] bg-white z-50 shadow-2xl flex flex-col">
             <div className="bg-gradient-to-r from-[#1A1037] to-[#4C1D63] px-5 py-4 relative overflow-hidden">
               <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#EF4444]/20 blur-2xl" />
               <div className="relative flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#EF4444] to-[#EC4899] flex items-center justify-center"><Radio className="h-4 w-4 text-white" /></div>
                 <div><h3 className="text-sm font-bold text-white">AI News Analysis</h3><div className="text-[0.6rem] text-white/60">{selItem.source_name || 'News Radar'}</div></div>
-                <button onClick={() => setSelItem(null)} className="ml-auto h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
+                <button onClick={() => { setSelItem(null); stopCampaignPolling() }} className="ml-auto h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -468,6 +646,118 @@ export default function NewsRadarPage() {
                   ))}
                 </div>
               ) })()}
+
+              {/* ============ CAMPAIGN / GENERATION PIPELINE ============ */}
+              <div className="rounded-xl border border-[#EBECF2] p-3.5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold flex items-center gap-1.5"><Layers className="h-3 w-3 text-[#7C3AED]" /> Generation Pipeline — one research pass, every platform</h4>
+                  {campaignRunning && <span className="ml-auto text-[0.6rem] font-bold text-[#7C3AED] animate-pulse flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> {campaignProgress}%</span>}
+                </div>
+
+                {/* No campaign yet → platform picker */}
+                {!campaign && (
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {PLATFORMS.map(p => (
+                        <button key={p.key} onClick={() => setGenPlatforms(sel => sel.includes(p.key) ? sel.filter(x => x !== p.key) : [...sel, p.key])} className={`text-[0.6rem] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${genPlatforms.includes(p.key) ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#D8C8FB]' : 'bg-[#F8F9FC] text-[#8A8A96] border-[#EBECF2]'}`}>{P_ICON[p.key]} {p.label}</button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button onClick={() => startCampaign(selItem, genPlatforms)} disabled={!genPlatforms.length || campaignRunning} className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1.5 hover:opacity-90 disabled:opacity-50">
+                        <Wand2 className="h-3.5 w-3.5" /> Generate All ({genPlatforms.length})
+                      </button>
+                      <button onClick={() => { setGenPlatforms(PLATFORMS.map(p => p.key)); toast.info('All content types selected') }} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">All</button>
+                      <button onClick={() => { setGenPlatforms([]); toast.info('Select content types') }} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">None</button>
+                    </div>
+                    <div className="text-[0.6rem] text-[#8A8A96] leading-relaxed">Research runs <b>once</b> (read article → knowledge pack → supporting sources) and every selected content type is generated from the same context. Failed platforms never block the rest — they show an error and can be retried individually.</div>
+                  </div>
+                )}
+
+                {/* Running → live progress stepper */}
+                {campaign && campaign.status === 'running' && (
+                  <div className="space-y-2.5">
+                    <div className="h-1.5 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] transition-all duration-500" style={{ width: `${campaignProgress}%` }} /></div>
+                    {currentStep && <div className="text-[0.65rem] font-semibold text-[#7C3AED] animate-pulse">● {currentStep}</div>}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1">
+                      {campaign.steps.map(s => (
+                        <div key={s.id} className={`flex items-center gap-1.5 text-[0.62rem] rounded-lg px-2 py-1 ${s.status === 'active' ? 'bg-[#7C3AED]/8 text-[#7C3AED] font-semibold' : s.status === 'done' ? 'text-[#0EA37A]' : s.status === 'error' ? 'text-red-500' : 'text-[#8A8A96]'}`}>
+                          <span>{STEP_ICON[s.status] || '⬜'}</span><span className="truncate">{s.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={stopCampaignPolling} className="w-full py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96] hover:text-red-500">Stop waiting (engine continues in background)</button>
+                  </div>
+                )}
+
+                {/* Done → asset manager */}
+                {campaign && campaign.status !== 'running' && (
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {PLATFORMS.map(p => {
+                        const a = campaign.assets?.[p.key]
+                        if (!a) return null
+                        const st = a.status
+                        const stColor = st === 'done' ? '#0EA37A' : st === 'error' ? '#EF4444' : st === 'scheduled' ? '#8B5CF6' : st === 'published' ? '#3B82F6' : '#8A8A96'
+                        return (
+                          <button key={p.key} onClick={() => openAssetEditor(p.key)} className={`text-[0.6rem] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${expandedAsset === p.key ? 'ring-2 ring-[#7C3AED]/30 border-[#7C3AED]' : 'border-[#EBECF2]'}`} style={{ backgroundColor: stColor + '12', color: stColor }}>
+                            {st === 'done' ? '✅' : st === 'error' ? '❌' : st === 'published' ? '🚀' : st === 'scheduled' ? '📅' : '⬜'} {P_ICON[p.key]} {p.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {Object.keys(campaign.assets).length === 0 && <div className="text-[0.65rem] text-[#8A8A96] text-center py-3">No assets yet — choose platforms above and press Generate All.</div>}
+
+                    {/* Expanded asset editor */}
+                    {expandedAsset && campaign.assets[expandedAsset] && (() => {
+                      const key = expandedAsset
+                      const a = campaign.assets[key]
+                      const meta = PLATFORMS.find(p => p.key === key)
+                      return (
+                        <div className="rounded-xl border border-[#EBECF2] bg-[#FAFAFD] p-3 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-[#16161D]">{P_ICON[key]} {meta.label}</span>
+                            {a.status === 'error' ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500">ERROR</span>
+                              : a.status === 'published' ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#3B82F6]">PUBLISHED</span>
+                              : a.status === 'scheduled' ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-[#8B5CF6]">SCHEDULED</span>
+                              : <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A]">READY</span>}
+                            {a.scheduled_for && <span className="text-[0.55rem] text-[#8B5CF6] font-semibold">📅 {new Date(a.scheduled_for).toLocaleString()}</span>}
+                            {a.publish_results?.url && <a href={a.publish_results.url} target="_blank" rel="noreferrer" className="text-[0.55rem] font-bold text-[#3B82F6] underline truncate max-w-[180px]">{a.publish_results.url}</a>}
+                          </div>
+                          {a.error && <div className="text-[0.62rem] text-red-500 bg-red-50 rounded-lg p-2">{a.error}</div>}
+                          {(a.warnings || []).length > 0 && <div className="text-[0.6rem] text-amber-600 bg-amber-50 rounded-lg p-2">⚠ {a.warnings.join(' · ')}</div>}
+                          <div className="space-y-1.5">
+                            {['blog', 'linkedin', 'instagram', 'carousel'].includes(key) && (
+                              <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Title" className="w-full text-xs rounded-lg border border-[#EBECF2] px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#7C3AED]" />
+                            )}
+                            <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={8} className="w-full text-xs rounded-lg border border-[#EBECF2] px-2.5 py-2 bg-white focus:outline-none focus:border-[#7C3AED] leading-relaxed" />
+                            {['linkedin', 'instagram', 'facebook', 'threads', 'blog'].includes(key) && (
+                              <input value={editTags} onChange={e => setEditTags(e.target.value)} placeholder="Hashtags (space separated)" className="w-full text-xs rounded-lg border border-[#EBECF2] px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#7C3AED]" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button onClick={() => saveAsset(key)} disabled={busyAsset === key} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#7C3AED] text-white hover:opacity-90 disabled:opacity-50"><Pencil className="h-3 w-3" /> {busyAsset === key ? 'Saving…' : 'Save'}</button>
+                            {a.status === 'error' && <button onClick={() => retryAsset(key)} disabled={busyAsset === key} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-amber-500 text-white hover:opacity-90 disabled:opacity-50"><RefreshCcw className="h-3 w-3" /> Retry</button>}
+                            <button onClick={() => publishAsset(key)} disabled={busyAsset === key || (a.status !== 'done' && a.status !== 'scheduled')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#0EA37A] text-white hover:opacity-90 disabled:opacity-40"><Rocket className="h-3 w-3" /> Publish</button>
+                            <div className="flex items-center gap-1 ml-auto">
+                              <input type="datetime-local" value={scheduleWhen} onChange={e => setScheduleWhen(e.target.value)} className="text-[0.6rem] rounded-lg border border-[#EBECF2] px-1.5 py-1 bg-white" />
+                              <button onClick={() => scheduleAsset(key, scheduleWhen)} disabled={busyAsset === key || !scheduleWhen} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#8B5CF6] text-white hover:opacity-90 disabled:opacity-40"><CalendarClock className="h-3 w-3" /> Sched</button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Publish-all + schedule-all row */}
+                    <div className="flex items-center gap-2 flex-wrap pt-1">
+                      <input type="datetime-local" value={scheduleWhen} onChange={e => setScheduleWhen(e.target.value)} className="text-[0.6rem] rounded-lg border border-[#EBECF2] px-1.5 py-1.5 bg-white" />
+                      <button onClick={scheduleAll} disabled={busyAsset === 'all' || !scheduleWhen} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#E4D8FB] hover:opacity-90 disabled:opacity-40"><CalendarDays className="h-3 w-3" /> Schedule all</button>
+                      <button onClick={publishAll} disabled={publishing === 'all'} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-[0.65rem] font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] hover:opacity-90 disabled:opacity-50">{publishing === 'all' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />} Publish all {Object.values(campaign.assets || {}).filter(a => a.status === 'done' || a.status === 'scheduled').length ? `(${Object.values(campaign.assets).filter(a => a.status === 'done' || a.status === 'scheduled').length})` : ''}</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-xl border border-[#EBECF2] p-3.5 bg-[#FAFAFD]">
                 <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><BrainCircuit className="h-3 w-3 text-[#7C3AED]" /> Why this matters</div>
                 <div className="space-y-1.5 text-[0.7rem] text-[#16161D] leading-relaxed">
@@ -477,36 +767,14 @@ export default function NewsRadarPage() {
                   <div>• <b>Should you post?</b> {analyzeItem(selItem).opportunity >= 55 ? 'Yes — strong engagement opportunity within the next 30 minutes.' : 'Evaluate — moderate opportunity, add your unique angle.'}</div>
                 </div>
               </div>
-              {selItem.generated_posts && Object.keys(selItem.generated_posts).length > 0 && (
-                <div className="rounded-xl border border-[#EBECF2] p-3.5">
-                  <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Generated content ({Object.keys(selItem.generated_posts).length} platforms)</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(selItem.generated_posts).map(([p, post]) => (
-                      <span key={p} className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{p}</span>
-                    ))}
-                  </div>
-                  <div className="mt-2 space-y-1.5 max-h-36 overflow-y-auto">
-                    {Object.entries(selItem.generated_posts).slice(0, 2).map(([p, post]) => (
-                      <div key={p} className="rounded-lg bg-[#FAFAFD] border border-[#EBECF2] p-2.5 text-[0.65rem] text-[#16161D] leading-relaxed line-clamp-4"><b className="capitalize">{p}:</b> {post?.caption || ''}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="rounded-xl border border-[#EBECF2] p-3.5">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><Zap className="h-3 w-3 text-[#EC4899]" /> AI recommendations</div>
-                <div className="space-y-1.5 text-[0.7rem] text-[#16161D]">
-                  <div>• {selItem.is_trending ? 'Topic is rapidly trending — post within 30 minutes.' : 'Steady interest — schedule within the next few hours.'}</div>
-                  <div>• LinkedIn performs best for {selItem.category || 'industry'} news; add carousels for higher reach.</div>
-                  <div>• Mention the source company and add statistics for credibility.</div>
-                </div>
-              </div>
             </div>
             <div className="p-5 border-t border-[#F0F1F5] space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                {selItem.status === 'new' && <button onClick={() => generateAi(selItem.id)} className="py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1.5">{generating === selItem.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}Generate AI</button>}
-                {(selItem.status === 'pending_approval' || selItem.status === 'approved') && <button onClick={() => { approveAndSchedule(selItem); setSelItem(null) }} className="py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] flex items-center justify-center gap-1.5"><Send className="h-3.5 w-3.5" />Approve & Publish</button>}
+                {campaign && campaign.status !== 'running' && <button onClick={publishAll} disabled={publishing === 'all'} className="py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] flex items-center justify-center gap-1.5 disabled:opacity-50">{publishing === 'all' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}Publish all</button>}
+                {campaign && campaign.status === 'running' && <div className="py-2.5 rounded-xl text-sm font-bold bg-[#7C3AED]/10 text-[#7C3AED] flex items-center justify-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" />Generating… {campaignProgress}%</div>}
+                {(!campaign || campaign.status !== 'running') && <button onClick={() => { if (campaign) { startCampaign(selItem, PLATFORMS.map(p => p.key)) } else { startCampaign(selItem, genPlatforms) } }} className="py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1.5 hover:opacity-90"><Wand2 className="h-3.5 w-3.5" />{campaign ? 'Regenerate all' : 'Generate All'}</button>}
                 {selItem.url && <a href={selItem.url} target="_blank" rel="noreferrer" className="py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] flex items-center justify-center gap-1.5"><ExternalLink className="h-3.5 w-3.5" />Open source</a>}
-                <button onClick={() => setSelItem(null)} className="py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2]">Close</button>
+                <button onClick={() => { setSelItem(null); stopCampaignPolling() }} className="py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2]">Close</button>
               </div>
             </div>
           </motion.div>

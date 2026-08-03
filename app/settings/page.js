@@ -18,7 +18,6 @@ import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { api, PROVIDER_TYPES, StatusStamp, RunningOrderRow, resizeImageToBase64 } from '@/components/shared'
-import { supabaseBrowser } from '@/lib/supabase-browser'
 import { toast } from 'sonner'
 
 const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -650,129 +649,45 @@ function TelegramTab() {
 }
 
 function SecurityTab() {
-  const [mfaFactors, setMfaFactors] = useState([])
+  // Single-user security: password lives in env (APP_PASSWORD), session is a
+  // signed HttpOnly cookie. No database, no MFA enrollment UI needed.
+  const [session, setSession] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [enrolling, setEnrolling] = useState(false)
-  const [enrollData, setEnrollData] = useState(null)
-  const [totpCode, setTotpCode] = useState('')
-  const [codes, setCodes] = useState(null)
 
   const refresh = async () => {
     setLoading(true)
-    try {
-      const { data } = await supabaseBrowser().auth.mfa.listFactors()
-      setMfaFactors(data?.all || [])
-    } catch (e) { /* ignore */ }
+    try { const s = await api('/auth/session'); setSession(!!s?.session) } catch {}
     finally { setLoading(false) }
   }
 
   useEffect(() => { refresh() }, [])
 
-  const verifiedFactors = mfaFactors.filter(f => f.status === 'verified')
-  const hasMfa = verifiedFactors.length > 0
-
-  const handleEnroll = async () => {
-    setEnrolling(true)
-    try {
-      const res = await supabaseBrowser().auth.mfa.enroll({ factorType: 'totp', issuer: 'SocialForge', friendlyName: 'SocialForge MFA' })
-      if (res.error) { toast.error(res.error.message); return }
-      setEnrollData({ id: res.data.id, totp: res.data.totp })
-    } catch (e) { toast.error(e.message) } finally { setEnrolling(false) }
-  }
-
-  const handleVerifyEnroll = async () => {
-    if (!totpCode || !enrollData) return
-    try {
-      const { data: challenge, error: challengeErr } = await supabaseBrowser().auth.mfa.challenge({ factorId: enrollData.id })
-      if (challengeErr) { toast.error(challengeErr.message); return }
-      const { error: verifyErr } = await supabaseBrowser().auth.mfa.verify({ factorId: enrollData.id, challengeId: challenge.id, code: totpCode })
-      if (verifyErr) { toast.error(verifyErr.message); return }
-      toast.success('TOTP enrolled')
-      setEnrollData(null)
-      setTotpCode('')
-      await refresh()
-    } catch (e) { toast.error(e.message) }
-  }
-
-  const handleUnenroll = async (factorId) => {
-    if (!confirm('Remove this MFA factor?')) return
-    try {
-      const { error } = await supabaseBrowser().auth.mfa.unenroll({ factorId })
-      if (error) { toast.error(error.message); return }
-      toast.success('MFA factor removed')
-      await refresh()
-    } catch (e) { toast.error(e.message) }
-  }
-
-  const generateBackupCodes = async () => {
-    try {
-      const { data, error } = await supabaseBrowser().auth.mfa.generateRecoveryCodes()
-      if (error) { toast.error(error.message); return }
-      setCodes(data)
-      toast.success('Backup codes generated')
-    } catch (e) { toast.error(e.message) }
-  }
-
-  if (loading) return <div className="text-sm text-muted-foreground py-10 text-center">Loading…</div>
+  const logout = async () => { await fetch('/api/auth/signout', { method: 'POST' }); window.location.href = '/login' }
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <div>
-        <h3 className="font-serif font-semibold text-lg">Multi-Factor Authentication</h3>
-        <p className="text-sm text-muted-foreground mt-1">Add an extra layer of security with TOTP authenticator apps.</p>
-      </div>
-
-      <div className="border border-border rounded-sm p-4 bg-card">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="font-medium">Authenticator App</div>
-            <div className="text-sm text-muted-foreground mt-0.5">{hasMfa ? 'Enabled' : 'Not configured'}</div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Security</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-xl border border-[#EBECF2] bg-[#FAFAFD] p-4 text-sm">
+          <div className="font-bold text-[#16161D]">Session status</div>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${session ? 'bg-[#0EA37A]' : 'bg-[#C4C5CE]'}`} />
+            <span className="text-[#8A8A96]">{session ? 'Active session (signed cookie)' : 'No session'}</span>
           </div>
-          {hasMfa ? (
-            <Button variant="outline" size="sm" className="border-flag text-flag hover:bg-flag/10" onClick={() => handleUnenroll(verifiedFactors[0].id)}>Remove</Button>
-          ) : !enrollData ? (
-            <Button size="sm" className="bg-primary text-primary-foreground" onClick={handleEnroll} disabled={enrolling}>
-              {enrolling ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set up'}
-            </Button>
-          ) : null}
         </div>
-
-        {enrollData && (
-          <div className="space-y-4 pt-3 border-t border-border mt-3">
-            <div className="text-sm text-muted-foreground">Scan this QR code with Google Authenticator, Authy, or any TOTP app.</div>
-            {enrollData.totp?.qr_code && <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }} />}
-            {enrollData.totp?.secret && (
-              <div className="bg-stone-50 rounded-sm p-3 text-center">
-                <div className="text-[10px] uppercase text-muted-foreground mb-1">Or enter this key manually</div>
-                <code className="text-xs font-mono" style={{ color: '#44403c' }}>{enrollData.totp.secret}</code>
-              </div>
-            )}
-            <div className="flex gap-2">
-              <Input type="text" value={totpCode} onChange={e => setTotpCode(e.target.value)} placeholder="000000" maxLength={6} className="text-center text-lg tracking-widest w-32" />
-              <Button onClick={handleVerifyEnroll} disabled={totpCode.length !== 6} className="bg-primary text-primary-foreground">Verify & Enable</Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="border border-border rounded-sm p-4 bg-card">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <div className="font-medium">Backup Codes</div>
-            <div className="text-sm text-muted-foreground mt-0.5">Use one-time codes if you lose access to your authenticator.</div>
-          </div>
-          <Button variant="outline" size="sm" className="border-border" onClick={generateBackupCodes}>Generate</Button>
+        <div className="rounded-xl border border-[#EBECF2] bg-[#FAFAFD] p-4 text-sm space-y-2">
+          <div className="font-bold text-[#16161D]">Single-operator auth</div>
+          <ul className="text-xs text-[#8A8A96] space-y-1.5 leading-relaxed">
+            <li>• Password is stored in <code className="text-[#7C3AED]">APP_PASSWORD</code> (environment variable) — change it there.</li>
+            <li>• Sessions are 30-day signed HttpOnly cookies signed by <code className="text-[#7C3AED]">APP_SESSION_SECRET</code>.</li>
+            <li>• No credentials are stored in Google Sheets or any database.</li>
+          </ul>
         </div>
-        {codes && (
-          <div className="bg-stone-50 rounded-sm p-3 mt-2">
-            <div className="text-[10px] uppercase text-muted-foreground mb-2">Save these somewhere safe. Each code can be used once.</div>
-            <div className="grid grid-cols-2 gap-1">
-              {codes.map((c, i) => <code key={i} className="font-mono text-xs" style={{ color: '#44403c' }}>{c}</code>)}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        <Button variant="outline" onClick={logout}>Sign out everywhere</Button>
+      </CardContent>
+    </Card>
   )
 }
 
