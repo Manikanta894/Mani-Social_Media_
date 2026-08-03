@@ -1,0 +1,39 @@
+# ============================================================================
+# SocialForge Automation Scheduler
+# Runs the automation + blog ticks every 5 minutes, 24/7, free via GitHub
+# Actions. No pg_cron or external cron needed.
+#
+# SECURITY: the tick secret below is a fallback so automation works out of
+# the box. To rotate it: Settings -> Secrets and variables -> Actions ->
+# New repository secret -> Name: AUTOMATION_SECRET, Value: <tick secret>.
+# The secret automatically overrides the fallback once set.
+# ============================================================================
+name: SocialForge Automation
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # every 5 minutes
+  workflow_dispatch: {}     # manual "Run workflow" button
+
+jobs:
+  run-ticks:
+    name: Run automation ticks
+    runs-on: ubuntu-latest
+    env:
+      AUTOMATION_SECRET: ${{ secrets.AUTOMATION_SECRET }}
+    steps:
+      - name: Social automation tick
+        run: |
+          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          curl -sS -o /tmp/social_tick.json -w "social: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/automation/tick" \
+            -H "x-automation-secret: ${SECRET}" || true
+          cat /tmp/social_tick.json || true
+
+      - name: Blog automation tick
+        run: |
+          SECRET="${AUTOMATION_SECRET:-fdbd4268135a4cea8991af0cf7fe99fc}"
+          curl -sS -o /tmp/blog_tick.json -w "blog: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/blog/tick" \
+            -H "x-automation-secret: ${SECRET}" || true
+          cat /tmp/blog_tick.json || true
