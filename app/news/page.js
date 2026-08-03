@@ -205,6 +205,33 @@ export default function NewsRadarPage() {
         ))}
       </motion.div>
 
+      {/* Executive funnel */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <h4 className="text-sm font-bold text-[#16161D]">Editorial funnel</h4>
+          <span className="text-[0.6rem] text-[#8A8A96]">Internet → detected → matched → AI approved → generated → published → impact</span>
+        </div>
+        <div className="grid grid-cols-7 gap-2 text-center">
+          {[
+            { l: 'Internet', v: '24/7', c: '#8A8A96' },
+            { l: 'News today', v: fmt(todayCount), c: '#3B82F6' },
+            { l: 'Matched', v: fmt(posts.filter(p => p.ai_analysis?.matched_topics?.length).length), c: '#7C3AED' },
+            { l: 'AI approved', v: fmt(posts.filter(p => p.status === 'pending_approval').length), c: '#F59E0B' },
+            { l: 'Generated', v: fmt(posts.filter(p => p.generated_posts && Object.keys(p.generated_posts).length).length), c: '#EC4899' },
+            { l: 'Published', v: fmt(posts.filter(p => p.status === 'published').length), c: '#0EA37A' },
+            { l: 'Avg AI score', v: avgScore ? `${avgScore}` : '—', c: '#14B8A6' },
+          ].map((s, i) => (
+            <div key={s.l} className="flex items-center gap-1.5">
+              <div className={`flex-1 rounded-xl border p-2.5 ${i === 0 ? 'bg-[#F8F9FC] border-[#EBECF2]' : 'bg-[#FAFAFD] border-[#EBECF2] hover:border-[#D8C8FB] transition-colors'}`}>
+                <div className="text-lg font-bold" style={{ color: s.c }}>{s.v}</div>
+                <div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider">{s.l}</div>
+              </div>
+              {i < 6 && <span className="text-[#C4C5CE] text-xs">→</span>}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Topics + workflow */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className={`${C} p-4 lg:col-span-2`}>
@@ -315,6 +342,12 @@ export default function NewsRadarPage() {
                     <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span>
                     {item.ai_analysis?.opportunity_score ? (
                       <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.opportunity_score >= 85 ? 'bg-red-50 text-red-600' : item.ai_analysis.opportunity_score >= 70 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>AI {item.ai_analysis.opportunity_score}/100</span>
+                    ) : null}
+                    {item.ai_analysis?.confidence ? (
+                      <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.confidence >= 75 ? 'bg-emerald-50 text-[#0EA37A]' : item.ai_analysis.confidence >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'}`} title="Multi-source verification">{item.ai_analysis.confidence >= 75 ? '✔ Verified' : '⚠ Verify'}</span>
+                    ) : null}
+                    {item.ai_analysis?.lifecycle ? (
+                      <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{item.ai_analysis.lifecycle}</span>
                     ) : null}
                     <span className="ml-auto text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: pr + '12', color: pr }}>{a.priority}</span>
                   </div>

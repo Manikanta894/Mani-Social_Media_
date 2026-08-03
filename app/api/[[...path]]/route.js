@@ -34,7 +34,7 @@ async function route(request, method) {
   const PUBLIC_API = ['auth', 'health', 'telegram', 'approve']
   const PUBLIC_RESOURCES = ['health', 'telegram', 'approve']
   const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
-  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook'
+  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief'
   if (!isPublic && !isTick) {
     const cookieName = 'sb-socialforge-auth-auth-token'
     const token = request.cookies.get(cookieName)?.value
@@ -789,6 +789,11 @@ async function route(request, method) {
       if (id === 'topics' && method === 'PUT') {
         const { saveNewsTopics } = await import('@/lib/news/ai-decision')
         return ok(await saveNewsTopics((await request.json()).topics || []))
+      }
+      if (id === 'brief' && method === 'POST') {
+        const body = await request.json().catch(() => ({}))
+        const { sendEditorialBrief } = await import('@/lib/news/ai-decision')
+        return ok(await sendEditorialBrief(body.type || 'morning'))
       }
       if (id === 'queue-settings' && method === 'PUT') {
         const body = await request.json()
