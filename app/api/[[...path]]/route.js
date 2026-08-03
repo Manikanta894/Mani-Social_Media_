@@ -34,7 +34,7 @@ async function route(request, method) {
   const PUBLIC_API = ['auth', 'health', 'telegram', 'approve']
   const PUBLIC_RESOURCES = ['health', 'telegram', 'approve']
   const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
-  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief'
+  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief' || resource === 'automation' && id === 'news-publish'
   if (!isPublic && !isTick) {
     const cookieName = 'sb-socialforge-auth-auth-token'
     const token = request.cookies.get(cookieName)?.value
@@ -752,8 +752,7 @@ async function route(request, method) {
         return ok(await getActivityFeed(limit))
       }
       if (id === 'news' && method === 'POST') {
-        // Dedicated news check job (called by the scheduler) — throttled to once per 15 min
-        const sb = supabase()
+        // Dedicated news check job (called by the scheduler) — throttled to once per 15 min        const sb = supabase()
         const { data: newsLast } = await sb.from('app_settings').select('value').eq('key', 'news_last_check').maybeSingle()
         const last = newsLast?.value?.at ? new Date(newsLast.value.at).getTime() : 0
         if (Date.now() - last < 15 * 60 * 1000) return ok({ skipped: 'throttled' })
@@ -802,6 +801,11 @@ async function route(request, method) {
       if (id === 'sync' && method === 'POST') {
         const { syncIntakeToQueue } = await import('@/lib/intake')
         return ok(await syncIntakeToQueue())
+      }
+      if (id === 'news-publish' && method === 'POST') {
+        // One-shot: publish the top news opportunity to blog + all social platforms
+        const { runNewsPublishAll } = await import('@/lib/news/publish-all')
+        return ok(await runNewsPublishAll())
       }
     }
 
