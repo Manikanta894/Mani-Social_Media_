@@ -35,15 +35,15 @@ function Kpi({ k, onSelect }) {
       <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br from-[#7C3AED]/5 to-[#EC4899]/5 blur-xl" />
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96] truncate">{k.label}</div>
+          <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96] truncate">{k.label}</div>
           <div className="text-xl font-bold text-[#16161D] mt-1.5">{k.value}</div>
           <div className="flex items-center gap-1.5 mt-1">
             {k.trend !== undefined && (
-              <span className={`text-[0.58rem] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${up ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-red-50 text-red-500'}`}>
+              <span className={`text-[0.78rem] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${up ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-red-50 text-red-500'}`}>
                 {up ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}{Math.abs(k.trend)}%
               </span>
             )}
-            {k.vs && <span className="text-[0.55rem] text-[#8A8A96]">vs {k.vs}</span>}
+            {k.vs && <span className="text-[0.9rem] text-[#8A8A96]">vs {k.vs}</span>}
           </div>
         </div>
         <div className={`h-9 w-9 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0 ${k.g}`}>{k.icon}</div>
@@ -71,11 +71,11 @@ function Section({ title, icon, accent = '#7C3AED', badge, open, onToggle, child
           <span className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${accent}12`, color: accent }}>{icon}</span>
           <div className="text-left min-w-0">
             <div className="text-sm font-semibold text-[#16161D]">{title}</div>
-            {sub && <div className="text-[0.6rem] text-[#8A8A96] truncate">{sub}</div>}
+            {sub && <div className="text-[0.95rem] text-[#8A8A96] truncate">{sub}</div>}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {badge && <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96] font-semibold">{badge}</span>}
+          {badge && <span className="text-[0.95rem] px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96] font-semibold">{badge}</span>}
           <ChevronDown className={`h-4 w-4 text-[#8A8A96] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
         </div>
       </button>
@@ -298,7 +298,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`px-3 py-1.5 rounded-full text-[0.65rem] font-semibold flex items-center gap-1.5 ${paused ? 'bg-amber-50 text-amber-600' : status === 'Running' ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>
+          <span className={`px-3 py-1.5 rounded-full text-[0.85rem] font-semibold flex items-center gap-1.5 ${paused ? 'bg-amber-50 text-amber-600' : status === 'Running' ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${paused ? 'bg-amber-500' : status === 'Running' ? 'bg-[#0EA37A] animate-pulse' : 'bg-[#8A8A96]'}`} /> {status}
           </span>
           <button onClick={genReport} className="px-3.5 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md hover:opacity-90 transition-opacity">Generate Report</button>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className={`${C} p-5 border-l-4`} style={{ borderLeftColor: '#7C3AED' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-[#16161D] flex items-center gap-2"><BarChart3 className="h-4 w-4 text-[#7C3AED]" /> {focusKpi} — Detail Audit</h3>
-              <button onClick={() => setFocusKpi(null)} className="text-[0.6rem] text-[#8A8A96] hover:text-[#7C3AED] font-medium">Close ✕</button>
+              <button onClick={() => setFocusKpi(null)} className="text-[0.95rem] text-[#8A8A96] hover:text-[#7C3AED] font-medium">Close ✕</button>
             </div>
             {(() => {
               const rows = []
@@ -350,9 +350,9 @@ export default function DashboardPage() {
                       <span className="h-8 w-8 rounded-lg bg-[#F4F5F9] flex items-center justify-center shrink-0">{r.icon}</span>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-medium text-[#16161D] truncate">{r.t}</div>
-                        <div className="text-[0.6rem] text-[#8A8A96] truncate">{r.d}</div>
+                        <div className="text-[0.95rem] text-[#8A8A96] truncate">{r.d}</div>
                       </div>
-                      <span className={`text-[0.55rem] px-2 py-0.5 rounded-full font-semibold shrink-0 ${r.s === 'failed' ? 'bg-red-50 text-red-500' : r.s === 'pending_approval' ? 'bg-amber-50 text-amber-600' : r.s === 'scheduled' ? 'bg-[#7C3AED]/10 text-[#7C3AED]' : 'bg-emerald-50 text-[#0EA37A]'}`}>{r.s}</span>
+                      <span className={`text-[0.9rem] px-2 py-0.5 rounded-full font-semibold shrink-0 ${r.s === 'failed' ? 'bg-red-50 text-red-500' : r.s === 'pending_approval' ? 'bg-amber-50 text-amber-600' : r.s === 'scheduled' ? 'bg-[#7C3AED]/10 text-[#7C3AED]' : 'bg-emerald-50 text-[#0EA37A]'}`}>{r.s}</span>
                     </div>
                   ))}
                 </div>
@@ -371,34 +371,34 @@ export default function DashboardPage() {
             <div className="flex-1 min-w-[280px]">
               <div className="flex items-center gap-2 mb-4">
                 <span className="h-8 w-8 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center"><BrainCircuit className="h-4 w-4 text-[#C4B5FD]" /></span>
-                <div><h3 className="text-sm font-bold text-white">AI Automation Status</h3><p className="text-[0.6rem] text-white/50">Live pipeline · {auto.timezone || 'Asia/Kolkata'}</p></div>
+                <div><h3 className="text-sm font-bold text-white">AI Automation Status</h3><p className="text-[0.95rem] text-white/50">Live pipeline · {auto.timezone || 'Asia/Kolkata'}</p></div>
               </div>
               <div className="space-y-2.5 text-sm text-white/80">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <span className="text-white/50 text-[0.65rem] uppercase tracking-wider font-semibold">Current task</span>
+                  <span className="text-white/50 text-[0.85rem] uppercase tracking-wider font-semibold">Current task</span>
                   <span className="font-medium text-white">{paused ? 'Paused — click Resume to continue' : status === 'Running' ? `Generating ${(auto.next_slot ? 'post for ' + auto.next_slot : 'next post')}` : 'Automation disabled'}</span>
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1.5"><span className="text-white/50 text-[0.65rem] uppercase tracking-wider font-semibold">Progress</span><span className="text-[0.65rem] text-white/80 font-mono">{paused ? '0%' : `${Math.min(100, 82)}%`}</span></div>
+                  <div className="flex items-center justify-between mb-1.5"><span className="text-white/50 text-[0.85rem] uppercase tracking-wider font-semibold">Progress</span><span className="text-[0.85rem] text-white/80 font-mono">{paused ? '0%' : `${Math.min(100, 82)}%`}</span></div>
                   <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                     <motion.div initial={{ width: 0 }} animate={{ width: paused ? '0%' : '82%' }} transition={{ duration: 1.2, ease: 'easeOut' }} className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] via-[#A855F7] to-[#EC4899]" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                    <div className="text-[0.55rem] text-white/50 uppercase tracking-wider">Next generation</div>
+                    <div className="text-[0.9rem] text-white/50 uppercase tracking-wider">Next generation</div>
                     <div className="text-sm font-bold text-white mt-1">{auto.next_slot ? auto.next_slot : '—'}</div>
                   </div>
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                    <div className="text-[0.55rem] text-white/50 uppercase tracking-wider">Next publish</div>
+                    <div className="text-[0.9rem] text-white/50 uppercase tracking-wider">Next publish</div>
                     <div className="text-sm font-bold text-white mt-1">{auto.next_slot || '—'}</div>
                   </div>
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                    <div className="text-[0.55rem] text-white/50 uppercase tracking-wider">Automation health</div>
+                    <div className="text-[0.9rem] text-white/50 uppercase tracking-wider">Automation health</div>
                     <div className="text-sm font-bold mt-1" style={{ color: healthColor }}>{health} ({successRate}%)</div>
                   </div>
                   <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                    <div className="text-[0.55rem] text-white/50 uppercase tracking-wider">Queue ETA</div>
+                    <div className="text-[0.9rem] text-white/50 uppercase tracking-wider">Queue ETA</div>
                     <div className="text-sm font-bold text-white mt-1">{queueEta}</div>
                   </div>
                 </div>
@@ -408,7 +408,7 @@ export default function DashboardPage() {
               <button onClick={() => router.push('/compose')} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white text-sm font-semibold shadow-lg shadow-[#7C3AED]/30 hover:opacity-90 transition-opacity"><Zap className="h-4 w-4" /> Generate Now</button>
               <button onClick={togglePause} disabled={pausing} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm font-semibold hover:bg-white/15 transition-colors">{pausing ? <Loader2 className="h-4 w-4 animate-spin" /> : paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {paused ? 'Resume Automation' : 'Pause Automation'}</button>
               <button onClick={() => router.push('/automation')} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-sm font-semibold hover:bg-white/15 transition-colors"><Clock className="h-4 w-4" /> Open Queue</button>
-              <div className="flex items-center gap-2 text-[0.6rem] text-white/50 px-1"><Activity className="h-3 w-3" /> Last tick: {auto.last_tick_at ? new Date(auto.last_tick_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'never'}</div>
+              <div className="flex items-center gap-2 text-[0.95rem] text-white/50 px-1"><Activity className="h-3 w-3" /> Last tick: {auto.last_tick_at ? new Date(auto.last_tick_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'never'}</div>
             </div>
           </div>
         </div>
@@ -431,8 +431,8 @@ export default function DashboardPage() {
                         <span className="text-sm font-medium text-[#16161D] group-hover:text-[#7C3AED] transition-colors truncate">{e.label}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[0.58rem] text-[#8A8A96] font-mono">{e.time ? new Date(e.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                        <span className={`text-[0.55rem] px-1.5 py-0.5 rounded-full font-semibold ${meta.bg}`}>{meta.label}</span>
+                        <span className="text-[0.78rem] text-[#8A8A96] font-mono">{e.time ? new Date(e.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                        <span className={`text-[0.9rem] px-1.5 py-0.5 rounded-full font-semibold ${meta.bg}`}>{meta.label}</span>
                       </div>
                     </div>
                   </button>
@@ -441,11 +441,11 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
-            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Audit trail</div>
+            <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Audit trail</div>
             <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
               {audit.length === 0 && <div className="text-xs text-[#8A8A96] py-2">No audit events yet.</div>}
               {audit.map((a, i) => (
-                <div key={i} className="flex items-center gap-2 text-[0.65rem]">
+                <div key={i} className="flex items-center gap-2 text-[0.85rem]">
                   <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: a.new_status === 'failed' ? '#EF4444' : a.new_status === 'published' ? '#0EA37A' : '#7C3AED' }} />
                   <span className="text-[#16161D] truncate">{a.action.replace(/_/g, ' ')}</span>
                   <span className="text-[#8A8A96] ml-auto shrink-0 font-mono">{a.performed_at ? new Date(a.performed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
@@ -461,7 +461,7 @@ export default function DashboardPage() {
               <div key={p.key}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-[#16161D] flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />{p.label}</span>
-                  <span className="text-[0.65rem] text-[#8A8A96] font-mono">{p.count}</span>
+                  <span className="text-[0.85rem] text-[#8A8A96] font-mono">{p.count}</span>
                 </div>
                 <div className="h-2 rounded-full bg-[#F0F1F5] overflow-hidden">
                   <motion.div initial={{ width: 0 }} animate={{ width: `${(p.count / pipeTotal) * 100}%` }} transition={{ duration: 0.8, delay: i * 0.08 }} className="h-full rounded-full" style={{ backgroundColor: p.color }} />
@@ -470,17 +470,17 @@ export default function DashboardPage() {
             ))}
           </div>
           <div className="mt-4 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3">
-            <div className="flex items-center gap-2 text-[0.65rem] text-[#8A8A96]"><BrainCircuit className="h-3.5 w-3.5 text-[#7C3AED]" /> AI processes <span className="font-bold text-[#16161D]">{queueSize}</span> queued items at ~8 min each — queue clears in <span className="font-bold text-[#16161D]">{queueEta}</span>.</div>
+            <div className="flex items-center gap-2 text-[0.85rem] text-[#8A8A96]"><BrainCircuit className="h-3.5 w-3.5 text-[#7C3AED]" /> AI processes <span className="font-bold text-[#16161D]">{queueSize}</span> queued items at ~8 min each — queue clears in <span className="font-bold text-[#16161D]">{queueEta}</span>.</div>
           </div>
           <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
-            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Queue breakdown</div>
+            <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Queue breakdown</div>
             <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
               {queue.length === 0 && <div className="text-xs text-[#8A8A96] py-2">Queue is empty.</div>}
               {queue.slice(0, 20).map(q => (
-                <div key={q.file_id} className="flex items-center gap-2 text-[0.65rem] rounded-lg border border-[#EBECF2] p-2">
+                <div key={q.file_id} className="flex items-center gap-2 text-[0.85rem] rounded-lg border border-[#EBECF2] p-2">
                   <span className="text-[#8A8A96] font-mono shrink-0">#{q.queue_position}</span>
                   <span className="text-[#16161D] truncate flex-1">{q.topic || q.file_id}</span>
-                  <span className={`text-[0.55rem] px-1.5 py-0.5 rounded-full font-semibold ${q.status === 'failed' ? 'bg-red-50 text-red-500' : q.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : q.status === 'published' ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{q.status}</span>
+                  <span className={`text-[0.9rem] px-1.5 py-0.5 rounded-full font-semibold ${q.status === 'failed' ? 'bg-red-50 text-red-500' : q.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : q.status === 'published' ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{q.status}</span>
                 </div>
               ))}
             </div>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
           <div className="space-y-0">
             {notifications.map((n, i) => (
               <div key={i} className="flex items-start gap-2.5 py-2 border-b border-[#F0F1F5] last:border-0">
-                <span className="h-5 w-5 rounded-full flex items-center justify-center text-[0.55rem] shrink-0 mt-0.5" style={{ backgroundColor: `${n.c}15`, color: n.c }}>{n.i}</span>
+                <span className="h-5 w-5 rounded-full flex items-center justify-center text-[0.9rem] shrink-0 mt-0.5" style={{ backgroundColor: `${n.c}15`, color: n.c }}>{n.i}</span>
                 <span className="text-xs text-[#16161D] leading-snug">{n.t}</span>
               </div>
             ))}
@@ -501,32 +501,32 @@ export default function DashboardPage() {
             {Object.entries(M).filter(([k]) => k !== 'twitter').map(([k, v]) => (
               <div key={k} className="flex items-center gap-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] px-2.5 py-2">
                 <Icon p={k} size={13} />
-                <span className="text-[0.6rem] font-medium text-[#16161D]">{v.label}</span>
+                <span className="text-[0.95rem] font-medium text-[#16161D]">{v.label}</span>
                 <span className={`ml-auto h-1.5 w-1.5 rounded-full ${byPlatform[k] || posts.some(p => p.platform === k) ? 'bg-[#0EA37A]' : 'bg-[#C4C5CE]'}`} title={byPlatform[k] ? 'Data flowing' : 'Not connected'} />
               </div>
             ))}
             <div className="flex items-center gap-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] px-2.5 py-2">
               <FileText className="h-3 w-3 text-[#7C3AED]" />
-              <span className="text-[0.6rem] font-medium text-[#16161D]">Blog</span>
+              <span className="text-[0.95rem] font-medium text-[#16161D]">Blog</span>
               <span className={`ml-auto h-1.5 w-1.5 rounded-full ${(auto.blog_waiting_approval || 0) > 0 ? 'bg-[#0EA37A]' : 'bg-[#C4C5CE]'}`} />
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] px-2.5 py-2">
               <BarChart3 className="h-3 w-3 text-[#0EA37A]" />
-              <span className="text-[0.6rem] font-medium text-[#16161D]">API Health</span>
+              <span className="text-[0.95rem] font-medium text-[#16161D]">API Health</span>
               <span className={`ml-auto h-1.5 w-1.5 rounded-full ${failed > 0 ? 'bg-amber-500' : 'bg-[#0EA37A]'}`} />
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] px-2.5 py-2">
               <BrainCircuit className="h-3 w-3 text-[#8B5CF6]" />
-              <span className="text-[0.6rem] font-medium text-[#16161D]">AI Engine</span>
+              <span className="text-[0.95rem] font-medium text-[#16161D]">AI Engine</span>
               <span className={`ml-auto h-1.5 w-1.5 rounded-full ${status === 'Running' ? 'bg-[#0EA37A] animate-pulse' : 'bg-amber-500'}`} />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
-            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Full audit trail</div>
+            <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Full audit trail</div>
             <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
               {audit.length === 0 && <div className="text-xs text-[#8A8A96] py-2">No audit events yet.</div>}
               {audit.map((a, i) => (
-                <div key={i} className="flex items-center gap-2 text-[0.65rem]">
+                <div key={i} className="flex items-center gap-2 text-[0.85rem]">
                   <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: a.new_status === 'failed' ? '#EF4444' : a.new_status === 'published' ? '#0EA37A' : '#7C3AED' }} />
                   <span className="text-[#16161D] truncate flex-1">{a.action.replace(/_/g, ' ')}</span>
                   <span className="text-[#8A8A96] shrink-0 font-mono">{a.performed_at ? new Date(a.performed_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
@@ -562,10 +562,10 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
-            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Daily breakdown</div>
+            <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Daily breakdown</div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs min-w-[480px]">
-                <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">{['Date', 'Published', 'Reach', 'Impressions', 'Engagement'].map(h => <th key={h} className={`py-2 text-left font-semibold text-[0.58rem] uppercase tracking-wider ${h !== 'Date' ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
+                <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">{['Date', 'Published', 'Reach', 'Impressions', 'Engagement'].map(h => <th key={h} className={`py-2 text-left font-semibold text-[0.78rem] uppercase tracking-wider ${h !== 'Date' ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
                 <tbody>
                   {series.slice(-14).reverse().map((d, i) => (
                     <tr key={i} className="border-b border-[#F0F1F5] last:border-0 hover:bg-[#F8F9FC]">
@@ -615,7 +615,7 @@ export default function DashboardPage() {
                     <div className={`h-14 rounded-lg flex items-end justify-center ${dayHits[i] > 0 ? 'bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/20 border border-[#D8C8FB]' : 'bg-[#F4F5F9]'}`} title={`${d}: ${dayHits[i]} posts`}>
                       <div className={`w-2 rounded-t-md ${dayHits[i] > 0 ? 'bg-gradient-to-t from-[#7C3AED] to-[#EC4899]' : 'bg-[#D8D9E3]'}`} style={{ height: `${Math.max(6, (dayHits[i] / max) * 40)}px` }} />
                     </div>
-                    <div className="text-[0.5rem] text-[#8A8A96] mt-1">{d}</div>
+                    <div className="text-[0.875rem] text-[#8A8A96] mt-1">{d}</div>
                   </div>
                 )
               })}
@@ -639,19 +639,19 @@ export default function DashboardPage() {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-[#16161D] truncate">{p.caption ? p.caption.slice(0, 55) : 'Untitled post'}</div>
-                  <div className="text-[0.6rem] text-[#8A8A96] mt-0.5">{M[p.platform]?.label || p.platform} · {p.published_at ? new Date(p.published_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</div>
+                  <div className="text-[0.95rem] text-[#8A8A96] mt-0.5">{M[p.platform]?.label || p.platform} · {p.published_at ? new Date(p.published_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</div>
                 </div>
                 <div className="hidden md:flex items-center gap-3 text-center shrink-0">
-                  <div><div className="text-xs font-bold text-[#16161D]">{short(p.reach || 0)}</div><div className="text-[0.5rem] text-[#8A8A96]">Reach</div></div>
-                  <div><div className="text-xs font-bold text-[#0EA37A]">{fmt(eng(p))}</div><div className="text-[0.5rem] text-[#8A8A96]">Eng</div></div>
+                  <div><div className="text-xs font-bold text-[#16161D]">{short(p.reach || 0)}</div><div className="text-[0.875rem] text-[#8A8A96]">Reach</div></div>
+                  <div><div className="text-xs font-bold text-[#0EA37A]">{fmt(eng(p))}</div><div className="text-[0.875rem] text-[#8A8A96]">Eng</div></div>
                 </div>
-                {p.url && <a href={p.url} target="_blank" rel="noreferrer" className="text-[0.6rem] text-[#7C3AED] font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">Open →</a>}
+                {p.url && <a href={p.url} target="_blank" rel="noreferrer" className="text-[0.95rem] text-[#7C3AED] font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">Open →</a>}
               </div>
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <button onClick={() => router.push('/analytics')} className="text-[0.6rem] text-[#7C3AED] font-medium flex items-center gap-1 hover:underline">All analytics <ArrowRight className="h-3 w-3" /></button>
-            <button onClick={() => router.push('/compose')} className="text-[0.6rem] text-[#0EA37A] font-medium hover:underline">Compose new →</button>
+            <button onClick={() => router.push('/analytics')} className="text-[0.95rem] text-[#7C3AED] font-medium flex items-center gap-1 hover:underline">All analytics <ArrowRight className="h-3 w-3" /></button>
+            <button onClick={() => router.push('/compose')} className="text-[0.95rem] text-[#0EA37A] font-medium hover:underline">Compose new →</button>
           </div>
         </Section>
 
@@ -664,9 +664,9 @@ export default function DashboardPage() {
                 {p.thumbnail_url ? <img src={p.thumbnail_url} alt="" className="h-9 w-9 rounded-lg object-cover shrink-0" onError={e => { e.currentTarget.style.display = 'none' }} /> : <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center shrink-0"><Icon p={p.platform} size={15} /></div>}
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-[#16161D] truncate">#{i + 1} · {p.caption ? p.caption.slice(0, 40) : 'Untitled'}</div>
-                  <div className="text-[0.6rem] text-[#8A8A96]">{fmt(p.likes || 0)} likes · {fmt(p.comments || 0)} comments · {short(p.reach || 0)} reach</div>
+                  <div className="text-[0.95rem] text-[#8A8A96]">{fmt(p.likes || 0)} likes · {fmt(p.comments || 0)} comments · {short(p.reach || 0)} reach</div>
                 </div>
-                <span className="text-[0.55rem] px-1.5 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A] font-semibold shrink-0">{p.engagement_rate || '0'}%</span>
+                <span className="text-[0.9rem] px-1.5 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A] font-semibold shrink-0">{p.engagement_rate || '0'}%</span>
               </div>
             ))}
           </div>
@@ -685,12 +685,12 @@ export default function DashboardPage() {
           </div>
           {coach?.insight && (
             <div className="mt-4 rounded-xl bg-gradient-to-r from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#EBECF2] p-4">
-              <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">AI Coach summary</div>
+              <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">AI Coach summary</div>
               <p className="text-xs text-[#16161D] leading-relaxed">{coach.insight}</p>
               {coach.recommendations?.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   {coach.recommendations.map((r, i) => (
-                    <div key={i} className="flex items-start gap-2 text-[0.7rem]"><span className="px-1.5 py-0.5 rounded bg-[#7C3AED]/10 text-[#7C3AED] font-semibold shrink-0 mt-0.5">{r.category}</span><span className="text-[#16161D]">{r.text}</span></div>
+                    <div key={i} className="flex items-start gap-2 text-[0.875rem]"><span className="px-1.5 py-0.5 rounded bg-[#7C3AED]/10 text-[#7C3AED] font-semibold shrink-0 mt-0.5">{r.category}</span><span className="text-[#16161D]">{r.text}</span></div>
                   ))}
                 </div>
               )}
@@ -701,11 +701,11 @@ export default function DashboardPage() {
         <Section open={expanded.audience} onToggle={() => toggle('audience')} icon={<Users className="h-4 w-4" />} accent="#0EA37A" title="Audience Snapshot" sub="Followers, platforms and activity patterns" badge={fmt(followers)}>
           <div className="space-y-3">
             <div className="flex items-center justify-between rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3">
-              <div><div className="text-[0.58rem] text-[#8A8A96] uppercase tracking-wider font-semibold">Total followers</div><div className="text-lg font-bold text-[#16161D]">{fmt(followers)}</div></div>
-              <span className="text-[0.6rem] font-semibold px-2 py-1 rounded-full bg-emerald-50 text-[#0EA37A] flex items-center gap-1"><TrendingUp className="h-2.5 w-2.5" /> {followers > 0 ? 'growing' : 'tracked'}</span>
+              <div><div className="text-[0.78rem] text-[#8A8A96] uppercase tracking-wider font-semibold">Total followers</div><div className="text-lg font-bold text-[#16161D]">{fmt(followers)}</div></div>
+              <span className="text-[0.95rem] font-semibold px-2 py-1 rounded-full bg-emerald-50 text-[#0EA37A] flex items-center gap-1"><TrendingUp className="h-2.5 w-2.5" /> {followers > 0 ? 'growing' : 'tracked'}</span>
             </div>
             <div>
-              <div className="text-[0.58rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Platform split</div>
+              <div className="text-[0.78rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Platform split</div>
               <div className="space-y-2">
                 {Object.entries(byPlatform || {}).length === 0 && <div className="text-xs text-[#8A8A96]">Sync accounts to see audience distribution.</div>}
                 {Object.entries(byPlatform || {}).slice(0, 5).map(([p, d]) => {
@@ -714,28 +714,28 @@ export default function DashboardPage() {
                     <div key={p} className="flex items-center gap-2">
                       <Icon p={p} size={13} />
                       <div className="flex-1 h-1.5 bg-[#F0F1F5] rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${((d.impressions || 0) / max) * 100}%`, background: M[p]?.color }} /></div>
-                      <span className="text-[0.6rem] text-[#8A8A96] font-mono">{short(d.impressions || 0)}</span>
+                      <span className="text-[0.95rem] text-[#8A8A96] font-mono">{short(d.impressions || 0)}</span>
                     </div>
                   )
                 })}
               </div>
             </div>
             <div>
-              <div className="text-[0.58rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1">Active hours</div>
+              <div className="text-[0.78rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1">Active hours</div>
               <div className="flex items-end gap-0.5 h-10">
                 {hourHits.map((v, h) => <div key={h} title={`${h}:00`} className="flex-1 rounded-t-sm" style={{ height: `${Math.max(10, (v / Math.max(1, Math.max(...hourHits))) * 100)}%`, backgroundColor: h === hourHits.indexOf(Math.max(...hourHits)) ? '#7C3AED' : '#E5E6EF' }} />)}
               </div>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
-            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Most active days</div>
+            <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Most active days</div>
             <div className="grid grid-cols-7 gap-1.5">
               {dayNames.map((d, i) => (
                 <div key={d} className="text-center">
                   <div className={`h-10 rounded-lg flex items-end justify-center ${dayHits[i] > 0 ? 'bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/20' : 'bg-[#F4F5F9]'}`}>
                     <div className={`w-2 rounded-t-md ${dayHits[i] > 0 ? 'bg-gradient-to-t from-[#7C3AED] to-[#EC4899]' : 'bg-[#D8D9E3]'}`} style={{ height: `${Math.max(6, (dayHits[i] / Math.max(...dayHits, 1)) * 30)}px` }} />
                   </div>
-                  <div className="text-[0.5rem] text-[#8A8A96] mt-1">{d}</div>
+                  <div className="text-[0.875rem] text-[#8A8A96] mt-1">{d}</div>
                 </div>
               ))}
             </div>
@@ -747,25 +747,25 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <Section open={expanded.calendar} onToggle={() => toggle('calendar')} icon={<CalendarDays className="h-4 w-4" />} accent="#7C3AED" title="Content Calendar" sub={now.toLocaleDateString('en', { month: 'long', year: 'numeric' })} badge={`${calDays.filter(c => c && (c.pub > 0 || c.sch > 0)).length} days`}>
           <div className="grid grid-cols-7 gap-1">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-center text-[0.55rem] text-[#8A8A96] font-semibold py-1">{d}</div>)}
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-center text-[0.9rem] text-[#8A8A96] font-semibold py-1">{d}</div>)}
             {calDays.map((cell, i) => cell ? (
               <div key={i} className={`rounded-lg text-center py-1.5 text-xs transition-colors ${cell.best > 0 ? 'bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 border border-[#D8C8FB] text-[#7C3AED] font-bold' : cell.pub > 0 ? 'bg-emerald-50 text-[#0EA37A] font-semibold' : cell.sch > 0 ? 'bg-[#7C3AED]/10 text-[#7C3AED] font-semibold' : 'text-[#C4C5CE]'}`} title={cell.pub || cell.sch ? `${cell.pub} published · ${cell.sch} scheduled` : ''}>
                 {cell.d}
               </div>
             ) : <div key={i} />)}
           </div>
-          <div className="flex gap-3 mt-4 text-[0.6rem] text-[#8A8A96] flex-wrap">
+          <div className="flex gap-3 mt-4 text-[0.95rem] text-[#8A8A96] flex-wrap">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#7C3AED]" /> Best</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Published</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#7C3AED]/30" /> Scheduled</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border border-[#D8D9E3]" /> Empty</span>
           </div>
           <div className="mt-4 pt-3 border-t border-[#F0F1F5]">
-            <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Upcoming scheduled</div>
+            <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Upcoming scheduled</div>
             <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
               {jobs.filter(j => j.status === 'scheduled').length === 0 && <div className="text-xs text-[#8A8A96] py-2">Nothing scheduled yet.</div>}
               {jobs.filter(j => j.status === 'scheduled').sort((a, b) => new Date(a.scheduled_for || 0) - new Date(b.scheduled_for || 0)).slice(0, 10).map(j => (
-                <div key={j.id} className="flex items-center gap-2 text-[0.65rem] rounded-lg border border-[#EBECF2] p-2">
+                <div key={j.id} className="flex items-center gap-2 text-[0.85rem] rounded-lg border border-[#EBECF2] p-2">
                   <CalendarDays className="h-3 w-3 text-[#7C3AED] shrink-0" />
                   <span className="text-[#16161D] truncate flex-1">{j.topic || 'Untitled'}</span>
                   <span className="text-[#8A8A96] font-mono shrink-0">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
@@ -781,7 +781,7 @@ export default function DashboardPage() {
             {quickActions.map(qa => (
               <button key={qa.label} onClick={() => qa.action ? qa.action() : router.push(qa.href)} className="rounded-xl border border-[#EBECF2] p-4 text-center hover:border-[#D8C8FB] hover:shadow-md hover:-translate-y-0.5 transition-all group bg-white">
                 <div className={`h-10 w-10 mx-auto rounded-xl bg-gradient-to-br ${qa.g} text-white flex items-center justify-center mb-2 shadow-md group-hover:scale-110 transition-transform`}>{qa.icon}</div>
-                <div className="text-[0.65rem] font-semibold text-[#16161D]">{qa.label}</div>
+                <div className="text-[0.85rem] font-semibold text-[#16161D]">{qa.label}</div>
               </button>
             ))}
           </div>

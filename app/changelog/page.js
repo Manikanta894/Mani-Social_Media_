@@ -19,8 +19,8 @@ export default function ChangelogPage() {
         {entries.map((entry, i) => (
           <div key={i} className="border-l-2 border-accent/30 pl-4">
             <div className="flex items-baseline gap-3 mb-2">
-              <span className="editorial-mono text-[0.625rem] text-muted-foreground">{entry.date}</span>
-              <span className="editorial-mono text-[0.5rem] text-accent border border-accent/30 px-1.5 py-0.5 rounded-sm">{entry.version}</span>
+              <span className="editorial-mono text-[0.8125rem] text-muted-foreground">{entry.date}</span>
+              <span className="editorial-mono text-[0.875rem] text-accent border border-accent/30 px-1.5 py-0.5 rounded-sm">{entry.version}</span>
             </div>
             <h2 className="text-base font-serif font-semibold mb-2">{entry.title}</h2>
             <ul className="space-y-1">

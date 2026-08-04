@@ -212,32 +212,32 @@ export default function CalendarPage() {
         <div className="p-2">
           <div className="flex items-center gap-1.5">
             <Icon p={p} size={12} />
-            <span className="text-[0.6rem] font-bold" style={{ color: M[p]?.color }}>{M[p]?.label}</span>
+            <span className="text-[0.95rem] font-bold" style={{ color: M[p]?.color }}>{M[p]?.label}</span>
             <span className="h-1.5 w-1.5 rounded-full ml-auto" style={{ backgroundColor: STATUS_COLORS[j.status] || '#8A8A96' }} />
             {j.pinned && <Star className="h-3 w-3 text-amber-400 fill-current" />}
           </div>
-          {!compact && <div className="text-[0.68rem] font-semibold text-[#16161D] mt-1 line-clamp-2">{j.topic || 'Untitled'}</div>}
+          {!compact && <div className="text-[0.85rem] font-semibold text-[#16161D] mt-1 line-clamp-2">{j.topic || 'Untitled'}</div>}
           <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[0.55rem] font-mono text-[#8A8A96]">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
-            <span className="text-[0.5rem] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: pr.color + '18', color: pr.color }}>{pr.label}</span>
+            <span className="text-[0.9rem] font-mono text-[#8A8A96]">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+            <span className="text-[0.875rem] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: pr.color + '18', color: pr.color }}>{pr.label}</span>
           </div>
         </div>
         {hoverJob?.id === j.id && (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="absolute z-30 w-64 rounded-2xl bg-white border border-[#EBECF2] shadow-2xl p-3.5 -bottom-2 left-1/2 -translate-x-1/2 translate-y-full">
             <div className="flex items-center gap-2 mb-2">
               <Icon p={p} size={14} /><span className="text-xs font-bold text-[#16161D]">{M[p]?.label}</span>
-              <span className="text-[0.55rem] font-mono text-[#8A8A96] ml-auto">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleString() : ''}</span>
+              <span className="text-[0.9rem] font-mono text-[#8A8A96] ml-auto">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleString() : ''}</span>
             </div>
-            <p className="text-[0.68rem] text-[#16161D] leading-snug line-clamp-3">{jobCaption(j)}</p>
+            <p className="text-[0.85rem] text-[#16161D] leading-snug line-clamp-3">{jobCaption(j)}</p>
             <div className="flex gap-1.5 mt-2">
-              <span className="text-[0.55rem] px-1.5 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-semibold">AI {analyze(jobCaption(j)).quality}/100</span>
-              <span className="text-[0.55rem] px-1.5 py-0.5 rounded-full bg-[#3B82F6]/10 text-[#3B82F6] font-semibold">SEO {analyze(jobCaption(j)).seo}/100</span>
-              <span className="text-[0.55rem] px-1.5 py-0.5 rounded-full bg-[#0EA37A]/10 text-[#0EA37A] font-semibold">~{fmt(reachPred(j))} reach</span>
+              <span className="text-[0.9rem] px-1.5 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-semibold">AI {analyze(jobCaption(j)).quality}/100</span>
+              <span className="text-[0.9rem] px-1.5 py-0.5 rounded-full bg-[#3B82F6]/10 text-[#3B82F6] font-semibold">SEO {analyze(jobCaption(j)).seo}/100</span>
+              <span className="text-[0.9rem] px-1.5 py-0.5 rounded-full bg-[#0EA37A]/10 text-[#0EA37A] font-semibold">~{fmt(reachPred(j))} reach</span>
             </div>
             <div className="flex gap-1.5 mt-2.5">
-              {j.status !== 'published' && <button onClick={e => { e.stopPropagation(); publish(j) }} className="flex-1 text-[0.6rem] font-bold py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">{publishing === j.id ? '...' : 'Publish'}</button>}
-              {j.status === 'pending_approval' && <button onClick={e => { e.stopPropagation(); approve(j) }} className="flex-1 text-[0.6rem] font-bold py-1.5 rounded-lg bg-[#0EA37A] text-white">Approve</button>}
-              <button onClick={e => { e.stopPropagation(); copyLink(j) }} className="flex-1 text-[0.6rem] font-bold py-1.5 rounded-lg bg-[#F4F5F9] text-[#16161D]">Link</button>
+              {j.status !== 'published' && <button onClick={e => { e.stopPropagation(); publish(j) }} className="flex-1 text-[0.95rem] font-bold py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">{publishing === j.id ? '...' : 'Publish'}</button>}
+              {j.status === 'pending_approval' && <button onClick={e => { e.stopPropagation(); approve(j) }} className="flex-1 text-[0.95rem] font-bold py-1.5 rounded-lg bg-[#0EA37A] text-white">Approve</button>}
+              <button onClick={e => { e.stopPropagation(); copyLink(j) }} className="flex-1 text-[0.95rem] font-bold py-1.5 rounded-lg bg-[#F4F5F9] text-[#16161D]">Link</button>
             </div>
           </motion.div>
         )}
@@ -271,7 +271,7 @@ export default function CalendarPage() {
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
           <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all`}>
-            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>
         ))}
@@ -284,7 +284,7 @@ export default function CalendarPage() {
           <div>
             <div className="text-sm font-bold text-red-600">Schedule conflicts detected</div>
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {conflicts.map((c, i) => <span key={i} className="text-[0.65rem] px-2.5 py-1 rounded-full bg-white border border-red-200 text-red-600 font-medium">{c.t}{c.a ? ` · "${c.a.slice(0, 30)}"` : ''}</span>)}
+              {conflicts.map((c, i) => <span key={i} className="text-[0.85rem] px-2.5 py-1 rounded-full bg-white border border-red-200 text-red-600 font-medium">{c.t}{c.a ? ` · "${c.a.slice(0, 30)}"` : ''}</span>)}
             </div>
           </div>
         </motion.div>
@@ -308,12 +308,12 @@ export default function CalendarPage() {
         <div className={`${C} p-4`}>
           <div className="text-xs font-bold text-[#16161D] mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[#0EA37A]" /> Platform distribution</div>
           <div className="space-y-2">
-            {Object.entries(platCounts).length === 0 && <div className="text-[0.7rem] text-[#8A8A96]">No posts yet — platform bars appear after publishing.</div>}
+            {Object.entries(platCounts).length === 0 && <div className="text-[0.875rem] text-[#8A8A96]">No posts yet — platform bars appear after publishing.</div>}
             {Object.entries(platCounts).map(([p, c]) => (
               <div key={p} className="flex items-center gap-2">
-                <Icon p={p} size={13} /><span className="text-[0.6rem] font-semibold text-[#16161D] w-16">{M[p]?.label}</span>
+                <Icon p={p} size={13} /><span className="text-[0.95rem] font-semibold text-[#16161D] w-16">{M[p]?.label}</span>
                 <div className="flex-1 h-2 rounded-full bg-[#F0F1F5] overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(c / maxPlat) * 100}%` }} transition={{ duration: 0.6 }} className="h-full rounded-full" style={{ backgroundColor: M[p]?.color }} /></div>
-                <span className="text-[0.6rem] font-mono text-[#8A8A96] w-6 text-right">{c}</span>
+                <span className="text-[0.95rem] font-mono text-[#8A8A96] w-6 text-right">{c}</span>
               </div>
             ))}
           </div>
@@ -325,13 +325,13 @@ export default function CalendarPage() {
               <div className="flex items-end gap-0.5 h-16">
                 {hourHist.map((v, h) => <div key={h} title={`${h}:00 — ${v}`} className="flex-1 rounded-t-sm transition-all" style={{ height: `${Math.max(8, (v / Math.max(1, Math.max(...hourHist))) * 100)}%`, backgroundColor: h === bestHour ? '#7C3AED' : '#E5E6EF' }} />)}
               </div>
-              <div className="text-[0.65rem] text-[#8A8A96] mt-2">Peak: <b className="text-[#7C3AED]">{bestHour}:00</b> · {fmt(hourHist[bestHour])} posts</div>
+              <div className="text-[0.85rem] text-[#8A8A96] mt-2">Peak: <b className="text-[#7C3AED]">{bestHour}:00</b> · {fmt(hourHist[bestHour])} posts</div>
             </div>
-          ) : <div className="text-[0.7rem] text-[#8A8A96] py-6 text-center">Publish posts to discover your peak hours.</div>}
+          ) : <div className="text-[0.875rem] text-[#8A8A96] py-6 text-center">Publish posts to discover your peak hours.</div>}
         </div>
         <div className={`${C} p-4`}>
           <div className="text-xs font-bold text-[#16161D] mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-[#EC4899]" /> Calendar insights</div>
-          <div className="space-y-2 text-[0.7rem]">
+          <div className="space-y-2 text-[0.875rem]">
             <div className="flex justify-between rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><span className="text-[#8A8A96]">Most active day</span><b className="text-[#16161D]">{bestDay >= 0 ? DAYS[bestDay] : '—'}</b></div>
             <div className="flex justify-between rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><span className="text-[#8A8A96]">Posts this week</span><b className="text-[#16161D]">{wk}</b></div>
             <div className="flex justify-between rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><span className="text-[#8A8A96]">Pending approvals</span><b className="text-[#F59E0B]">{pending}</b></div>
@@ -344,23 +344,23 @@ export default function CalendarPage() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-4`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-bold text-[#16161D]">{MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-          <span className="text-[0.65rem] text-[#8A8A96]">{filtered.length} post(s) · drag to reschedule · click for details</span>
+          <span className="text-[0.85rem] text-[#8A8A96]">{filtered.length} post(s) · drag to reschedule · click for details</span>
         </div>
 
         {view === 'month' && (
           <div className="grid grid-cols-7 gap-1.5">
-            {DAYS.map(d => <div key={d} className="text-center text-[0.6rem] font-bold text-[#8A8A96] uppercase tracking-wider py-1.5">{d}</div>)}
+            {DAYS.map(d => <div key={d} className="text-center text-[0.95rem] font-bold text-[#8A8A96] uppercase tracking-wider py-1.5">{d}</div>)}
             {monthDays.map((d, i) => {
               const jd = dayJobs(d)
               const inMonth = d.getMonth() === currentDate.getMonth()
               return (
                 <div key={i} onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, d)} className={`rounded-xl border min-h-[92px] p-1.5 transition-colors ${isToday(d) ? 'border-[#7C3AED] bg-[#7C3AED]/4' : 'border-[#F0F1F5] bg-white'} ${inMonth ? '' : 'opacity-40'}`}>
-                  <div className={`text-[0.6rem] font-semibold mb-1 ${isToday(d) ? 'text-[#7C3AED]' : 'text-[#8A8A96]'}`}>{d.getDate()}</div>
+                  <div className={`text-[0.95rem] font-semibold mb-1 ${isToday(d) ? 'text-[#7C3AED]' : 'text-[#8A8A96]'}`}>{d.getDate()}</div>
                   <div className="space-y-1">
                     {jd.slice(0, 3).map(j => <PostCard key={j.id} j={j} compact />)}
-                    {jd.length > 3 && <div className="text-[0.55rem] text-[#7C3AED] font-semibold text-center">+{jd.length - 3} more</div>}
+                    {jd.length > 3 && <div className="text-[0.9rem] text-[#7C3AED] font-semibold text-center">+{jd.length - 3} more</div>}
                     {jd.length === 0 && (
-                      <div className="text-[0.55rem] text-[#C4C5CE] text-center py-2 rounded-lg border border-dashed border-[#F0F1F5]">Best slot ~{bestHour >= 0 ? `${bestHour}:00` : '9:00'}</div>
+                      <div className="text-[0.9rem] text-[#C4C5CE] text-center py-2 rounded-lg border border-dashed border-[#F0F1F5]">Best slot ~{bestHour >= 0 ? `${bestHour}:00` : '9:00'}</div>
                     )}
                   </div>
                 </div>
@@ -375,10 +375,10 @@ export default function CalendarPage() {
               const jd = dayJobs(d)
               return (
                 <div key={i} onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, d)} className={`rounded-xl border min-h-[140px] p-1.5 ${isToday(d) ? 'border-[#7C3AED] bg-[#7C3AED]/4' : 'border-[#F0F1F5]'}`}>
-                  <div className={`text-[0.65rem] font-bold mb-1.5 ${isToday(d) ? 'text-[#7C3AED]' : 'text-[#16161D]'}`}>{DAYS[d.getDay()]} {d.getDate()}</div>
+                  <div className={`text-[0.85rem] font-bold mb-1.5 ${isToday(d) ? 'text-[#7C3AED]' : 'text-[#16161D]'}`}>{DAYS[d.getDay()]} {d.getDate()}</div>
                   <div className="space-y-1.5">
                     {jd.map(j => <PostCard key={j.id} j={j} />)}
-                    {jd.length === 0 && <div className="text-[0.55rem] text-[#C4C5CE] text-center py-3 rounded-lg border border-dashed border-[#F0F1F5]">Empty — drag a post here</div>}
+                    {jd.length === 0 && <div className="text-[0.9rem] text-[#C4C5CE] text-center py-3 rounded-lg border border-dashed border-[#F0F1F5]">Empty — drag a post here</div>}
                   </div>
                 </div>
               )
@@ -392,10 +392,10 @@ export default function CalendarPage() {
               const jd = dayJobs(currentDate).filter(j => j.scheduled_for && new Date(j.scheduled_for).getHours() === h)
               return (
                 <div key={h} className={`flex gap-3 rounded-xl border border-[#F0F1F5] p-2 ${isToday(currentDate) && h === new Date().getHours() ? 'bg-[#7C3AED]/4' : ''}`}>
-                  <span className="text-[0.65rem] font-mono text-[#8A8A96] w-12 pt-1 shrink-0">{h}:00</span>
+                  <span className="text-[0.85rem] font-mono text-[#8A8A96] w-12 pt-1 shrink-0">{h}:00</span>
                   <div className="flex-1 flex flex-wrap gap-1.5">
                     {jd.map(j => <div key={j.id} className="w-72"><PostCard j={j} /></div>)}
-                    {jd.length === 0 && <div className="text-[0.55rem] text-[#C4C5CE] py-2">Open slot</div>}
+                    {jd.length === 0 && <div className="text-[0.9rem] text-[#C4C5CE] py-2">Open slot</div>}
                   </div>
                 </div>
               )
@@ -415,7 +415,7 @@ export default function CalendarPage() {
                   <div className="flex items-center gap-2.5 rounded-xl border border-[#EBECF2] px-3 py-2 flex-1 hover:bg-[#F8F9FC] transition-colors cursor-pointer min-w-0">
                     <Icon p={p} size={14} /><span className="text-sm font-semibold" style={{ color: M[p]?.color }}>{M[p]?.label}</span>
                     <span className="text-sm text-[#16161D] truncate flex-1">{j.topic || 'Untitled'}</span>
-                    <span className="text-[0.55rem] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: STATUS_COLORS[j.status] + '15', color: STATUS_COLORS[j.status] }}>{j.status}</span>
+                    <span className="text-[0.9rem] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: STATUS_COLORS[j.status] + '15', color: STATUS_COLORS[j.status] }}>{j.status}</span>
                   </div>
                 </div>
               )
@@ -428,10 +428,10 @@ export default function CalendarPage() {
           <div className="space-y-3">
             {[...filtered].sort((a, b) => new Date(a.scheduled_for || a.created_at) - new Date(b.scheduled_for || b.created_at)).slice(0, 20).map(j => (
               <div key={j.id} className="flex items-center gap-3 rounded-xl border border-[#EBECF2] p-3 hover:bg-[#F8F9FC] transition-colors cursor-pointer" onClick={() => setSelectedJob(j)}>
-                <div className="w-24 shrink-0"><div className="text-sm font-bold text-[#16161D]">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</div><div className="text-[0.6rem] text-[#8A8A96] font-mono">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div></div>
+                <div className="w-24 shrink-0"><div className="text-sm font-bold text-[#16161D]">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</div><div className="text-[0.95rem] text-[#8A8A96] font-mono">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div></div>
                 <Icon p={firstPlatform(j)} size={16} />
                 <span className="text-sm font-medium text-[#16161D] truncate flex-1">{j.topic || 'Untitled'}</span>
-                <span className="text-[0.55rem] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: STATUS_COLORS[j.status] + '15', color: STATUS_COLORS[j.status] }}>{j.status}</span>
+                <span className="text-[0.9rem] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: STATUS_COLORS[j.status] + '15', color: STATUS_COLORS[j.status] }}>{j.status}</span>
               </div>
             ))}
           </div>
@@ -443,8 +443,8 @@ export default function CalendarPage() {
               <div key={s} className="rounded-xl bg-[#FAFAFD] border border-[#F0F1F5] p-2 min-h-[140px]">
                 <div className="flex items-center gap-1.5 mb-2 px-1">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] }} />
-                  <span className="text-[0.6rem] font-bold text-[#16161D] uppercase tracking-wider">{s}</span>
-                  <span className="text-[0.55rem] text-[#8A8A96] ml-auto">{filtered.filter(j => j.status === s).length}</span>
+                  <span className="text-[0.95rem] font-bold text-[#16161D] uppercase tracking-wider">{s}</span>
+                  <span className="text-[0.9rem] text-[#8A8A96] ml-auto">{filtered.filter(j => j.status === s).length}</span>
                 </div>
                 <div className="space-y-1.5">
                   {filtered.filter(j => j.status === s).slice(0, 5).map(j => <PostCard key={j.id} j={j} compact />)}
@@ -458,14 +458,14 @@ export default function CalendarPage() {
       {/* Publishing queue */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} overflow-hidden`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0F1F5] flex-wrap gap-2">
-          <div className="flex items-center gap-2"><h3 className="text-base font-bold text-[#16161D]">Publishing Queue</h3><span className="text-[0.65rem] px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-semibold">{filtered.length}</span></div>
+          <div className="flex items-center gap-2"><h3 className="text-base font-bold text-[#16161D]">Publishing Queue</h3><span className="text-[0.85rem] px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-semibold">{filtered.length}</span></div>
           {selected.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[0.65rem] text-[#8A8A96]">{selected.length} selected</span>
+              <span className="text-[0.85rem] text-[#8A8A96]">{selected.length} selected</span>
               {[['approve', 'Approve'], ['reject', 'Reject'], ['publish', 'Publish'], ['tomorrow', '+1 Day']].map(([a, l]) => (
-                <button key={a} onClick={() => bulk(a)} className="text-[0.6rem] font-bold px-2.5 py-1.5 rounded-lg bg-[#F4F5F9] border border-[#EBECF2] hover:border-[#7C3AED]/40 transition-colors">{l}</button>
+                <button key={a} onClick={() => bulk(a)} className="text-[0.95rem] font-bold px-2.5 py-1.5 rounded-lg bg-[#F4F5F9] border border-[#EBECF2] hover:border-[#7C3AED]/40 transition-colors">{l}</button>
               ))}
-              <button onClick={() => setSelected([])} className="text-[0.6rem] font-bold px-2.5 py-1.5 rounded-lg text-red-500"><X className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setSelected([])} className="text-[0.95rem] font-bold px-2.5 py-1.5 rounded-lg text-red-500"><X className="h-3.5 w-3.5" /></button>
             </div>
           )}
         </div>
@@ -473,7 +473,7 @@ export default function CalendarPage() {
           <table className="w-full text-xs min-w-[860px]">
             <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">
               <th className="py-2.5 px-4 text-left w-8"><input type="checkbox" checked={selected.length === filtered.length && filtered.length > 0} onChange={e => setSelected(e.target.checked ? filtered.map(j => j.id) : [])} className="accent-[#7C3AED]" /></th>
-              {['Platform', 'Title', 'Status', 'Scheduled Time', 'Approval', 'Reach Prediction', 'Actions'].map(h => <th key={h} className={`py-2.5 px-3 text-left font-semibold text-[0.58rem] uppercase tracking-wider ${['Scheduled Time', 'Reach Prediction', 'Actions'].includes(h) ? '' : ''}`}>{h}</th>)}
+              {['Platform', 'Title', 'Status', 'Scheduled Time', 'Approval', 'Reach Prediction', 'Actions'].map(h => <th key={h} className={`py-2.5 px-3 text-left font-semibold text-[0.78rem] uppercase tracking-wider ${['Scheduled Time', 'Reach Prediction', 'Actions'].includes(h) ? '' : ''}`}>{h}</th>)}
             </tr></thead>
             <tbody>
               {filtered.slice(0, 25).map(j => {
@@ -482,11 +482,11 @@ export default function CalendarPage() {
                   <tr key={j.id} className={`border-b border-[#F0F1F5] hover:bg-[#F8F9FC] transition-colors cursor-pointer ${selected.includes(j.id) ? 'bg-[#7C3AED]/5' : ''}`} onClick={() => { const s = j.id; setSelected(sel => sel.includes(s) ? sel.filter(x => x !== s) : [...sel, s]) }}>
                     <td className="py-2.5 px-4"><input type="checkbox" checked={selected.includes(j.id)} onChange={e => { e.stopPropagation(); const s = j.id; setSelected(sel => e.target.checked ? [...sel, s] : sel.filter(x => x !== s)) }} onClick={e => e.stopPropagation()} className="accent-[#7C3AED]" /></td>
                     <td className="py-2.5 px-3"><div className="flex items-center gap-2"><Icon p={p} size={15} /><span className="font-semibold" style={{ color: M[p]?.color }}>{M[p]?.label}</span></div></td>
-                    <td className="py-2.5 px-3 max-w-[200px]"><span className="font-medium text-[#16161D] truncate block">{j.topic || 'Untitled'}</span><span className="text-[0.55rem] text-[#8A8A96]">{jobCaption(j).slice(0, 50)}</span></td>
-                    <td className="py-2.5 px-3"><span className="font-semibold text-[#7C3AED] px-2 py-0.5 rounded-full text-[0.55rem]" style={{ backgroundColor: STATUS_COLORS[j.status] + '15', color: STATUS_COLORS[j.status] }}>{j.status}</span></td>
+                    <td className="py-2.5 px-3 max-w-[200px]"><span className="font-medium text-[#16161D] truncate block">{j.topic || 'Untitled'}</span><span className="text-[0.9rem] text-[#8A8A96]">{jobCaption(j).slice(0, 50)}</span></td>
+                    <td className="py-2.5 px-3"><span className="font-semibold text-[#7C3AED] px-2 py-0.5 rounded-full text-[0.9rem]" style={{ backgroundColor: STATUS_COLORS[j.status] + '15', color: STATUS_COLORS[j.status] }}>{j.status}</span></td>
                     <td className="py-2.5 px-3 font-mono text-[#8A8A96]">{j.scheduled_for ? new Date(j.scheduled_for).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</td>
-                    <td className="py-2.5 px-3"><span className={`text-[0.55rem] px-2 py-0.5 rounded-full font-semibold ${j.status === 'approved' ? 'bg-emerald-50 text-[#0EA37A]' : j.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{j.status === 'pending_approval' ? 'Pending' : j.status === 'approved' ? 'Approved' : '—'}</span></td>
-                    <td className="py-2.5 px-3"><span className="font-mono font-semibold text-[#16161D]">~{fmt(reachPred(j))}</span><span className="text-[0.55rem] text-[#8A8A96]"> · AI {a.quality}</span></td>
+                    <td className="py-2.5 px-3"><span className={`text-[0.9rem] px-2 py-0.5 rounded-full font-semibold ${j.status === 'approved' ? 'bg-emerald-50 text-[#0EA37A]' : j.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{j.status === 'pending_approval' ? 'Pending' : j.status === 'approved' ? 'Approved' : '—'}</span></td>
+                    <td className="py-2.5 px-3"><span className="font-mono font-semibold text-[#16161D]">~{fmt(reachPred(j))}</span><span className="text-[0.9rem] text-[#8A8A96]"> · AI {a.quality}</span></td>
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                         {j.status !== 'published' && <button onClick={() => publish(j)} className="h-7 w-7 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white flex items-center justify-center hover:opacity-85" title="Publish">{publishing === j.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}</button>}
@@ -514,27 +514,27 @@ export default function CalendarPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
-                {jobPlatforms(selectedJob).map(p => <span key={p} className="flex items-center gap-1.5 text-[0.65rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: M[p]?.bg, color: M[p]?.color }}><Icon p={p} size={11} />{M[p]?.label}</span>)}
+                {jobPlatforms(selectedJob).map(p => <span key={p} className="flex items-center gap-1.5 text-[0.85rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: M[p]?.bg, color: M[p]?.color }}><Icon p={p} size={11} />{M[p]?.label}</span>)}
               </div>
               <div className="rounded-xl border border-[#EBECF2] p-3.5 bg-[#FAFAFD]">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">Caption preview</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">Caption preview</div>
                 <p className="text-xs text-[#16161D] leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">{jobCaption(selectedJob)}</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold text-[#7C3AED]">{analyze(jobCaption(selectedJob)).quality}</div><div className="text-[0.5rem] text-[#8A8A96] uppercase">AI score</div></div>
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold text-[#3B82F6]">{analyze(jobCaption(selectedJob)).seo}</div><div className="text-[0.5rem] text-[#8A8A96] uppercase">SEO</div></div>
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold text-[#0EA37A]">~{fmt(reachPred(selectedJob))}</div><div className="text-[0.5rem] text-[#8A8A96] uppercase">Reach</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold text-[#7C3AED]">{analyze(jobCaption(selectedJob)).quality}</div><div className="text-[0.875rem] text-[#8A8A96] uppercase">AI score</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold text-[#3B82F6]">{analyze(jobCaption(selectedJob)).seo}</div><div className="text-[0.875rem] text-[#8A8A96] uppercase">SEO</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold text-[#0EA37A]">~{fmt(reachPred(selectedJob))}</div><div className="text-[0.875rem] text-[#8A8A96] uppercase">Reach</div></div>
               </div>
               <div className="rounded-xl border border-[#EBECF2] p-3">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Hashtags & mentions</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Hashtags & mentions</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {jobPlatforms(selectedJob).flatMap(p => selectedJob.platform_posts?.[p]?.hashtags || []).slice(0, 10).map((t, i) => <span key={i} className="text-[0.65rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2 py-0.5 rounded-full">{t}</span>)}
-                  {jobPlatforms(selectedJob).flatMap(p => selectedJob.platform_posts?.[p]?.hashtags || []).length === 0 && <span className="text-[0.65rem] text-[#8A8A96]">None</span>}
+                  {jobPlatforms(selectedJob).flatMap(p => selectedJob.platform_posts?.[p]?.hashtags || []).slice(0, 10).map((t, i) => <span key={i} className="text-[0.85rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2 py-0.5 rounded-full">{t}</span>)}
+                  {jobPlatforms(selectedJob).flatMap(p => selectedJob.platform_posts?.[p]?.hashtags || []).length === 0 && <span className="text-[0.85rem] text-[#8A8A96]">None</span>}
                 </div>
               </div>
               <div className="rounded-xl border border-[#EBECF2] p-3">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Publishing history</div>
-                <div className="space-y-1.5 text-[0.65rem]">
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Publishing history</div>
+                <div className="space-y-1.5 text-[0.85rem]">
                   <div className="flex justify-between"><span className="text-[#8A8A96]">Created</span><span className="text-[#16161D] font-mono">{selectedJob.created_at ? new Date(selectedJob.created_at).toLocaleString() : '—'}</span></div>
                   <div className="flex justify-between"><span className="text-[#8A8A96]">Scheduled</span><span className="text-[#16161D] font-mono">{selectedJob.scheduled_for ? new Date(selectedJob.scheduled_for).toLocaleString() : '—'}</span></div>
                   <div className="flex justify-between"><span className="text-[#8A8A96]">Published</span><span className="text-[#16161D] font-mono">{selectedJob.published_at ? new Date(selectedJob.published_at).toLocaleString() : 'Not yet'}</span></div>
@@ -542,8 +542,8 @@ export default function CalendarPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-[#EBECF2] p-3 bg-[#F8F9FC]">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-[#EC4899]" /> AI suggestions</div>
-                <div className="space-y-1.5 text-[0.7rem] text-[#16161D]">
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-[#EC4899]" /> AI suggestions</div>
+                <div className="space-y-1.5 text-[0.875rem] text-[#16161D]">
                   <div>• {analyze(jobCaption(selectedJob)).ctaScore < 50 ? 'Add a clear CTA to lift engagement.' : 'CTA is strong — keep it.'}</div>
                   <div>• {analyze(jobCaption(selectedJob)).hashtagCount === 0 ? 'Add 5–8 hashtags for discovery.' : 'Hashtag mix looks balanced.'}</div>
                   <div>• Best time window: {bestHour >= 0 ? `${bestHour}:00` : '9:00'} · {DAYS[bestDay >= 0 ? bestDay : 3]}</div>
@@ -584,7 +584,7 @@ export default function CalendarPage() {
                 { l: 'Move all Instagram to evening', a: () => { let n = 0; jobs.filter(j => jobPlatforms(j).includes('instagram') && j.status === 'scheduled' && j.scheduled_for).forEach(async (j) => { const d = new Date(j.scheduled_for); d.setHours(19, 0, 0, 0); try { await api(`/jobs/${j.id}`, { method: 'PUT', body: { scheduled_for: d.toISOString() } }); n++ } catch {} }); setTimeout(() => { toast.success(`Moved ${n} Instagram posts to 7 PM`); refresh() }, 800) } },
                 { l: 'Schedule all drafts', a: () => { let n = 0; jobs.filter(j => j.status === 'draft').slice(0, 8).forEach(async (j) => { const d = new Date(Date.now() + (n + 1) * 864e5); d.setHours(10, 0, 0, 0); try { await api(`/jobs/${j.id}`, { method: 'PUT', body: { status: 'scheduled', scheduled_for: d.toISOString() } }); n++ } catch {} }); setTimeout(() => { toast.success(`Scheduled ${n} draft(s) — one per day at 10 AM`); refresh() }, 800) } },
               ].map((c, i) => (
-                <button key={i} onClick={c.a} className="w-full text-left text-[0.7rem] font-medium rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-[#7C3AED] shrink-0" />{c.l}</button>
+                <button key={i} onClick={c.a} className="w-full text-left text-[0.875rem] font-medium rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-[#7C3AED] shrink-0" />{c.l}</button>
               ))}
             </div>
           </motion.div>

@@ -115,7 +115,7 @@ function InboxPage() {
           </button>
         ))}
         <div className="ml-auto flex items-center gap-2">
-          <span className="editorial-mono text-[0.5rem] text-muted-foreground">Sort:</span>
+          <span className="editorial-mono text-[0.875rem] text-muted-foreground">Sort:</span>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs bg-secondary/50 border border-border rounded-sm px-2 py-1">
             <option value="chronological">Newest</option>
             <option value="followers">By followers</option>
@@ -144,10 +144,10 @@ function InboxPage() {
                         <span className="editorial-eyebrow">{pc}</span>
                         <span className="font-medium text-sm">{c.author}</span>
                         <span className={`text-xs ${sentimentColors[c.sentiment] || 'text-gray-400'}`}>{sentimentIcons[c.sentiment] || '⚪'}</span>
-                        {c.commenter_follower_count > 0 && <span className="editorial-mono text-[0.5rem] text-muted-foreground">{c.commenter_follower_count} followers</span>}
-                        <span className="editorial-mono text-[0.625rem] text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleString() : ''}</span>
+                        {c.commenter_follower_count > 0 && <span className="editorial-mono text-[0.875rem] text-muted-foreground">{c.commenter_follower_count} followers</span>}
+                        <span className="editorial-mono text-[0.8125rem] text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleString() : ''}</span>
                         <StatusStamp status={c.status} />
-                        {c.auto_sent && <span className="editorial-mono text-[0.5rem] text-green-600 border border-green-200 px-1 rounded-sm">🤖 auto</span>}
+                        {c.auto_sent && <span className="editorial-mono text-[0.875rem] text-green-600 border border-green-200 px-1 rounded-sm">🤖 auto</span>}
                       </div>
                       <div className="text-sm text-foreground/80 bg-secondary/30 rounded-sm p-3 border border-border/50">
                         {c.comment_text}
@@ -155,10 +155,10 @@ function InboxPage() {
                       {replyingId === c.id && (
                         <div className="space-y-2 pl-3 border-l-2 border-primary/30">
                           {c.draft_reply && (
-                            <div className="editorial-mono text-[0.625rem] text-muted-foreground mb-1 italic">Saved draft: "{c.draft_reply}"</div>
+                            <div className="editorial-mono text-[0.8125rem] text-muted-foreground mb-1 italic">Saved draft: "{c.draft_reply}"</div>
                           )}
                           {c.ai_generated_draft && (
-                            <div className="editorial-mono text-[0.5rem] text-blue-600 mb-1">🤖 AI-generated draft</div>
+                            <div className="editorial-mono text-[0.875rem] text-blue-600 mb-1">🤖 AI-generated draft</div>
                           )}
                           <Textarea
                             value={replyTexts[c.id] ?? c.draft_reply ?? ''}

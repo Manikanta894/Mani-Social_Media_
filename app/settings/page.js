@@ -142,18 +142,18 @@ function ProvidersTab({ providers, onRefresh }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium">{p.name}</div>
-                <div className="editorial-mono text-[0.625rem] text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
+                <div className="editorial-mono text-[0.8125rem] text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
                   <span>{PROVIDER_TYPES.find(t => t.value === p.type)?.label || p.type}</span>
                   <span>·</span>
                   <span>{p.model}</span>
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-wrap">
-                <label className="flex items-center gap-2 editorial-mono text-[0.625rem] text-muted-foreground">
+                <label className="flex items-center gap-2 editorial-mono text-[0.8125rem] text-muted-foreground">
                   <Switch checked={!!p.active_for_vision} onCheckedChange={(v) => v && setActive('vision', p.id)} />
                   Vision
                 </label>
-                <label className="flex items-center gap-2 editorial-mono text-[0.625rem] text-muted-foreground">
+                <label className="flex items-center gap-2 editorial-mono text-[0.8125rem] text-muted-foreground">
                   <Switch checked={!!p.active_for_text} onCheckedChange={(v) => v && setActive('text', p.id)} />
                   Text
                 </label>
@@ -276,7 +276,7 @@ function ProviderDialog({ open, onOpenChange, editing, onSaved }) {
               <SelectContent>
                 {PROVIDER_TYPES.map(t => (
                   <SelectItem key={t.value} value={t.value}>
-                    {t.label} {!t.supportsVision && <span className="editorial-mono text-[0.5rem] text-muted-foreground ml-1">(text only)</span>}
+                    {t.label} {!t.supportsVision && <span className="editorial-mono text-[0.875rem] text-muted-foreground ml-1">(text only)</span>}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -318,7 +318,7 @@ function ProviderDialog({ open, onOpenChange, editing, onSaved }) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm">Active for vision</Label>
-              <div className="editorial-mono text-[0.625rem] text-muted-foreground">Analyzes uploaded photos</div>
+              <div className="editorial-mono text-[0.8125rem] text-muted-foreground">Analyzes uploaded photos</div>
             </div>
             <Switch checked={form.active_for_vision} onCheckedChange={v => setForm({ ...form, active_for_vision: v })} disabled={currentType && !currentType.supportsVision} />
           </div>
@@ -326,7 +326,7 @@ function ProviderDialog({ open, onOpenChange, editing, onSaved }) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm">Active for text</Label>
-              <div className="editorial-mono text-[0.625rem] text-muted-foreground">Writes captions + hashtags</div>
+              <div className="editorial-mono text-[0.8125rem] text-muted-foreground">Writes captions + hashtags</div>
             </div>
             <Switch checked={form.active_for_text} onCheckedChange={v => setForm({ ...form, active_for_text: v })} />
           </div>
@@ -434,7 +434,7 @@ function PromptStylesTab({ styles, onRefresh }) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-serif font-semibold text-lg">{selected.name}</h3>
-              <p className="editorial-mono text-[0.625rem] text-muted-foreground">Instructions shape every caption, hashtag, and emoji choice.</p>
+              <p className="editorial-mono text-[0.8125rem] text-muted-foreground">Instructions shape every caption, hashtag, and emoji choice.</p>
             </div>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" className="border-border" onClick={preview}>
@@ -563,7 +563,7 @@ function TelegramTab() {
               {isConnected ? (
                 <>
                   <div className="text-sm font-medium">{botInfo.first_name}</div>
-                  <div className="editorial-mono text-[0.625rem] text-muted-foreground">@{botInfo.username}</div>
+                  <div className="editorial-mono text-[0.8125rem] text-muted-foreground">@{botInfo.username}</div>
                   <StatusStamp status="live" className="mt-2" />
                 </>
               ) : (
@@ -578,7 +578,7 @@ function TelegramTab() {
               {webhookOk ? (
                 <>
                   <div className="text-sm">Registered</div>
-                  <div className="editorial-mono text-[0.5rem] text-muted-foreground truncate">{webhook.url}</div>
+                  <div className="editorial-mono text-[0.875rem] text-muted-foreground truncate">{webhook.url}</div>
                   <StatusStamp status="live" className="mt-2" />
                 </>
               ) : (
@@ -616,7 +616,7 @@ function TelegramTab() {
               placeholder="Numeric id — or send /start to the bot"
               className="bg-secondary/50 border-border editorial-mono text-sm"
             />
-            <div className="editorial-mono text-[0.5rem] text-muted-foreground mt-1">
+            <div className="editorial-mono text-[0.875rem] text-muted-foreground mt-1">
               Tip: open your bot in Telegram and send <code>/start</code>. On first message we auto-capture the chat id.
             </div>
           </div>
@@ -641,7 +641,7 @@ function TelegramTab() {
           <div>• Each draft gets posted to your bot chat with the 5 platform captions and inline buttons.</div>
           <div>• Tap <b>Approve</b>, <b>Post now</b>, <b>Schedule</b>, <b>Regen all</b>, or <b>Regen {'<platform>'}</b> to act instantly.</div>
           <div>• Send <code>/help</code>, <code>/pending</code>, <code>/styles</code>, <code>/style playful</code> to the bot for text control.</div>
-          <div className="editorial-mono text-[0.5rem] text-muted-foreground pt-2">Note: <b>Post now</b> currently stubs the platform APIs — real LinkedIn / Meta / Threads / X posting arrives in the next slice.</div>
+          <div className="editorial-mono text-[0.875rem] text-muted-foreground pt-2">Note: <b>Post now</b> currently stubs the platform APIs — real LinkedIn / Meta / Threads / X posting arrives in the next slice.</div>
         </CardContent>
       </Card>
     </div>
@@ -751,10 +751,10 @@ function AutomationTab() {
                 rows={5}
                 className="bg-secondary/50 border-border editorial-mono text-xs leading-relaxed"
               />
-              <div className="editorial-mono text-[0.5rem] text-muted-foreground">
+              <div className="editorial-mono text-[0.875rem] text-muted-foreground">
                 Uses <code>{'{{context}}'}</code>, <code>{'{{platform}}'}</code>, <code>{'{{mode}}'}</code>, <code>{'{{target}}'}</code>, <code>{'{{count}}'}</code>, <code>{'{{style}}'}</code> as variables.
               </div>
-              {savingKey === m.module_key && <div className="editorial-mono text-[0.5rem] text-primary flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving…</div>}
+              {savingKey === m.module_key && <div className="editorial-mono text-[0.875rem] text-primary flex items-center gap-1"><Loader2 className="h-2.5 w-2.5 animate-spin" /> saving…</div>}
             </CardContent>
           </Card>
         ))}

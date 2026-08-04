@@ -327,7 +327,7 @@ export default function ComposePage() {
               { l: 'Shortcuts', v: '⌘Enter · ⌘S · ⌘P' },
             ].map(s => (
               <div key={s.l} className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-                <div className="text-[0.55rem] text-white/50 uppercase tracking-wider font-semibold">{s.l}</div>
+                <div className="text-[0.9rem] text-white/50 uppercase tracking-wider font-semibold">{s.l}</div>
                 <div className="text-sm font-bold text-white mt-0.5 truncate">{s.v}</div>
               </div>
             ))}
@@ -345,8 +345,8 @@ export default function ComposePage() {
                 <button key={t.key} onClick={() => setKind(t.key)} className={`rounded-xl p-3 text-left transition-all ${kind === t.key ? 'bg-gradient-to-br ' + t.g + ' text-white shadow-md scale-[1.01]' : 'bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]'}`}>
                   <div className={`h-8 w-8 rounded-lg flex items-center justify-center mb-1.5 ${kind === t.key ? 'bg-white/20 text-white' : 'bg-white text-[#7C3AED] shadow-sm'}`}>{t.icon}</div>
                   <div className={`text-xs font-bold leading-tight ${kind === t.key ? 'text-white' : 'text-[#16161D]'}`}>{t.label}</div>
-                  <div className={`text-[0.55rem] mt-0.5 leading-snug ${kind === t.key ? 'text-white/70' : 'text-[#8A8A96]'}`}>{t.desc}</div>
-                  <div className={`text-[0.5rem] mt-1 font-mono ${kind === t.key ? 'text-white/60' : 'text-[#8A8A96]'}`}>{t.plats} · {t.time}</div>
+                  <div className={`text-[0.9rem] mt-0.5 leading-snug ${kind === t.key ? 'text-white/70' : 'text-[#8A8A96]'}`}>{t.desc}</div>
+                  <div className={`text-[0.875rem] mt-1 font-mono ${kind === t.key ? 'text-white/60' : 'text-[#8A8A96]'}`}>{t.plats} · {t.time}</div>
                 </button>
               ))}
             </div>
@@ -360,20 +360,20 @@ export default function ComposePage() {
                 return (
                   <button key={k} onClick={() => setSelPlatforms(s => on ? s.filter(x => x !== k) : [...s, k])} className={`rounded-xl p-2.5 text-left border transition-all ${on ? 'shadow-sm' : 'bg-[#F8F9FC] border-[#EBECF2] opacity-70 hover:opacity-100'}`} style={on ? { backgroundColor: `${v.color}08`, borderColor: v.color } : {}}>
                     <div className="flex items-center gap-2">
-                      <span className="h-6 w-6 rounded-lg flex items-center justify-center text-[0.6rem] font-bold text-white shrink-0" style={{ backgroundColor: v.color }}>{v.label[0]}</span>
+                      <span className="h-6 w-6 rounded-lg flex items-center justify-center text-[0.95rem] font-bold text-white shrink-0" style={{ backgroundColor: v.color }}>{v.label[0]}</span>
                       <span className="text-xs font-bold" style={{ color: on ? v.color : '#16161D' }}>{v.label}</span>
                       <span className={`ml-auto h-4 w-4 rounded-full border-2 flex items-center justify-center ${on ? 'border-[#7C3AED]' : 'border-[#D8D9E3]'}`}>{on && <span className="h-2 w-2 rounded-full bg-[#7C3AED]" />}</span>
                     </div>
-                    <div className="text-[0.55rem] text-[#8A8A96] mt-1.5 leading-snug">{v.style}</div>
+                    <div className="text-[0.9rem] text-[#8A8A96] mt-1.5 leading-snug">{v.style}</div>
                     <div className="flex gap-1 mt-1">
-                      <span className="text-[0.5rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] font-mono">{v.limit} chars</span>
-                      <span className="text-[0.5rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9]">{v.cta}</span>
+                      <span className="text-[0.875rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] font-mono">{v.limit} chars</span>
+                      <span className="text-[0.875rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9]">{v.cta}</span>
                     </div>
                   </button>
                 )
               })}
             </div>
-            <div className="text-[0.65rem] text-[#8A8A96] mt-2.5">Auto-derived: <b>X · YouTube · Blog · Newsletter</b> — unique content per platform, never one generic caption.</div>
+            <div className="text-[0.85rem] text-[#8A8A96] mt-2.5">Auto-derived: <b>X · YouTube · Blog · Newsletter</b> — unique content per platform, never one generic caption.</div>
           </motion.div>
 
           <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-4`}>
@@ -394,14 +394,14 @@ export default function ComposePage() {
                             <div key={i} className="relative group shrink-0">
                               <img src={img.previewUrl} alt="" className="w-16 h-16 object-cover rounded-lg" />
                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-0.5">
-                                {i > 0 && <button onClick={(e) => { e.stopPropagation(); moveImage(i, -1) }} className="text-white text-[0.6rem] px-1 hover:bg-white/20 rounded">↑</button>}
-                                {i < images.length - 1 && <button onClick={(e) => { e.stopPropagation(); moveImage(i, 1) }} className="text-white text-[0.6rem] px-1 hover:bg-white/20 rounded">↓</button>}
-                                <button onClick={(e) => { e.stopPropagation(); removeImage(i) }} className="text-white text-[0.6rem] px-1 hover:bg-white/20 rounded">✕</button>
+                                {i > 0 && <button onClick={(e) => { e.stopPropagation(); moveImage(i, -1) }} className="text-white text-[0.95rem] px-1 hover:bg-white/20 rounded">↑</button>}
+                                {i < images.length - 1 && <button onClick={(e) => { e.stopPropagation(); moveImage(i, 1) }} className="text-white text-[0.95rem] px-1 hover:bg-white/20 rounded">↓</button>}
+                                <button onClick={(e) => { e.stopPropagation(); removeImage(i) }} className="text-white text-[0.95rem] px-1 hover:bg-white/20 rounded">✕</button>
                               </div>
                             </div>
                           ))}
                         </div>
-                        <div className="text-[0.6rem] text-[#8A8A96]">{images.length}/10 · drop more to add · drag to reorder</div>
+                        <div className="text-[0.95rem] text-[#8A8A96]">{images.length}/10 · drop more to add · drag to reorder</div>
                       </div>
                     ) : (
                       <div className="p-10 flex flex-col items-center gap-2 text-[#8A8A96]">
@@ -425,7 +425,7 @@ export default function ComposePage() {
                 <motion.div key="text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <textarea value={pastedArticle} onChange={e => { setPastedArticle(e.target.value); setImages([]) }} placeholder="Paste raw text, markdown, research paper, email, or a LinkedIn post…" rows={6} className="w-full rounded-xl border border-[#EBECF2] px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
                   <div className="flex gap-2 mt-2 flex-wrap">
-                    {['PDF', 'DOCX', 'PPTX', 'TXT', 'Markdown', 'Research', 'Email'].map(f => <span key={f} className="text-[0.6rem] px-2.5 py-1 rounded-full bg-[#F4F5F9] text-[#8A8A96] border border-[#EBECF2]">{f}</span>)}
+                    {['PDF', 'DOCX', 'PPTX', 'TXT', 'Markdown', 'Research', 'Email'].map(f => <span key={f} className="text-[0.95rem] px-2.5 py-1 rounded-full bg-[#F4F5F9] text-[#8A8A96] border border-[#EBECF2]">{f}</span>)}
                   </div>
                 </motion.div>
               )}
@@ -433,7 +433,7 @@ export default function ComposePage() {
                 <motion.div key="topic" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
                   <input value={context} onChange={e => setContext(e.target.value)} placeholder="Type a topic or keywords…" className="w-full rounded-xl border border-[#EBECF2] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
                   <div className="grid grid-cols-2 gap-1.5">
-                    {EXAMPLE_PROMPTS.map(p => <button key={p.t} onClick={() => applyExample(p)} className="text-[0.65rem] text-left rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2.5 hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{p.t}</button>)}
+                    {EXAMPLE_PROMPTS.map(p => <button key={p.t} onClick={() => applyExample(p)} className="text-[0.85rem] text-left rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2.5 hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{p.t}</button>)}
                   </div>
                 </motion.div>
               )}
@@ -462,8 +462,8 @@ export default function ComposePage() {
                 <input type="range" min="0" max="100" value={creativity} onChange={e => setCreativity(Number(e.target.value))} className="w-full accent-[#EC4899] h-1.5" />
               </div>
               <div className="grid grid-cols-2 gap-1.5">
-                <div><div className="flex justify-between text-[0.6rem] text-[#8A8A96] mb-1"><span>Emoji</span><span className="font-mono">{emojiEnabled ? emojiDensity : 'Off'}</span></div><input type="range" min="0" max="100" value={emojiDensity} onChange={e => setEmojiDensity(Number(e.target.value))} className="w-full accent-[#7C3AED] h-1.5" /></div>
-                <div><div className="flex justify-between text-[0.6rem] text-[#8A8A96] mb-1"><span>Hashtags</span><span className="font-mono">{hashtagDensity}</span></div><input type="range" min="0" max="100" value={hashtagDensity} onChange={e => setHashtagDensity(Number(e.target.value))} className="w-full accent-[#0EA37A] h-1.5" /></div>
+                <div><div className="flex justify-between text-[0.95rem] text-[#8A8A96] mb-1"><span>Emoji</span><span className="font-mono">{emojiEnabled ? emojiDensity : 'Off'}</span></div><input type="range" min="0" max="100" value={emojiDensity} onChange={e => setEmojiDensity(Number(e.target.value))} className="w-full accent-[#7C3AED] h-1.5" /></div>
+                <div><div className="flex justify-between text-[0.95rem] text-[#8A8A96] mb-1"><span>Hashtags</span><span className="font-mono">{hashtagDensity}</span></div><input type="range" min="0" max="100" value={hashtagDensity} onChange={e => setHashtagDensity(Number(e.target.value))} className="w-full accent-[#0EA37A] h-1.5" /></div>
               </div>
               <label className="flex items-center gap-2 text-xs text-[#8A8A96] cursor-pointer"><input type="checkbox" checked={emojiEnabled} onChange={e => setEmojiEnabled(e.target.checked)} className="accent-[#7C3AED]" /> Enable emojis</label>
               <input id="prompt-builder" value={prompt} onChange={e => setPrompt(e.target.value)} placeholder='AI command — "Write like Steve Jobs", "Gen Z voice", "Luxury tone"…' className="w-full rounded-xl border border-[#EBECF2] px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
@@ -476,7 +476,7 @@ export default function ComposePage() {
 
           <motion.button variants={fade} initial="initial" animate="animate" onClick={generate} disabled={!canGenerate} className={`w-full rounded-2xl p-4 flex items-center justify-center gap-2.5 text-base font-bold shadow-lg transition-all ${canGenerate ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-[#7C3AED]/25 hover:opacity-90 hover:-translate-y-0.5' : 'bg-[#E5E6EF] text-[#8A8A96] cursor-not-allowed'}`}>
             {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wand2 className="h-5 w-5" />}
-            {generating ? 'AI is writing…' : 'Generate Content'} <span className="text-[0.6rem] font-mono opacity-60 hidden sm:inline">⌘↵</span>
+            {generating ? 'AI is writing…' : 'Generate Content'} <span className="text-[0.95rem] font-mono opacity-60 hidden sm:inline">⌘↵</span>
           </motion.button>
         </div>
 
@@ -485,9 +485,9 @@ export default function ComposePage() {
           {savedDraft && (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 flex items-center gap-3 border-l-4`} style={{ borderLeftColor: '#0EA37A' }}>
               <Save className="h-4 w-4 text-[#0EA37A] shrink-0" />
-              <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-[#16161D]">Unsaved draft found</div><div className="text-[0.65rem] text-[#8A8A96] truncate">{(savedDraft.topic || 'Generated content').slice(0, 60)} — saved locally earlier</div></div>
-              <button onClick={restoreDraft} className="text-[0.7rem] font-bold px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] text-white">Restore</button>
-              <button onClick={() => { localStorage.removeItem('sf_studio_draft'); setSavedDraft(null) }} className="text-[0.7rem] font-semibold px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">Discard</button>
+              <div className="flex-1 min-w-0"><div className="text-sm font-semibold text-[#16161D]">Unsaved draft found</div><div className="text-[0.85rem] text-[#8A8A96] truncate">{(savedDraft.topic || 'Generated content').slice(0, 60)} — saved locally earlier</div></div>
+              <button onClick={restoreDraft} className="text-[0.875rem] font-bold px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] text-white">Restore</button>
+              <button onClick={() => { localStorage.removeItem('sf_studio_draft'); setSavedDraft(null) }} className="text-[0.875rem] font-semibold px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">Discard</button>
             </motion.div>
           )}
           {!result && !generating && (
@@ -528,7 +528,7 @@ export default function ComposePage() {
                   ].map((s, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <motion.div initial={{ width: 0 }} animate={{ width: `${s.w}%` }} transition={{ duration: 0.5, delay: i * 0.35 }} className="h-1.5 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" />
-                      <span className="text-[0.65rem] text-[#8A8A96] whitespace-nowrap">{s.t}</span>
+                      <span className="text-[0.85rem] text-[#8A8A96] whitespace-nowrap">{s.t}</span>
                     </div>
                   ))}
                 </div>
@@ -564,17 +564,17 @@ export default function ComposePage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2.5">
                       <span className="text-base font-bold text-[#16161D]">{M[activeTab]?.label || activeTab}</span>
-                      <span className="text-[0.6rem] px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: `${M[activeTab]?.color}12`, color: M[activeTab]?.color }}>{M[activeTab]?.style}</span>
+                      <span className="text-[0.95rem] px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: `${M[activeTab]?.color}12`, color: M[activeTab]?.color }}>{M[activeTab]?.style}</span>
                     </div>
                     <span className={`text-xs font-mono ${(activePost?.caption || '').length > 2800 ? 'text-red-500' : 'text-[#8A8A96]'}`}>{(activePost?.caption || '').length} / {M[activeTab]?.limit || '—'}</span>
                   </div>
                   {inlineIssues(activePost?.caption).length > 0 && (
                     <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
-                      <span className="text-[0.55rem] font-bold uppercase tracking-wider text-[#8A8A96]">Inline issues:</span>
+                      <span className="text-[0.9rem] font-bold uppercase tracking-wider text-[#8A8A96]">Inline issues:</span>
                       {inlineIssues(activePost?.caption).map((iss, i) => (
-                        <span key={i} className="flex items-center gap-1.5 text-[0.6rem] px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium">
+                        <span key={i} className="flex items-center gap-1.5 text-[0.95rem] px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium">
                           <AlertTriangle className="h-3 w-3 shrink-0" />{iss.label}
-                          <button onClick={() => applyCoachFix(iss.fix, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: safeSetPost })} className="text-[0.55rem] font-bold text-[#7C3AED] hover:underline">Fix</button>
+                          <button onClick={() => applyCoachFix(iss.fix, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: safeSetPost })} className="text-[0.9rem] font-bold text-[#7C3AED] hover:underline">Fix</button>
                         </span>
                       ))}
                     </div>
@@ -594,7 +594,7 @@ export default function ComposePage() {
                     <button onClick={() => { const name = prompt('Template name:'); if (!name) return; api('/templates', { method: 'POST', body: { name, context: result.topic || '', style_id: styleId, tone_adjustment: (tone - 50) / 50 } }).then(async () => { setTemplates(await api('/templates')); toast.success('Template saved') }).catch(() => {}) }} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors"><FolderPlus className="h-3.5 w-3.5" /> Save Template</button>
                   </div>
                   <div className="mt-3 pt-3 border-t border-[#F0F1F5]">
-                    <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">AI actions</div>
+                    <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">AI actions</div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {EXTRA_ACTIONS.map(a => (
                         <button key={a.key} onClick={() => runStudioAction(a.key, { caption: activePost?.caption || '', hashtags: activeHashtags, setPost: safeSetPost, rewrite: () => regenerate(activeTab), setLang, openPack: setPackOpen })} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{a.icon}{a.label}</button>
@@ -607,9 +607,9 @@ export default function ComposePage() {
               <motion.div variants={fade} initial="initial" animate="animate" className={`${C} p-4`}>
                 <h4 className="text-sm font-semibold text-[#16161D] mb-3 flex items-center gap-2"><Send className="h-4 w-4 text-[#0EA37A]" /> Publish & Distribute</h4>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => saveJob({ publishNow: true })} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-md hover:opacity-90"><Send className="h-4 w-4" /> Publish Now <span className="text-[0.55rem] font-mono opacity-60">⌘P</span></button>
+                  <button onClick={() => saveJob({ publishNow: true })} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-md hover:opacity-90"><Send className="h-4 w-4" /> Publish Now <span className="text-[0.9rem] font-mono opacity-60">⌘P</span></button>
                   <button onClick={() => setSchedOpen(v => !v)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><Clock className="h-4 w-4 text-[#F59E0B]" /> Schedule</button>
-                  <button onClick={() => saveJob({})} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><List className="h-4 w-4 text-[#3B82F6]" /> Approval Queue <span className="text-[0.55rem] font-mono opacity-60">⌘S</span></button>
+                  <button onClick={() => saveJob({})} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><List className="h-4 w-4 text-[#3B82F6]" /> Approval Queue <span className="text-[0.9rem] font-mono opacity-60">⌘S</span></button>
                   <button onClick={saveDraft} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><Save className="h-4 w-4 text-[#0EA37A]" /> Draft</button>
                   <button onClick={() => { navigator.clipboard.writeText(JSON.stringify({ topic: result.topic, posts: result.posts }, null, 2)); toast.success('Export JSON copied') }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB]"><FolderPlus className="h-4 w-4 text-[#14B8A6]" /> Export</button>
                 </div>

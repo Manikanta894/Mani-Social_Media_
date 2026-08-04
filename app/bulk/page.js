@@ -266,7 +266,7 @@ export default function BulkPage() {
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium truncate">{c.name}</div>
-                        <div className="editorial-mono text-[0.5rem] text-muted-foreground">{jobs.filter(j => j.campaign_id === c.id).length || 0} post(s)</div>
+                        <div className="editorial-mono text-[0.875rem] text-muted-foreground">{jobs.filter(j => j.campaign_id === c.id).length || 0} post(s)</div>
                       </div>
                       <div className="flex items-center gap-0.5 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                         <button onClick={() => startRename(c)} className="text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent" title="Rename"><Pencil className="h-3 w-3" /></button>
@@ -320,7 +320,7 @@ export default function BulkPage() {
                           <div key={p.key} className="space-y-1.5">
                             <div className="flex items-center justify-between">
                               <span className="editorial-eyebrow">{p.label}</span>
-                              <span className="editorial-mono text-[0.5rem] text-muted-foreground">{manualPosts[p.key]?.length || 0}/{p.limit}</span>
+                              <span className="editorial-mono text-[0.875rem] text-muted-foreground">{manualPosts[p.key]?.length || 0}/{p.limit}</span>
                             </div>
                             <Textarea value={manualPosts[p.key] || ''}
                               onChange={e => setManualPosts(prev => ({ ...prev, [p.key]: e.target.value }))}
@@ -339,7 +339,7 @@ export default function BulkPage() {
                   {/* CSV tab */}
                   <TabsContent value="csv">
                     <div className="border border-border rounded-sm bg-card p-4 space-y-3">
-                      <p className="text-sm text-muted-foreground">Paste CSV rows. Each line: <code className="editorial-mono text-[0.5rem] bg-secondary/50 px-1">platform,caption,scheduled_time(optional)</code></p>
+                      <p className="text-sm text-muted-foreground">Paste CSV rows. Each line: <code className="editorial-mono text-[0.875rem] bg-secondary/50 px-1">platform,caption,scheduled_time(optional)</code></p>
                       <Textarea value={csvText} onChange={e => setCsvText(e.target.value)}
                         rows={8} placeholder={`linkedin,Check out our new product launch!,\ninstagram,New product alert! 🔥,2025-01-15T10:00:00Z\nfacebook,Big news everyone!,`}
                         className="bg-secondary/50 border-border text-sm editorial-mono" />
@@ -348,7 +348,7 @@ export default function BulkPage() {
                           className="bg-primary text-primary-foreground hover:bg-primary/90">
                           <Upload className="h-4 w-4 mr-2" /> Import CSV
                         </Button>
-                        <span className="editorial-mono text-[0.5rem] text-muted-foreground">Supported: linkedin, instagram, facebook, threads, twitter</span>
+                        <span className="editorial-mono text-[0.875rem] text-muted-foreground">Supported: linkedin, instagram, facebook, threads, twitter</span>
                       </div>
                     </div>
                   </TabsContent>
@@ -432,7 +432,7 @@ export default function BulkPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-border bg-secondary/20 editorial-mono text-[0.625rem] text-muted-foreground uppercase">
+                          <tr className="border-b border-border bg-secondary/20 editorial-mono text-[0.8125rem] text-muted-foreground uppercase">
                             <th className="w-10 px-3 py-2.5 text-left">
                               <input type="checkbox" checked={selectedIds.size === jobs.length && jobs.length > 0}
                                 onChange={selectAll} className="accent-primary cursor-pointer" />
@@ -456,20 +456,20 @@ export default function BulkPage() {
                                   {getPlatforms(job).map(p => {
                                     const plat = PLATFORMS.find(x => x.key === p)
                                     return (
-                                      <span key={p} className="editorial-mono text-[0.5rem] border border-border/50 px-1.5 py-0.5 rounded-sm bg-secondary/30">
+                                      <span key={p} className="editorial-mono text-[0.875rem] border border-border/50 px-1.5 py-0.5 rounded-sm bg-secondary/30">
                                         {plat?.letter || p?.slice(0, 2)}
                                       </span>
                                     )
                                   })}
-                                  {getPlatforms(job).length === 0 && <span className="text-muted-foreground text-[0.5rem]">—</span>}
+                                  {getPlatforms(job).length === 0 && <span className="text-muted-foreground text-[0.875rem]">—</span>}
                                 </div>
                               </td>
                               <td className="px-3 py-2.5 max-w-[240px]">
                                 <div className="truncate text-foreground/80 text-xs">{getCaption(job) || <span className="text-muted-foreground italic">No caption</span>}</div>
-                                {job.topic && <div className="editorial-mono text-[0.5rem] text-muted-foreground truncate mt-0.5">{job.topic}</div>}
+                                {job.topic && <div className="editorial-mono text-[0.875rem] text-muted-foreground truncate mt-0.5">{job.topic}</div>}
                               </td>
                               <td className="px-3 py-2.5">
-                                <span className="editorial-mono text-[0.5rem] text-muted-foreground">
+                                <span className="editorial-mono text-[0.875rem] text-muted-foreground">
                                   {job.scheduled_for ? new Date(job.scheduled_for).toLocaleString() : '—'}
                                 </span>
                               </td>
@@ -491,7 +491,7 @@ export default function BulkPage() {
                         </tbody>
                       </table>
                     </div>
-                    <div className="editorial-mono text-[0.5rem] text-muted-foreground px-4 py-2 border-t border-border text-right">
+                    <div className="editorial-mono text-[0.875rem] text-muted-foreground px-4 py-2 border-t border-border text-right">
                       {jobs.length} post(s)
                     </div>
                   </div>

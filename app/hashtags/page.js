@@ -244,7 +244,7 @@ export default function HashtagsPage() {
               <button onClick={generate} disabled={generating} className="w-full py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-md hover:opacity-90 disabled:opacity-50">
                 {generating ? <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> : <Sparkles className="h-4 w-4 inline mr-2" />}{generating ? 'Analyzing…' : 'Generate Hashtags'}
               </button>
-              <div className="flex items-center gap-2 text-[0.6rem] text-[#8A8A96] flex-wrap">
+              <div className="flex items-center gap-2 text-[0.95rem] text-[#8A8A96] flex-wrap">
                 <span className="px-2.5 py-1 rounded-full bg-[#7C3AED]/8 text-[#7C3AED] font-semibold">Trending pool</span>
                 <span className="px-2.5 py-1 rounded-full bg-[#EC4899]/8 text-[#EC4899] font-semibold">{industry} industry</span>
                 <span className="px-2.5 py-1 rounded-full bg-[#0EA37A]/8 text-[#0EA37A] font-semibold">Seasonal: {SEASONAL[monthIdx][0]}</span>
@@ -272,12 +272,12 @@ export default function HashtagsPage() {
                   <motion.div key={r.tag} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} className="rounded-xl border border-[#EBECF2] p-3 bg-[#FAFAFD] hover:border-[#D8C8FB] transition-colors">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-[#7C3AED]">{r.tag}</span>
-                      <span className="text-[0.55rem] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: M[r.platform]?.color + '12', color: M[r.platform]?.color }}>{M[r.platform]?.label}</span>
-                      <span className="ml-auto text-[0.6rem] font-mono text-[#8A8A96]">{r.reach >= 10000 ? `${(r.reach / 1000).toFixed(1)}K` : fmt(r.reach)} reach · {r.engagement}% eng</span>
+                      <span className="text-[0.9rem] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: M[r.platform]?.color + '12', color: M[r.platform]?.color }}>{M[r.platform]?.label}</span>
+                      <span className="ml-auto text-[0.95rem] font-mono text-[#8A8A96]">{r.reach >= 10000 ? `${(r.reach / 1000).toFixed(1)}K` : fmt(r.reach)} reach · {r.engagement}% eng</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2 mt-2">
                       {[['Popularity', r.popularity, '#EC4899'], ['Competition', r.competition, '#F59E0B'], ['Growth', r.growth, '#0EA37A'], ['Relevance', r.relevance, '#7C3AED']].map(([l, v, c]) => (
-                        <div key={l}><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${v}%`, backgroundColor: c }} /></div></div>
+                        <div key={l}><div className="flex justify-between text-[0.875rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${v}%`, backgroundColor: c }} /></div></div>
                       ))}
                     </div>
                   </motion.div>
@@ -333,14 +333,14 @@ export default function HashtagsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <button onClick={() => toggleFav(s.id)} className={fav ? 'text-amber-400' : 'text-[#C4C5CE] hover:text-amber-400'}><Star className="h-4 w-4 fill-current" /></button>
                     <h3 className="text-base font-bold text-[#16161D] truncate flex-1">{s.name}</h3>
-                    <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={s.platform ? { backgroundColor: M[s.platform]?.color + '12', color: M[s.platform]?.color } : { backgroundColor: '#F4F5F9', color: '#8A8A96' }}>{s.platform ? M[s.platform]?.label : 'All'}</span>
+                    <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={s.platform ? { backgroundColor: M[s.platform]?.color + '12', color: M[s.platform]?.color } : { backgroundColor: '#F4F5F9', color: '#8A8A96' }}>{s.platform ? M[s.platform]?.label : 'All'}</span>
                   </div>
-                  <div className="text-[0.6rem] text-[#8A8A96] mb-3">{s.tags?.length || 0} tags · avg reach ~{avgReach >= 10000 ? `${(avgReach / 1000).toFixed(1)}K` : fmt(Math.round(avgReach))}</div>
+                  <div className="text-[0.95rem] text-[#8A8A96] mb-3">{s.tags?.length || 0} tags · avg reach ~{avgReach >= 10000 ? `${(avgReach / 1000).toFixed(1)}K` : fmt(Math.round(avgReach))}</div>
                   <div className="flex flex-wrap gap-1.5 mb-4 max-h-24 overflow-y-auto">
                     {(s.tags || []).slice(0, 12).map((t, i) => (
-                      <span key={i} className="text-[0.65rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2 py-1 rounded-full">{t}</span>
+                      <span key={i} className="text-[0.85rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2 py-1 rounded-full">{t}</span>
                     ))}
-                    {(s.tags || []).length > 12 && <span className="text-[0.6rem] text-[#8A8A96] self-center">+{s.tags.length - 12}</span>}
+                    {(s.tags || []).length > 12 && <span className="text-[0.95rem] text-[#8A8A96] self-center">+{s.tags.length - 12}</span>}
                   </div>
                   <div className="flex items-center gap-1.5 pt-3 border-t border-[#F0F1F5]">
                     <button onClick={() => copyTags(s.tags, s.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white hover:opacity-90">{copiedId === s.id ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}{copiedId === s.id ? 'Copied' : 'Copy for Compose'}</button>
@@ -371,9 +371,9 @@ export default function HashtagsPage() {
             <div className="space-y-2">
               {TRENDING.map((t, i) => { const a = analyzeTag(t, []); return (
                 <div key={t} className="flex items-center gap-2.5 rounded-xl border border-[#EBECF2] p-2.5 hover:bg-[#F8F9FC] transition-colors group">
-                  <span className="text-[0.6rem] font-bold text-[#8A8A96] w-5">{i + 1}</span>
+                  <span className="text-[0.95rem] font-bold text-[#8A8A96] w-5">{i + 1}</span>
                   <span className="text-sm font-bold text-[#7C3AED] flex-1">#{t}</span>
-                  <span className="text-[0.55rem] font-mono text-[#0EA37A] font-semibold">↑{a.growth}% growth</span>
+                  <span className="text-[0.9rem] font-mono text-[#0EA37A] font-semibold">↑{a.growth}% growth</span>
                   <button onClick={() => copyTags([`#${t}`], 't' + i)} className="opacity-0 group-hover:opacity-100 transition-opacity text-[#8A8A96] hover:text-[#7C3AED]">{copiedId === 't' + i ? <Check className="h-3.5 w-3.5 text-[#0EA37A]" /> : <Copy className="h-3.5 w-3.5" />}</button>
                 </div>
               ) })}
@@ -382,13 +382,13 @@ export default function HashtagsPage() {
           <div className={`${C} p-5`}>
             <h3 className="text-base font-bold text-[#16161D] mb-3 flex items-center gap-2"><Target className="h-4 w-4 text-[#7C3AED]" /> Industry hashtags · {industry}</h3>
             <div className="flex gap-1.5 mb-3 flex-wrap">
-              {Object.keys(INDUSTRY_POOLS).map(k => <button key={k} onClick={() => setIndustry(k)} className={`text-[0.6rem] font-semibold px-2.5 py-1 rounded-full transition-all ${industry === k ? 'bg-[#7C3AED] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{k}</button>)}
+              {Object.keys(INDUSTRY_POOLS).map(k => <button key={k} onClick={() => setIndustry(k)} className={`text-[0.95rem] font-semibold px-2.5 py-1 rounded-full transition-all ${industry === k ? 'bg-[#7C3AED] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{k}</button>)}
             </div>
             <div className="flex flex-wrap gap-1.5">
               {(INDUSTRY_POOLS[industry] || []).map(t => { const a = analyzeTag(t, INDUSTRY_POOLS[industry]); return (
-                <button key={t} onClick={() => copyTags([`#${t}`], 'i' + t)} className="group text-[0.7rem] font-medium px-3 py-1.5 rounded-full bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] transition-colors flex items-center gap-1.5">
-                  #{t}<span className="text-[0.5rem] text-[#0EA37A] font-bold opacity-0 group-hover:opacity-100">✓</span>
-                  <span className="text-[0.5rem] text-[#8A8A96] font-mono">{a.relevance}% rel</span>
+                <button key={t} onClick={() => copyTags([`#${t}`], 'i' + t)} className="group text-[0.875rem] font-medium px-3 py-1.5 rounded-full bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] transition-colors flex items-center gap-1.5">
+                  #{t}<span className="text-[0.875rem] text-[#0EA37A] font-bold opacity-0 group-hover:opacity-100">✓</span>
+                  <span className="text-[0.875rem] text-[#8A8A96] font-mono">{a.relevance}% rel</span>
                 </button>
               ) })}
             </div>
@@ -397,12 +397,12 @@ export default function HashtagsPage() {
             <h3 className="text-base font-bold text-[#16161D] mb-3 flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#F59E0B]" /> Seasonal hashtags · {SEASONAL[monthIdx][0]}</h3>
             <div className="flex flex-wrap gap-1.5">
               {SEASONAL[monthIdx].slice(1).map(t => (
-                <button key={t} onClick={() => copyTags([`#${t}`], 's' + t)} className="group text-[0.7rem] font-medium px-3 py-1.5 rounded-full bg-gradient-to-r from-[#F59E0B]/10 to-[#EF4444]/10 border border-[#F59E0B]/20 hover:border-[#F59E0B]/50 transition-colors flex items-center gap-1.5">
-                  #{t}<span className="text-[0.5rem] text-[#0EA37A] font-bold opacity-0 group-hover:opacity-100">✓</span>
+                <button key={t} onClick={() => copyTags([`#${t}`], 's' + t)} className="group text-[0.875rem] font-medium px-3 py-1.5 rounded-full bg-gradient-to-r from-[#F59E0B]/10 to-[#EF4444]/10 border border-[#F59E0B]/20 hover:border-[#F59E0B]/50 transition-colors flex items-center gap-1.5">
+                  #{t}<span className="text-[0.875rem] text-[#0EA37A] font-bold opacity-0 group-hover:opacity-100">✓</span>
                 </button>
               ))}
             </div>
-            <div className="mt-4 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3 text-[0.65rem] text-[#8A8A96]">
+            <div className="mt-4 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3 text-[0.85rem] text-[#8A8A96]">
               <b className="text-[#16161D]">Why seasonal?</b> Tags matched to this month's calendar (holidays, events, awareness days) typically see 2-3x higher engagement during their window.
             </div>
           </div>
@@ -423,7 +423,7 @@ export default function HashtagsPage() {
                       <div key={t.tag} className="flex items-center gap-2.5">
                         <span className="text-sm font-bold text-[#7C3AED] w-24 truncate">#{t.tag}</span>
                         <div className="flex-1 h-2 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" style={{ width: `${(t.count / max) * 100}%` }} /></div>
-                        <span className="text-[0.65rem] font-mono text-[#8A8A96] w-8 text-right">{t.count}</span>
+                        <span className="text-[0.85rem] font-mono text-[#8A8A96] w-8 text-right">{t.count}</span>
                       </div>
                     )
                   })}
@@ -440,7 +440,7 @@ export default function HashtagsPage() {
                       <div key={t.tag} className="flex items-center gap-2.5">
                         <span className="text-sm font-bold text-[#0EA37A] w-24 truncate">#{t.tag}</span>
                         <div className="flex-1 h-2 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-[#0EA37A] to-[#34D399]" style={{ width: `${(t.impressions / max) * 100}%` }} /></div>
-                        <span className="text-[0.65rem] font-mono text-[#8A8A96] w-14 text-right">{t.impressions >= 1000 ? `${(t.impressions / 1000).toFixed(1)}K` : t.impressions}</span>
+                        <span className="text-[0.85rem] font-mono text-[#8A8A96] w-14 text-right">{t.impressions >= 1000 ? `${(t.impressions / 1000).toFixed(1)}K` : t.impressions}</span>
                       </div>
                     )
                   })}
@@ -458,7 +458,7 @@ export default function HashtagsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs min-w-[860px]">
                 <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">
-                  {['Hashtag', 'Popularity', 'Competition', 'Reach', 'Growth', 'Engagement', 'Industry rel.', 'Platform', 'Recommendation'].map(h => <th key={h} className={`py-2.5 px-3 text-left font-semibold text-[0.58rem] uppercase tracking-wider ${h !== 'Hashtag' && h !== 'Platform' && h !== 'Recommendation' ? 'text-right' : ''}`}>{h}</th>)}
+                  {['Hashtag', 'Popularity', 'Competition', 'Reach', 'Growth', 'Engagement', 'Industry rel.', 'Platform', 'Recommendation'].map(h => <th key={h} className={`py-2.5 px-3 text-left font-semibold text-[0.78rem] uppercase tracking-wider ${h !== 'Hashtag' && h !== 'Platform' && h !== 'Recommendation' ? 'text-right' : ''}`}>{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {(search ? sortedTags.filter(t => t.tag.includes(search.toLowerCase())) : sortedTags).slice(0, 30).map(t => {
@@ -475,8 +475,8 @@ export default function HashtagsPage() {
                         <td className="py-2.5 px-3 text-right font-mono text-[#0EA37A]">+{a.growth}%</td>
                         <td className="py-2.5 px-3 text-right font-mono">{a.engagement}%</td>
                         <td className="py-2.5 px-3 text-right font-mono">{a.relevance}%</td>
-                        <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: M[a.platform]?.color + '12', color: M[a.platform]?.color }}>{M[a.platform]?.label}</span></td>
-                        <td className="py-2.5 px-3"><span className={`px-2 py-0.5 rounded-full text-[0.55rem] font-semibold ${col}`}>{rec}</span></td>
+                        <td className="py-2.5 px-3"><span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: M[a.platform]?.color + '12', color: M[a.platform]?.color }}>{M[a.platform]?.label}</span></td>
+                        <td className="py-2.5 px-3"><span className={`px-2 py-0.5 rounded-full text-[0.9rem] font-semibold ${col}`}>{rec}</span></td>
                       </tr>
                     )
                   })}
@@ -493,7 +493,7 @@ export default function HashtagsPage() {
             ].map((k, i) => (
               <div key={i} className={`${C} p-4 flex items-center gap-3`}>
                 <span className="h-9 w-9 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: k.c }}>{k.i}</span>
-                <div><div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold">{k.t}</div><div className="text-sm font-bold text-[#16161D]">{k.d}</div></div>
+                <div><div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold">{k.t}</div><div className="text-sm font-bold text-[#16161D]">{k.d}</div></div>
               </div>
             ))}
           </div>

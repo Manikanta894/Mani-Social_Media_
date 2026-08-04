@@ -32,34 +32,34 @@ export function CommCard({ item, onAction, busy }) {
         <span className={`h-10 w-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${item.emojiBg || 'bg-[#F4F5F9]'}`}>{item.emoji}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-[0.55rem] font-bold uppercase tracking-wider text-[#8A8A96]">{item.source}</span>
-            <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${st.bg}`}>{st.label}</span>
-            {item.priority === 'High' && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">HIGH</span>}
-            {item.priority === 'Medium' && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">MEDIUM</span>}
+            <span className="text-[0.9rem] font-bold uppercase tracking-wider text-[#8A8A96]">{item.source}</span>
+            <span className={`text-[0.9rem] font-bold px-2 py-0.5 rounded-full ${st.bg}`}>{st.label}</span>
+            {item.priority === 'High' && <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">HIGH</span>}
+            {item.priority === 'Medium' && <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">MEDIUM</span>}
             {item.unread && <span className="h-2 w-2 rounded-full bg-[#7C3AED] animate-pulse" title="Unread" />}
-            <span className="ml-auto text-[0.55rem] font-mono text-[#8A8A96]">{item.time}</span>
+            <span className="ml-auto text-[0.9rem] font-mono text-[#8A8A96]">{item.time}</span>
           </div>
           <div className="text-sm font-bold text-[#16161D] leading-snug">{item.title}</div>
-          {item.summary && <p className={`text-[0.7rem] text-[#8A8A96] leading-relaxed mt-1 ${expanded ? '' : 'line-clamp-2'}`}>{item.summary}</p>}
+          {item.summary && <p className={`text-[0.875rem] text-[#8A8A96] leading-relaxed mt-1 ${expanded ? '' : 'line-clamp-2'}`}>{item.summary}</p>}
           {item.draft && expanded && (
             <div className="mt-2.5 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-3">
-              <div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1"><Sparkles className="h-3 w-3 text-[#7C3AED]" /> Generated draft</div>
-              <p className="text-[0.7rem] text-[#16161D] whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">{item.draft}</p>
+              <div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1"><Sparkles className="h-3 w-3 text-[#7C3AED]" /> Generated draft</div>
+              <p className="text-[0.875rem] text-[#16161D] whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">{item.draft}</p>
             </div>
           )}
           {platforms.length > 0 && (
             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-              {platforms.map(p => <span key={p} className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/8 text-[#7C3AED] border border-[#D8C8FB]">{p}</span>)}
+              {platforms.map(p => <span key={p} className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/8 text-[#7C3AED] border border-[#D8C8FB]">{p}</span>)}
             </div>
           )}
           <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-            {isAppr && <button onClick={() => onAction('approve', item)} disabled={busy} className="flex items-center gap-1 text-[0.65rem] font-bold px-3 py-1.5 rounded-lg bg-[#0EA37A] text-white hover:opacity-90">{busy ? '…' : <Check className="h-3 w-3" />}Approve</button>}
-            {isAppr && <button onClick={() => onAction('reject', item)} disabled={busy} className="flex items-center gap-1 text-[0.65rem] font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><X className="h-3 w-3" />Reject</button>}
-            {(item.status === 'approved' || item.status === 'ai_generated' || item.status === 'new') && <button onClick={() => onAction('schedule', item)} disabled={busy} className="flex items-center gap-1 text-[0.65rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Clock className="h-3 w-3 text-[#7C3AED]" />Schedule</button>}
-            {(item.status === 'approved' || item.status === 'ai_generated' || item.status === 'scheduled') && <button onClick={() => onAction('publish', item)} disabled={busy} className="flex items-center gap-1 text-[0.65rem] font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white"><Send className="h-3 w-3" />Publish</button>}
-            {item.canGenerate && <button onClick={() => onAction('generate', item)} disabled={busy} className="flex items-center gap-1 text-[0.65rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Wand2 className="h-3 w-3 text-[#EC4899]" />Generate AI</button>}
-            {item.href && <a href={item.href} className="flex items-center gap-1 text-[0.65rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] text-[#7C3AED]"><ExternalLink className="h-3 w-3" />Open</a>}
-            <button onClick={() => setExpanded(v => !v)} className="text-[0.65rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Pencil className="h-3 w-3 inline mr-1 text-[#8A8A96]" />{expanded ? 'Collapse' : 'Details'}</button>
+            {isAppr && <button onClick={() => onAction('approve', item)} disabled={busy} className="flex items-center gap-1 text-[0.85rem] font-bold px-3 py-1.5 rounded-lg bg-[#0EA37A] text-white hover:opacity-90">{busy ? '…' : <Check className="h-3 w-3" />}Approve</button>}
+            {isAppr && <button onClick={() => onAction('reject', item)} disabled={busy} className="flex items-center gap-1 text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><X className="h-3 w-3" />Reject</button>}
+            {(item.status === 'approved' || item.status === 'ai_generated' || item.status === 'new') && <button onClick={() => onAction('schedule', item)} disabled={busy} className="flex items-center gap-1 text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Clock className="h-3 w-3 text-[#7C3AED]" />Schedule</button>}
+            {(item.status === 'approved' || item.status === 'ai_generated' || item.status === 'scheduled') && <button onClick={() => onAction('publish', item)} disabled={busy} className="flex items-center gap-1 text-[0.85rem] font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white"><Send className="h-3 w-3" />Publish</button>}
+            {item.canGenerate && <button onClick={() => onAction('generate', item)} disabled={busy} className="flex items-center gap-1 text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Wand2 className="h-3 w-3 text-[#EC4899]" />Generate AI</button>}
+            {item.href && <a href={item.href} className="flex items-center gap-1 text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] text-[#7C3AED]"><ExternalLink className="h-3 w-3" />Open</a>}
+            <button onClick={() => setExpanded(v => !v)} className="text-[0.85rem] font-semibold px-3 py-1.5 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Pencil className="h-3 w-3 inline mr-1 text-[#8A8A96]" />{expanded ? 'Collapse' : 'Details'}</button>
           </div>
         </div>
       </div>
@@ -82,7 +82,7 @@ export function AssistantPanel({ brief, events, news }) {
         {items.map((x, i) => (
           <div key={i} className="flex items-start gap-2.5 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5">
             <span className="text-[#7C3AED] shrink-0 mt-0.5" style={{ color: x.c }}>{x.i}</span>
-            <span className="text-[0.7rem] text-[#16161D] leading-snug">{x.t}</span>
+            <span className="text-[0.875rem] text-[#16161D] leading-snug">{x.t}</span>
           </div>
         ))}
       </div>
@@ -102,7 +102,7 @@ export function TimelinePanel({ events }) {
             <div key={i} className="relative pl-6">
               <span className="absolute left-0 top-1 h-[13px] w-[13px] rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: e.failed ? '#EF4444' : e.ok ? '#0EA37A' : '#7C3AED' }} />
               <div className="text-xs font-medium text-[#16161D]">{e.label}</div>
-              <div className="text-[0.55rem] text-[#8A8A96] font-mono">{e.time}</div>
+              <div className="text-[0.9rem] text-[#8A8A96] font-mono">{e.time}</div>
             </div>
           ))}
         </div>
@@ -121,24 +121,24 @@ export function RulesPanel({ rules, setRules }) {
   return (
     <div className={`${C} p-4`}>
       <h4 className="text-sm font-bold text-[#16161D] mb-3 flex items-center gap-2"><Bell className="h-4 w-4 text-[#3B82F6]" /> Notification Rules</h4>
-      <div className="text-[0.6rem] text-[#8A8A96] font-semibold uppercase tracking-wider mb-1.5">Delivery channel</div>
+      <div className="text-[0.95rem] text-[#8A8A96] font-semibold uppercase tracking-wider mb-1.5">Delivery channel</div>
       <div className="flex flex-wrap gap-1.5 mb-3">
         {channels.map(([k, l]) => (
-          <button key={k} onClick={() => setRules({ ...rules, channel: k })} className={`text-[0.65rem] font-semibold px-3 py-1.5 rounded-full transition-all ${rules.channel === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
+          <button key={k} onClick={() => setRules({ ...rules, channel: k })} className={`text-[0.85rem] font-semibold px-3 py-1.5 rounded-full transition-all ${rules.channel === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
         ))}
       </div>
-      <div className="text-[0.6rem] text-[#8A8A96] font-semibold uppercase tracking-wider mb-1.5">Notify me about</div>
+      <div className="text-[0.95rem] text-[#8A8A96] font-semibold uppercase tracking-wider mb-1.5">Notify me about</div>
       <div className="space-y-1.5">
         {events.map(([k, l]) => (
           <label key={k} className="flex items-center justify-between rounded-lg bg-[#F8F9FC] border border-[#EBECF2] px-3 py-2 cursor-pointer">
-            <span className="text-[0.7rem] font-medium text-[#16161D]">{l}</span>
+            <span className="text-[0.875rem] font-medium text-[#16161D]">{l}</span>
             <button onClick={() => setRules({ ...rules, [k]: !rules[k] })} className={`h-5 w-9 rounded-full transition-colors relative ${rules[k] ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-[#E5E6EF]'}`}>
               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${rules[k] ? 'left-[18px]' : 'left-0.5'}`} />
             </button>
           </label>
         ))}
       </div>
-      <div className="mt-3 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-2.5 text-[0.6rem] text-[#8A8A96] leading-relaxed">
+      <div className="mt-3 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-2.5 text-[0.95rem] text-[#8A8A96] leading-relaxed">
         <Settings2 className="h-3 w-3 inline mr-1 text-[#7C3AED]" /> Every AI event is created once in this center — your chosen channels just deliver the notification.
       </div>
     </div>
@@ -153,14 +153,14 @@ export function BriefPanel({ onGenerate, brief }) {
       <h4 className="text-sm font-bold text-[#16161D] mb-3 flex items-center gap-2">{type === 'morning' ? <Sun className="h-4 w-4 text-[#F59E0B]" /> : <Moon className="h-4 w-4 text-[#8B5CF6]" />} Daily Brief</h4>
       <div className="flex gap-1.5 mb-3">
         {[['morning', 'Morning'], ['evening', 'Evening']].map(([k, l]) => (
-          <button key={k} onClick={() => setType(k)} className={`flex-1 text-[0.65rem] font-semibold px-3 py-2 rounded-xl transition-all ${type === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
+          <button key={k} onClick={() => setType(k)} className={`flex-1 text-[0.85rem] font-semibold px-3 py-2 rounded-xl transition-all ${type === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
         ))}
       </div>
       <button onClick={gen} className="w-full py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">Generate now</button>
       {brief && (
         <div className="mt-3 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-3">
-          <div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">Last {brief.type}</div>
-          <div className="text-[0.7rem] text-[#16161D] leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">{brief.text}</div>
+          <div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5">Last {brief.type}</div>
+          <div className="text-[0.875rem] text-[#16161D] leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">{brief.text}</div>
         </div>
       )}
     </div>

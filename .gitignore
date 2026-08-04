@@ -98,3 +98,4 @@ node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
 
 .vercel
 .env*
+CLAUDE_CONTINUATION_PROMPT.md

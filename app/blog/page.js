@@ -220,7 +220,7 @@ export default function BlogPage() {
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
           <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all`}>
-            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>
         ))}
@@ -239,7 +239,7 @@ export default function BlogPage() {
                 { l: 'Published', a: () => setLibraryFilter('published'), i: <CheckCircle className="h-3.5 w-3.5" />, c: '#0EA37A' },
                 { l: 'Templates', a: () => setCreateMode('template'), i: <Sparkles className="h-3.5 w-3.5" />, c: '#EC4899' },
               ].map(qa => (
-                <button key={qa.l} onClick={qa.a} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.7rem] font-semibold text-[#16161D] hover:bg-[#F8F9FC] hover:text-[#7C3AED] transition-colors">
+                <button key={qa.l} onClick={qa.a} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.875rem] font-semibold text-[#16161D] hover:bg-[#F8F9FC] hover:text-[#7C3AED] transition-colors">
                   <span className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: qa.c + '12', color: qa.c }}>{qa.i}</span>{qa.l}
                 </button>
               ))}
@@ -249,20 +249,20 @@ export default function BlogPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} overflow-hidden`}>
             <div className="px-4 pt-4">
               <div className="flex items-center gap-2 mb-3"><h4 className="text-sm font-bold text-[#16161D] flex-1">Article Library</h4>
-                {selected.length > 0 && <button onClick={bulkDelete} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-red-50 text-red-500">Archive {selected.length}</button>}
+                {selected.length > 0 && <button onClick={bulkDelete} className="text-[0.95rem] font-bold px-2 py-1 rounded-lg bg-red-50 text-red-500">Archive {selected.length}</button>}
               </div>
               <div className="flex items-center gap-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] px-3 py-2 mb-2.5">
                 <Search className="h-3.5 w-3.5 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search articles…" className="flex-1 bg-transparent text-xs focus:outline-none" />
               </div>
               <div className="flex gap-1 mb-3 flex-wrap">
                 {libraryActions.map(([k, l]) => (
-                  <button key={k} onClick={() => setLibraryFilter(k)} className={`text-[0.6rem] font-semibold px-2.5 py-1.5 rounded-full transition-all ${libraryFilter === k ? 'bg-[#7C3AED] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
+                  <button key={k} onClick={() => setLibraryFilter(k)} className={`text-[0.95rem] font-semibold px-2.5 py-1.5 rounded-full transition-all ${libraryFilter === k ? 'bg-[#7C3AED] text-white' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l}</button>
                 ))}
               </div>
             </div>
             <div className="max-h-[560px] overflow-y-auto border-t border-[#F0F1F5]">
               {filtered.length === 0 ? (
-                <div className="p-6 text-center text-[0.7rem] text-[#8A8A96]">No articles here yet. Generate your first article.</div>
+                <div className="p-6 text-center text-[0.875rem] text-[#8A8A96]">No articles here yet. Generate your first article.</div>
               ) : filtered.map(p => {
                 const s = blogSeo(p.title, p.body_markdown, p.seo_description, p.slug)
                 const statusColor = { draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[p.status] || '#8A8A96'
@@ -271,16 +271,16 @@ export default function BlogPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <input type="checkbox" checked={selected.includes(p.id)} onChange={e => { e.stopPropagation(); setSelected(sel => e.target.checked ? [...sel, p.id] : sel.filter(x => x !== p.id)) }} className="accent-[#7C3AED] shrink-0" onClick={e => e.stopPropagation()} />
                       <span className="text-xs font-semibold text-[#16161D] truncate flex-1">{p.title || 'Untitled'}</span>
-                      <span className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: statusColor + '15', color: statusColor }}>{p.status}</span>
+                      <span className="text-[0.9rem] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: statusColor + '15', color: statusColor }}>{p.status}</span>
                     </div>
                     <div className="flex items-center gap-2 pl-6">
-                      <span className="text-[0.55rem] text-[#8A8A96]">{p.category || 'uncategorized'}</span>
-                      <span className="text-[0.55rem] font-bold text-[#7C3AED]">{s.seo}</span>
-                      <span className="text-[0.55rem] text-[#8A8A96] font-mono">{s.readTime}m</span>
+                      <span className="text-[0.9rem] text-[#8A8A96]">{p.category || 'uncategorized'}</span>
+                      <span className="text-[0.9rem] font-bold text-[#7C3AED]">{s.seo}</span>
+                      <span className="text-[0.9rem] text-[#8A8A96] font-mono">{s.readTime}m</span>
                       <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {p.status === 'published' && p.published_url && <a href={p.published_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[0.6rem] text-[#0EA37A]"><ExternalLink className="h-3 w-3" /></a>}
-                        <button onClick={e => { e.stopPropagation(); duplicatePost(p) }} className="text-[0.6rem] text-[#8A8A96] hover:text-[#7C3AED]"><Copy className="h-3 w-3" /></button>
-                        <button onClick={e => { e.stopPropagation(); deletePost(p) }} className="text-[0.6rem] text-[#8A8A96] hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                        {p.status === 'published' && p.published_url && <a href={p.published_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[0.95rem] text-[#0EA37A]"><ExternalLink className="h-3 w-3" /></a>}
+                        <button onClick={e => { e.stopPropagation(); duplicatePost(p) }} className="text-[0.95rem] text-[#8A8A96] hover:text-[#7C3AED]"><Copy className="h-3 w-3" /></button>
+                        <button onClick={e => { e.stopPropagation(); deletePost(p) }} className="text-[0.95rem] text-[#8A8A96] hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function BlogPage() {
                     <label className="cursor-pointer flex items-center gap-1.5 rounded-xl border border-[#EBECF2] px-3 py-2.5 text-xs font-semibold text-[#8A8A96] hover:border-[#D8C8FB]">
                       <ImageIcon className="h-3.5 w-3.5" />{imageFile ? 'Cover set' : 'Cover image'}<input type="file" accept="image/*" onChange={handleImage} className="hidden" />
                     </label>
-                    <span className="text-[0.6rem] text-[#8A8A96]">Vision AI reads your cover image for context</span>
+                    <span className="text-[0.95rem] text-[#8A8A96]">Vision AI reads your cover image for context</span>
                   </div>
                   {imagePreview && <img src={imagePreview} alt="" className="h-24 rounded-xl object-cover" />}
                   <button onClick={generate} disabled={generating || !context.trim()} className="w-full py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] shadow-md disabled:opacity-50">
@@ -326,15 +326,15 @@ export default function BlogPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
                 <div className="rounded-xl bg-gradient-to-br from-[#0EA37A]/8 to-[#14B8A6]/8 border border-[#EBECF2] p-4">
                   <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Bot className="h-3.5 w-3.5 text-[#0EA37A]" /> AI does everything</div>
-                  <p className="text-[0.7rem] text-[#8A8A96] leading-relaxed">Title, meta description, slug, headings, FAQ, internal links and schema — generated and optimized automatically.</p>
+                  <p className="text-[0.875rem] text-[#8A8A96] leading-relaxed">Title, meta description, slug, headings, FAQ, internal links and schema — generated and optimized automatically.</p>
                 </div>
                 <div className="rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-4">
                   <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Gauge className="h-3.5 w-3.5 text-[#7C3AED]" /> SEO Center</div>
-                  <p className="text-[0.7rem] text-[#8A8A96] leading-relaxed">Real-time scores for title, meta, headings, keywords, readability, links and alt tags — with fixes.</p>
+                  <p className="text-[0.875rem] text-[#8A8A96] leading-relaxed">Real-time scores for title, meta, headings, keywords, readability, links and alt tags — with fixes.</p>
                 </div>
                 <div className="rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-4">
                   <div className="text-xs font-bold text-[#16161D] mb-2 flex items-center gap-1.5"><Send className="h-3.5 w-3.5 text-[#EC4899]" /> One-click publish</div>
-                  <p className="text-[0.7rem] text-[#8A8A96] leading-relaxed">Schedule, publish live to INSIGHTS, or drip the article into a 5-day social campaign.</p>
+                  <p className="text-[0.875rem] text-[#8A8A96] leading-relaxed">Schedule, publish live to INSIGHTS, or drip the article into a 5-day social campaign.</p>
                 </div>
               </div>
             </motion.div>
@@ -343,10 +343,10 @@ export default function BlogPage() {
               {/* Editor toolbar */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ({ draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[activePost.status] || '#8A8A96') + '15', color: { draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[activePost.status] || '#8A8A96' }}>{activePost.status}</span>
-                  <span className="text-[0.6rem] text-[#8A8A96] font-mono">{seo.words} words · {seo.readTime}m read</span>
-                  {autoSaved && <span className="text-[0.6rem] text-[#0EA37A] font-semibold flex items-center gap-1"><Check className="h-3 w-3" /> Auto-saved</span>}
-                  {activePost.published_url && <a href={activePost.published_url} target="_blank" rel="noreferrer" className="text-[0.65rem] text-[#0EA37A] hover:underline flex items-center gap-1"><ExternalLink className="h-3 w-3" /> View live</a>}
+                  <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ({ draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[activePost.status] || '#8A8A96') + '15', color: { draft: '#8A8A96', scheduled: '#3B82F6', published: '#0EA37A', rejected: '#EF4444' }[activePost.status] || '#8A8A96' }}>{activePost.status}</span>
+                  <span className="text-[0.95rem] text-[#8A8A96] font-mono">{seo.words} words · {seo.readTime}m read</span>
+                  {autoSaved && <span className="text-[0.95rem] text-[#0EA37A] font-semibold flex items-center gap-1"><Check className="h-3 w-3" /> Auto-saved</span>}
+                  {activePost.published_url && <a href={activePost.published_url} target="_blank" rel="noreferrer" className="text-[0.85rem] text-[#0EA37A] hover:underline flex items-center gap-1"><ExternalLink className="h-3 w-3" /> View live</a>}
                   <div className="ml-auto flex items-center gap-1.5 flex-wrap">
                     <button onClick={saveEdit} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6]"><Save className="h-3.5 w-3.5" /> Save</button>
                     <button onClick={() => setDripOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><Dribbble className="h-3.5 w-3.5 text-[#7C3AED]" /> Drip</button>
@@ -368,7 +368,7 @@ export default function BlogPage() {
                     <input value={editTags} onChange={e => setEditTags(e.target.value)} placeholder="Tags (comma separated)" className="rounded-xl border border-[#EBECF2] px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
                   </div>
                   <textarea ref={bodyRef} value={editBody} onChange={e => setEditBody(e.target.value)} rows={26} placeholder="Write in Markdown — ## headings, > quotes, [links](url), ![alt](image)…" className="w-full text-sm leading-relaxed font-mono rounded-xl border border-[#EBECF2] px-4 py-3.5 resize-y focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20" />
-                  <div className="flex gap-2 flex-wrap text-[0.6rem] text-[#8A8A96]">
+                  <div className="flex gap-2 flex-wrap text-[0.95rem] text-[#8A8A96]">
                     <span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">## Heading</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">**bold**</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">[text](url)</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">![alt](img)</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">{'>'} quote</span><span className="px-2.5 py-1 rounded-full bg-[#F4F5F9]">- list</span>
                   </div>
                 </div>
@@ -414,7 +414,7 @@ export default function BlogPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-6 text-center`}>
               <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-[#0EA37A]/10 to-[#14B8A6]/10 flex items-center justify-center mb-3"><Gauge className="h-5 w-5 text-[#0EA37A]" /></div>
               <h4 className="text-sm font-bold text-[#16161D]">SEO & preview panel</h4>
-              <p className="text-[0.7rem] text-[#8A8A96] mt-1.5 leading-relaxed">Select or generate an article — real-time SEO scores, Google preview, AI review and scheduling appear here.</p>
+              <p className="text-[0.875rem] text-[#8A8A96] mt-1.5 leading-relaxed">Select or generate an article — real-time SEO scores, Google preview, AI review and scheduling appear here.</p>
             </motion.div>
           )}
         </div>
@@ -427,7 +427,7 @@ export default function BlogPage() {
             <motion.div initial={{ scale: 0.96, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 10 }} className={`${C} w-full max-w-md rounded-3xl p-5`} onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5"><div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#EC4899] flex items-center justify-center"><Dribbble className="h-4 w-4 text-white" /></div>
-                  <div><h3 className="text-base font-bold text-[#16161D]">Drip to Social</h3><p className="text-[0.65rem] text-[#8A8A96]">Break into {dripCount} posts across {dripSpread} days</p></div></div>
+                  <div><h3 className="text-base font-bold text-[#16161D]">Drip to Social</h3><p className="text-[0.85rem] text-[#8A8A96]">Break into {dripCount} posts across {dripSpread} days</p></div></div>
                 <button onClick={() => setDripOpen(false)} className="h-8 w-8 rounded-full bg-[#F4F5F9] flex items-center justify-center hover:bg-[#EDE9FE]"><X className="h-4 w-4 text-[#8A8A96]" /></button>
               </div>
               <div className="space-y-3">
@@ -436,10 +436,10 @@ export default function BlogPage() {
                 <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-3 space-y-1.5">
                   <div className="text-xs font-bold text-[#16161D] mb-1">Schedule preview</div>
                   {Array.from({ length: dripCount }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + Math.floor((dripSpread / dripCount) * i) + 1); d.setHours(10 + (i % 8), 0, 0, 0); return (
-                    <div key={i} className="flex items-center gap-2 text-[0.65rem] text-[#8A8A96]"><span className="font-bold text-[#16161D] w-5">#{i + 1}</span><span>{d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><span className="ml-auto text-[0.5rem]">LinkedIn · IG · FB · Threads</span></div>
+                    <div key={i} className="flex items-center gap-2 text-[0.85rem] text-[#8A8A96]"><span className="font-bold text-[#16161D] w-5">#{i + 1}</span><span>{d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><span className="ml-auto text-[0.875rem]">LinkedIn · IG · FB · Threads</span></div>
                   ) })}
                 </div>
-                {dripResult && <div className="rounded-xl bg-[#0EA37A]/8 border border-[#0EA37A]/20 p-3 text-[0.7rem] text-[#0EA37A] font-semibold">Scheduled {dripResult.total} drip posts!</div>}
+                {dripResult && <div className="rounded-xl bg-[#0EA37A]/8 border border-[#0EA37A]/20 p-3 text-[0.875rem] text-[#0EA37A] font-semibold">Scheduled {dripResult.total} drip posts!</div>}
                 <button onClick={runDrip} disabled={dripRunning} className="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] shadow-md disabled:opacity-50">{dripRunning ? <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> : <Send className="h-4 w-4 inline mr-2" />}{dripRunning ? 'Generating…' : 'Generate & Schedule'}</button>
               </div>
             </motion.div>

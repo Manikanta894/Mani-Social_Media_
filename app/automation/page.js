@@ -37,9 +37,9 @@ function MetricCard({ label, value, icon, gradient, sub }) {
     <motion.div variants={fadeUp} className="group rounded-2xl border border-[#EBECF2] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_8px_24px_rgba(124,58,237,0.08)] hover:-translate-y-0.5">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-[0.625rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{label}</div>
+          <div className="text-[0.8125rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{label}</div>
           <div className="text-2xl font-bold text-[#16161D] mt-1.5">{value}</div>
-          {sub && <div className="text-[0.625rem] text-[#8A8A96] mt-1">{sub}</div>}
+          {sub && <div className="text-[0.8125rem] text-[#8A8A96] mt-1">{sub}</div>}
         </div>
         <div className={`h-9 w-9 rounded-xl flex items-center justify-center text-white shrink-0 ${gradient}`}>
           {icon}
@@ -206,7 +206,7 @@ function Dashboard() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#16161D]">Engine {liveStats.status || '—'}</h2>
-              <span className="text-[0.6rem] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: statusColor + '1A', color: statusColor }}>
+              <span className="text-[0.95rem] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: statusColor + '1A', color: statusColor }}>
                 {liveStats.status || 'OFFLINE'}
               </span>
             </div>
@@ -235,34 +235,34 @@ function Dashboard() {
             </div>
             <h3 className="text-sm font-semibold text-[#16161D]">AI Activity</h3>
           </div>
-          <span className="text-[0.6rem] font-medium px-2 py-1 rounded-full bg-[#7C3AED]/8 text-[#7C3AED]">Live</span>
+          <span className="text-[0.95rem] font-medium px-2 py-1 rounded-full bg-[#7C3AED]/8 text-[#7C3AED]">Live</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Current Task</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Current Task</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D]">
               {stats?.processing > 0 ? 'Generating content…' : stats?.queued > 0 ? 'Awaiting next slot' : liveStats.status === 'Running' ? 'Idle — waiting for slot' : 'Engine stopped'}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Queue Progress</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Queue Progress</div>
             <div className="mt-2">
               <div className="h-1.5 rounded-full bg-[#EEEFF4] overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] transition-all duration-500" style={{ width: `${stats?.total ? Math.min(100, ((stats.total - stats.queued) / stats.total) * 100) : 0}%` }} />
               </div>
-              <div className="text-[0.6rem] text-[#8A8A96] mt-1">{stats?.total ? `${stats.total - stats.queued}/${stats.total} processed` : '0/0'}</div>
+              <div className="text-[0.95rem] text-[#8A8A96] mt-1">{stats?.total ? `${stats.total - stats.queued}/${stats.total} processed` : '0/0'}</div>
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Next Action</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Next Action</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D]">{stats?.queued > 0 ? 'Generate at next slot' : 'Awaiting uploads'}</div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Active Platform</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Active Platform</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D]">{(settings?.enabled_platforms || []).slice(0, 2).map(p => PLATFORM_ICONS[p]).join(' ')} {settings?.enabled_platforms?.length || 0} platforms</div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Est. Queue Time</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Est. Queue Time</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D]">{stats?.queued ? `~${Math.ceil(stats.queued / (settings?.posts_per_day || 1))} day(s)` : '—'}</div>
           </div>
         </div>
@@ -277,7 +277,7 @@ function Dashboard() {
       <motion.div variants={fadeUp} className="rounded-2xl border border-[#EBECF2] bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-sm font-semibold text-[#16161D]">Content Pipeline</h3>
-          <span className="text-[0.6rem] text-[#8A8A96]">{stats?.total || 0} total items</span>
+          <span className="text-[0.95rem] text-[#8A8A96]">{stats?.total || 0} total items</span>
         </div>
         <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
           {pipelineStages.map((stage, i) => {
@@ -291,14 +291,14 @@ function Dashboard() {
                   className={`rounded-xl border p-2.5 text-center transition-all ${active ? 'border-[#7C3AED]/40 bg-[#7C3AED]/5 shadow-[0_4px_12px_rgba(124,58,237,0.12)]' : done ? 'border-[#0EA37A]/30 bg-[#0EA37A]/5' : 'border-[#EBECF2] bg-[#FAFAFC]'}`}
                 >
                   <div className={`mx-auto w-fit ${active ? 'text-[#7C3AED]' : done ? 'text-[#0EA37A]' : 'text-[#8A8A96]'}`}>{stage.icon}</div>
-                  <div className="text-[0.5rem] font-semibold uppercase tracking-wide mt-1.5 text-[#16161D]">{stage.label}</div>
-                  <div className="text-[0.6rem] font-bold mt-0.5 text-[#8A8A96]">{val}</div>
+                  <div className="text-[0.875rem] font-semibold uppercase tracking-wide mt-1.5 text-[#16161D]">{stage.label}</div>
+                  <div className="text-[0.95rem] font-bold mt-0.5 text-[#8A8A96]">{val}</div>
                   <div className="mt-1.5 h-0.5 rounded-full bg-[#EEEFF4] overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-500 ${active ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : done ? 'bg-[#0EA37A]' : 'bg-[#E2E4EA]'}`} style={{ width: `${(val / maxStage) * 100}%` }} />
                   </div>
                 </motion.div>
                 {i < pipelineStages.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-1.5 text-[#C9CBD4] text-[0.5rem] -translate-y-1/2 z-10">›</div>
+                  <div className="hidden md:block absolute top-1/2 -right-1.5 text-[#C9CBD4] text-[0.875rem] -translate-y-1/2 z-10">›</div>
                 )}
               </div>
             )
@@ -311,7 +311,7 @@ function Dashboard() {
         <motion.div variants={fadeUp} className="rounded-2xl border border-[#EBECF2] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#7C3AED]" /> Today's Schedule</h3>
-            <span className="text-[0.6rem] px-2 py-1 rounded-full bg-[#7C3AED]/8 text-[#7C3AED]">{todaySchedule.filter(s => !s.isPast).length} upcoming</span>
+            <span className="text-[0.95rem] px-2 py-1 rounded-full bg-[#7C3AED]/8 text-[#7C3AED]">{todaySchedule.filter(s => !s.isPast).length} upcoming</span>
           </div>
           <div className="space-y-2">
             {todaySchedule.length === 0 && <div className="text-sm text-[#8A8A96] py-4 text-center">No posting times configured.</div>}
@@ -319,7 +319,7 @@ function Dashboard() {
               <div key={slot.index} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm ${slot.isPast ? 'bg-[#F8F9FC] text-[#A0A1AC]' : 'bg-[#F5F3FF] text-[#16161D]'}`}>
                 <div className={`h-2 w-2 rounded-full ${slot.isPast ? 'bg-[#D4D5DD]' : 'bg-[#7C3AED]'}`} />
                 <span className="font-medium">{slot.time}</span>
-                <span className="text-[0.55rem] ml-auto px-1.5 py-0.5 rounded-full font-medium ${slot.isPast ? 'bg-[#EEEFF4] text-[#8A8A96]' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}">{slot.isPast ? 'Completed' : 'Upcoming'}</span>
+                <span className="text-[0.9rem] ml-auto px-1.5 py-0.5 rounded-full font-medium ${slot.isPast ? 'bg-[#EEEFF4] text-[#8A8A96]' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}">{slot.isPast ? 'Completed' : 'Upcoming'}</span>
               </div>
             ))}
           </div>
@@ -328,7 +328,7 @@ function Dashboard() {
         <motion.div variants={fadeUp} className="rounded-2xl border border-[#EBECF2] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><Activity className="h-4 w-4 text-[#7C3AED]" /> Activity Timeline</h3>
-            <span className="text-[0.6rem] text-[#8A8A96]">{activity.length} events</span>
+            <span className="text-[0.95rem] text-[#8A8A96]">{activity.length} events</span>
           </div>
           <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
             {activity.length === 0 && (
@@ -341,10 +341,10 @@ function Dashboard() {
                   <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${meta.color}`} />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-[#16161D]">{meta.label}</span>
-                    {a.file_id && <span className="text-[0.6rem] text-[#8A8A96] ml-1.5 truncate">{a.file_id.split('/').pop()}</span>}
-                    {a.details?.slot && <span className="text-[0.6rem] text-[#8A8A96] ml-1">slot #{a.details.slot}</span>}
+                    {a.file_id && <span className="text-[0.95rem] text-[#8A8A96] ml-1.5 truncate">{a.file_id.split('/').pop()}</span>}
+                    {a.details?.slot && <span className="text-[0.95rem] text-[#8A8A96] ml-1">slot #{a.details.slot}</span>}
                   </div>
-                  <span className="text-[0.6rem] text-[#8A8A96] shrink-0">{new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span className="text-[0.95rem] text-[#8A8A96] shrink-0">{new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               )
             })}
@@ -496,7 +496,7 @@ function QueueManager() {
             <button key={k} onClick={() => setStatusFilter(k === statusFilter ? '' : k)}
               className={`rounded-xl border p-2.5 text-center transition-all ${statusFilter === k ? 'border-[#7C3AED]/40 bg-[#7C3AED]/5' : 'border-[#EBECF2] bg-white hover:shadow-sm'}`}>
               <div className="text-lg font-bold text-[#16161D]">{currentStats[k] || 0}</div>
-              <div className="text-[0.55rem] uppercase tracking-wider text-[#8A8A96]">{label}</div>
+              <div className="text-[0.9rem] uppercase tracking-wider text-[#8A8A96]">{label}</div>
             </button>
           ))}
         </div>
@@ -550,10 +550,10 @@ function QueueManager() {
           <div className="divide-y divide-[#F0F1F5]">
             {(queueType === 'manual' ? manualJobs : newsItems).slice(0, 50).map((item, i) => (
               <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#F8F9FC] transition-colors">
-                <span className="text-[0.6rem] text-[#8A8A96] w-6">#{i + 1}</span>
+                <span className="text-[0.95rem] text-[#8A8A96] w-6">#{i + 1}</span>
                 <StatusPill status={item.status || 'pending'} />
                 <span className="flex-1 truncate text-sm text-[#16161D]">{item.topic || item.title || 'Untitled'}</span>
-                <span className="text-[0.6rem] text-[#8A8A96]">{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span>
+                <span className="text-[0.95rem] text-[#8A8A96]">{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span>
               </div>
             ))}
             {(queueType === 'manual' ? manualJobs : newsItems).length === 0 && (
@@ -606,12 +606,12 @@ function QueueCard({ row, index, selected, onToggle, draggable, onDragStart, onD
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-[#16161D] truncate">{row.file_name}</span>
-            <span className={`text-[0.55rem] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusStyle}`}>{row.status}</span>
+            <span className={`text-[0.9rem] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusStyle}`}>{row.status}</span>
           </div>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-[0.6rem] text-[#8A8A96]">#{row.queue_position}</span>
-            {row.scheduled_time && <span className="text-[0.6rem] text-[#8A8A96]">· {row.scheduled_time}</span>}
-            {row.ai_confidence && <span className="text-[0.6rem] text-[#0EA37A]">· {(row.ai_confidence * 100).toFixed(0)}% conf</span>}
+            <span className="text-[0.95rem] text-[#8A8A96]">#{row.queue_position}</span>
+            {row.scheduled_time && <span className="text-[0.95rem] text-[#8A8A96]">· {row.scheduled_time}</span>}
+            {row.ai_confidence && <span className="text-[0.95rem] text-[#0EA37A]">· {(row.ai_confidence * 100).toFixed(0)}% conf</span>}
           </div>
         </div>
       </div>
@@ -658,21 +658,15 @@ function AutomationSettings() {
   }
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-  const cronSql = `-- Run in Supabase SQL Editor
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'socialforge-tick') THEN
-    PERFORM cron.unschedule('socialforge-tick');
-  END IF;
-END $$;
-SELECT cron.schedule('socialforge-tick','* * * * *', $sql$
-  SELECT net.http_post(
-    url := '${baseUrl}/api/automation/tick',
-    headers := '{"X-Automation-Secret": "${s.tick_secret}", "Content-Type": "application/json"}'::jsonb,
-    body := '{}'::jsonb
-  );
-$sql$);`
+  const cronInfo = `Scheduling is handled by the GitHub Actions workflow (.github/workflows/automation.yml),
+which POSTs to ${baseUrl}/api/automation/tick every 5 minutes, 24/7 — no Supabase,
+no pg_cron, no external cron needed. The request is authenticated with this tick
+secret (derived from APP_SESSION_SECRET, never stored):
+
+${s.tick_secret}
+
+To change the cadence, edit the workflow's cron expression and push to main.
+The "Run tick now" button below runs the same endpoint immediately for testing.`
 
   const PLATFORMS = [
     { key: 'linkedin', emoji: '💼', label: 'LinkedIn' },
@@ -688,16 +682,16 @@ $sql$);`
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Posts per day</Label>
+              <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Posts per day</Label>
               <Input type="number" min="1" max="24" value={s.posts_per_day || 5} onChange={e => setS({ ...s, posts_per_day: Number(e.target.value) })} onBlur={e => save({ posts_per_day: Number(e.target.value) })} className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
             </div>
             <div>
-              <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Buffer minutes</Label>
+              <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Buffer minutes</Label>
               <Input type="number" min="1" max="30" value={s.buffer_minutes || 5} onBlur={e => save({ buffer_minutes: Number(e.target.value) })} className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
             </div>
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Posting times</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Posting times</Label>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-1.5">
               {(s.posting_times || []).map((t, i) => (
                 <Input key={i} type="time" value={t} onChange={e => setTime(i, e.target.value)} className="rounded-xl bg-[#FAFAFC] border-[#EBECF2] text-sm" />
@@ -705,14 +699,14 @@ $sql$);`
             </div>
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Timezone</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Timezone</Label>
             <Select value={s.timezone} onValueChange={v => save({ timezone: v })}>
               <SelectTrigger className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]"><SelectValue /></SelectTrigger>
               <SelectContent>{COMMON_TZ.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Working days</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Working days</Label>
             <div className="flex gap-1.5 mt-2">
               {WEEKDAYS.map((wd, i) => (
                 <button key={i} onClick={() => toggleWorkingDay(i)}
@@ -728,22 +722,22 @@ $sql$);`
       content: (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Queue order</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Queue order</Label>
             <Select value={s.queue_order || 'fifo'} onValueChange={v => save({ queue_order: v })}>
               <SelectTrigger className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="fifo">FIFO (First In)</SelectItem><SelectItem value="lifo">LIFO (Last In)</SelectItem></SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Max retries</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Max retries</Label>
             <Input type="number" min="0" max="10" value={s.max_retries || 3} onBlur={e => save({ max_retries: Number(e.target.value) })} className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Regeneration limit</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Regeneration limit</Label>
             <Input type="number" min="1" max="10" value={s.regeneration_limit || 3} onBlur={e => save({ regeneration_limit: Number(e.target.value) })} className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">AI temperature</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">AI temperature</Label>
             <Input type="number" min="0" max="2" step="0.1" value={s.ai_temperature || 0.7} onBlur={e => save({ ai_temperature: Number(e.target.value) })} className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
           </div>
         </div>
@@ -755,7 +749,7 @@ $sql$);`
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Writing tone</Label>
+              <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Writing tone</Label>
               <Select value={s.writing_tone || 'professional'} onValueChange={v => save({ writing_tone: v })}>
                 <SelectTrigger className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -764,14 +758,14 @@ $sql$);`
               </Select>
             </div>
             <div>
-              <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">CTA style</Label>
+              <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">CTA style</Label>
               <Select value={s.cta_style || 'conversational'} onValueChange={v => save({ cta_style: v })}>
                 <SelectTrigger className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="conversational">Conversational</SelectItem><SelectItem value="direct">Direct</SelectItem><SelectItem value="soft">Soft</SelectItem></SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Hashtag count</Label>
+              <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Hashtag count</Label>
               <Input type="number" min="0" max="30" value={s.hashtag_count || 5} onBlur={e => save({ hashtag_count: Number(e.target.value) })} className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]" />
             </div>
             <div className="flex items-end pb-1">
@@ -782,7 +776,7 @@ $sql$);`
             </div>
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96] mb-2 block">Enabled platforms</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96] mb-2 block">Enabled platforms</Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {PLATFORMS.map(p => (
                 <button key={p.key} onClick={() => togglePlatform(p.key)}
@@ -800,26 +794,26 @@ $sql$);`
       content: (
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-[#FAFAFC] border border-[#EBECF2] rounded-xl px-4 py-3">
-            <div><Label className="text-sm text-[#16161D]">Require Telegram approval</Label><div className="text-[0.6rem] text-[#8A8A96]">Wait for your tap before publishing</div></div>
+            <div><Label className="text-sm text-[#16161D]">Require Telegram approval</Label><div className="text-[0.95rem] text-[#8A8A96]">Wait for your tap before publishing</div></div>
             <Switch checked={s.approval_required !== false} onCheckedChange={v => save({ approval_required: v })} />
           </div>
           <div className="flex items-center justify-between bg-[#FAFAFC] border border-[#EBECF2] rounded-xl px-4 py-3">
-            <div><Label className="text-sm text-[#16161D]">Auto-publish after approve</Label><div className="text-[0.6rem] text-[#8A8A96]">Single tap publishes immediately</div></div>
+            <div><Label className="text-sm text-[#16161D]">Auto-publish after approve</Label><div className="text-[0.95rem] text-[#8A8A96]">Single tap publishes immediately</div></div>
             <Switch checked={s.auto_publish_after_approve !== false} onCheckedChange={v => save({ auto_publish_after_approve: v })} />
           </div>
           <div className="flex items-center justify-between bg-[#FAFAFC] border border-[#EBECF2] rounded-xl px-4 py-3">
-            <div><Label className="text-sm text-[#16161D]">Approval reminders</Label><div className="text-[0.6rem] text-[#8A8A96]">Telegram nudge 3 min before slot</div></div>
+            <div><Label className="text-sm text-[#16161D]">Approval reminders</Label><div className="text-[0.95rem] text-[#8A8A96]">Telegram nudge 3 min before slot</div></div>
             <Switch checked={s.approval_reminders !== false} onCheckedChange={v => save({ approval_reminders: v })} />
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">If not approved by publish time</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">If not approved by publish time</Label>
             <Select value={s.approval_timeout_action || 'move_next'} onValueChange={v => save({ approval_timeout_action: v })}>
               <SelectTrigger className="mt-1.5 rounded-xl bg-[#FAFAFC] border-[#EBECF2]"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="move_next">Move to next slot</SelectItem><SelectItem value="skip">Skip this post</SelectItem><SelectItem value="auto_publish">Auto-publish anyway</SelectItem></SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Confidence auto-publish threshold</Label>
+            <Label className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">Confidence auto-publish threshold</Label>
             <Input type="number" min="0" max="1" step="0.05" placeholder="empty = always manual" value={s.auto_publish_confidence_threshold ?? ''}
               onChange={e => setS({ ...s, auto_publish_confidence_threshold: e.target.value === '' ? null : Number(e.target.value) })}
               onBlur={e => save({ auto_publish_confidence_threshold: e.target.value === '' ? null : Number(e.target.value) })}
@@ -833,11 +827,11 @@ $sql$);`
       content: (
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-[#FEF2F2] border border-[#FCA5A5]/30 rounded-xl px-4 py-3">
-            <div><Label className="text-sm font-semibold text-[#EF4444]">Kill switch</Label><div className="text-[0.6rem] text-[#8A8A96]">Stops ALL automation immediately</div></div>
+            <div><Label className="text-sm font-semibold text-[#EF4444]">Kill switch</Label><div className="text-[0.95rem] text-[#8A8A96]">Stops ALL automation immediately</div></div>
             <Switch checked={s.kill_switch || false} onCheckedChange={v => save({ kill_switch: v })} />
           </div>
           <div className="flex items-center justify-between bg-[#FAFAFC] border border-[#EBECF2] rounded-xl px-4 py-3">
-            <div><Label className="text-sm text-[#16161D]">Pause queue</Label><div className="text-[0.6rem] text-[#8A8A96]">Hold processing without disabling</div></div>
+            <div><Label className="text-sm text-[#16161D]">Pause queue</Label><div className="text-[0.95rem] text-[#8A8A96]">Hold processing without disabling</div></div>
             <Switch checked={s.pause_queue || false} onCheckedChange={v => save({ pause_queue: v })} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -846,7 +840,7 @@ $sql$);`
             </Button>
             <Button onClick={refresh} variant="ghost"><RefreshCw className="h-4 w-4 mr-2" /> Refresh</Button>
           </div>
-          <div className="rounded-xl bg-[#FAFAFC] border border-[#EBECF2] p-3.5 text-[0.6rem] text-[#8A8A96] space-y-1">
+          <div className="rounded-xl bg-[#FAFAFC] border border-[#EBECF2] p-3.5 text-[0.95rem] text-[#8A8A96] space-y-1">
             <div>Last tick: <span className="text-[#16161D]">{s.last_tick_at ? new Date(s.last_tick_at).toLocaleString() : 'never'}</span></div>
             <div>Secret: <code className="text-[#7C3AED]">{s.tick_secret}</code></div>
           </div>
@@ -854,14 +848,14 @@ $sql$);`
       ),
     },
     {
-      id: 'cron', title: 'Scheduled Ticks (pg_cron)', icon: <Clock className="h-4 w-4" />,
+      id: 'cron', title: 'Scheduled Ticks (GitHub Actions)', icon: <Clock className="h-4 w-4" />,
       content: (
         <div className="space-y-3">
-          <div className="text-[0.6rem] text-[#8A8A96]">Run this once in Supabase SQL Editor to tick every minute automatically.</div>
-          <Textarea readOnly value={cronSql} rows={10} className="rounded-xl bg-[#FAFAFC] border-[#EBECF2] text-[0.6rem] font-mono leading-relaxed" />
+          <div className="text-[0.95rem] text-[#8A8A96]">Automation ticks every 5 minutes via the GitHub Actions workflow — no Supabase or external cron needed.</div>
+          <Textarea readOnly value={cronInfo} rows={10} className="rounded-xl bg-[#FAFAFC] border-[#EBECF2] text-[0.95rem] font-mono leading-relaxed" />
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => { navigator.clipboard.writeText(cronSql); toast.success('SQL copied') }}><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy SQL</Button>
-            <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => window.open('https://supabase.com/dashboard/project/ghqakcbyqqxolavwfepe/sql/new', '_blank')}>Open Supabase SQL Editor</Button>
+            <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => { navigator.clipboard.writeText(cronInfo); toast.success('Copied') }}><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy</Button>
+            <Button size="sm" variant="outline" className="rounded-xl border-[#EBECF2]" onClick={() => window.open('https://github.com/Manikanta894/Mani-Social_Media_/actions', '_blank')}>Open GitHub Actions</Button>
           </div>
         </div>
       ),

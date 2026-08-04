@@ -129,7 +129,7 @@ export default function SeasonalDashboard() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <button onClick={refreshAll} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 border border-white/15 text-white hover:bg-white/20 transition-colors"><RefreshCw className="h-3.5 w-3.5" /> Rescan Events</button>
-            <div className="flex items-center gap-2 text-[0.6rem] text-white/60 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 text-[0.95rem] text-white/60 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
               <Zap className="h-3.5 w-3.5 text-[#FBBF24]" /> Auto Campaign Mode: <b className={settings.autoCampaign ? 'text-emerald-400' : 'text-white/80'}>{settings.autoCampaign ? 'ON' : 'OFF'}</b>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function SeasonalDashboard() {
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
           <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all`}>
-            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>
         ))}
@@ -151,7 +151,7 @@ export default function SeasonalDashboard() {
         {[['discovery', 'Event Discovery', Radar], ['campaigns', 'Campaigns', CalendarDays], ['queue', 'Content Queue', List], ['calendar', 'Calendar', LayoutGrid], ['settings', 'Auto Mode', Sliders]].map(([k, l, Ic]) => (
           <button key={k} onClick={() => setTab(k)} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white shadow-md' : 'text-[#8A8A96] hover:text-[#16161D]'}`}>
             <Ic className="h-4 w-4" />{l}
-            {k === 'queue' && <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-white/20">{queue.length}</span>}
+            {k === 'queue' && <span className="text-[0.95rem] px-1.5 py-0.5 rounded-full bg-white/20">{queue.length}</span>}
           </button>
         ))}
       </motion.div>
@@ -167,8 +167,8 @@ export default function SeasonalDashboard() {
                 {discovery.notifications.slice(0, 6).map((n, i) => (
                   <div key={i} className="flex items-center gap-2.5 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5">
                     <span className="text-lg shrink-0">{n.emoji}</span>
-                    <span className="text-[0.7rem] text-[#16161D] flex-1">{n.label}</span>
-                    <span className={`text-[0.55rem] px-2 py-0.5 rounded-full font-bold ${n.priority === 'high' ? 'bg-red-50 text-red-500' : n.priority === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{n.daysUntil === 0 ? 'Today' : `T-${n.daysUntil}`}</span>
+                    <span className="text-[0.875rem] text-[#16161D] flex-1">{n.label}</span>
+                    <span className={`text-[0.9rem] px-2 py-0.5 rounded-full font-bold ${n.priority === 'high' ? 'bg-red-50 text-red-500' : n.priority === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{n.daysUntil === 0 ? 'Today' : `T-${n.daysUntil}`}</span>
                   </div>
                 ))}
               </div>
@@ -189,9 +189,9 @@ export default function SeasonalDashboard() {
 
           {/* Category filters */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <button onClick={() => setDiscCat('all')} className={`text-[0.65rem] font-semibold px-3 py-1.5 rounded-full transition-all ${discCat === 'all' ? 'bg-[#7C3AED] text-white' : 'bg-white border border-[#EBECF2] text-[#8A8A96]'}`}>All categories</button>
+            <button onClick={() => setDiscCat('all')} className={`text-[0.85rem] font-semibold px-3 py-1.5 rounded-full transition-all ${discCat === 'all' ? 'bg-[#7C3AED] text-white' : 'bg-white border border-[#EBECF2] text-[#8A8A96]'}`}>All categories</button>
             {Object.entries(discovery?.categories || {}).map(([k, l]) => (
-              <button key={k} onClick={() => setDiscCat(discCat === k ? 'all' : k)} className={`text-[0.65rem] font-semibold px-3 py-1.5 rounded-full transition-all ${discCat === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-white border border-[#EBECF2] text-[#8A8A96] hover:border-[#D8C8FB]'}`}>{l}</button>
+              <button key={k} onClick={() => setDiscCat(discCat === k ? 'all' : k)} className={`text-[0.85rem] font-semibold px-3 py-1.5 rounded-full transition-all ${discCat === k ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white' : 'bg-white border border-[#EBECF2] text-[#8A8A96] hover:border-[#D8C8FB]'}`}>{l}</button>
             ))}
           </div>
 
@@ -219,29 +219,29 @@ export default function SeasonalDashboard() {
                             <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[#EC4899]/25 blur-2xl" />
                             <div className="absolute bottom-2 left-4 flex items-center gap-2">
                               <span className="text-2xl">{e.emoji}</span>
-                              <div><div className="text-sm font-bold text-white leading-tight">{e.name}</div><div className="text-[0.55rem] text-white/60">{e.country || 'Global'}{e.region && e.region !== 'Global' ? ` · ${e.region}` : ''} · {e.type}</div></div>
+                              <div><div className="text-sm font-bold text-white leading-tight">{e.name}</div><div className="text-[0.9rem] text-white/60">{e.country || 'Global'}{e.region && e.region !== 'Global' ? ` · ${e.region}` : ''} · {e.type}</div></div>
                             </div>
                             <div className="absolute top-2 right-2.5">
-                              <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: e.isDrafted ? '#0EA37A22' : '#FFFFFF15', color: e.isDrafted ? '#6EE7B7' : '#C4B5FD' }}>{e.isDrafted ? '✓ Draft ready' : 'Not started'}</span>
+                              <span className="text-[0.95rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: e.isDrafted ? '#0EA37A22' : '#FFFFFF15', color: e.isDrafted ? '#6EE7B7' : '#C4B5FD' }}>{e.isDrafted ? '✓ Draft ready' : 'Not started'}</span>
                             </div>
                           </div>
                           <div className="p-3.5">
                             <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
-                              <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${e.daysUntil === 0 ? 'bg-red-50 text-red-600' : e.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{e.daysUntil === 0 ? 'TODAY' : `${e.daysUntil}d left`}</span>
-                              <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l}</span>
-                              <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(e))} reach</span>
+                              <span className={`text-[0.95rem] font-bold px-2.5 py-1 rounded-full ${e.daysUntil === 0 ? 'bg-red-50 text-red-600' : e.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{e.daysUntil === 0 ? 'TODAY' : `${e.daysUntil}d left`}</span>
+                              <span className="text-[0.95rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l}</span>
+                              <span className="text-[0.95rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(e))} reach</span>
                             </div>
                             <div className="grid grid-cols-3 gap-2 mb-2.5">
                               {[['Popularity', e.popularity, '#EC4899'], ['Trend', e.trend, '#7C3AED'], ['Difficulty', Math.min(10, e.difficulty || 3), '#F59E0B']].map(([l, v, c]) => (
-                                <div key={l}><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}{l === 'Difficulty' ? '/10' : '%'}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min(100, v * (l === 'Difficulty' ? 10 : 1))}%`, backgroundColor: c }} /></div></div>
+                                <div key={l}><div className="flex justify-between text-[0.875rem] text-[#8A8A96] mb-0.5"><span>{l}</span><span className="font-mono">{v}{l === 'Difficulty' ? '/10' : '%'}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min(100, v * (l === 'Difficulty' ? 10 : 1))}%`, backgroundColor: c }} /></div></div>
                               ))}
                             </div>
                             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              {eventPlatforms(e).slice(0, 4).map(p => M[p] ? <span key={p} className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
-                              <span className="ml-auto text-[0.55rem] text-[#8A8A96]">{e.month}/{e.day}</span>
+                              {eventPlatforms(e).slice(0, 4).map(p => M[p] ? <span key={p} className="text-[0.9rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                              <span className="ml-auto text-[0.9rem] text-[#8A8A96]">{e.month}/{e.day}</span>
                             </div>
                             <div className="flex flex-wrap gap-1">
-                              {(e.contentTypes || []).slice(0, 3).map(ct => <span key={ct} className="text-[0.5rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{ct}</span>)}
+                              {(e.contentTypes || []).slice(0, 3).map(ct => <span key={ct} className="text-[0.875rem] px-1.5 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{ct}</span>)}
                             </div>
                           </div>
                         </motion.div>
@@ -255,24 +255,24 @@ export default function SeasonalDashboard() {
                 <div className="space-y-5">
                   <div className="rounded-xl bg-gradient-to-r from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#EBECF2] p-4">
                     <div className="text-sm font-bold text-[#16161D] mb-1 flex items-center gap-2"><Sparkles className="h-4 w-4 text-[#7C3AED]" /> More opportunities are always ready</div>
-                    <p className="text-[0.7rem] text-[#8A8A96]">No events in this exact window/filter — here's what the global event intelligence engine found everywhere else:</p>
+                    <p className="text-[0.875rem] text-[#8A8A96]">No events in this exact window/filter — here's what the global event intelligence engine found everywhere else:</p>
                   </div>
                   {fallbackSections.map(sec => sec.list.length > 0 ? (
                     <div key={sec.title}>
-                      <div className="flex items-center gap-2 mb-2.5"><span className="h-7 w-7 rounded-lg bg-[#F4F5F9] flex items-center justify-center shrink-0">{sec.icon}</span><h4 className="text-sm font-bold text-[#16161D]">{sec.title} <span className="text-[0.6rem] font-semibold text-[#8A8A96]">({sec.list.length})</span></h4></div>
+                      <div className="flex items-center gap-2 mb-2.5"><span className="h-7 w-7 rounded-lg bg-[#F4F5F9] flex items-center justify-center shrink-0">{sec.icon}</span><h4 className="text-sm font-bold text-[#16161D]">{sec.title} <span className="text-[0.95rem] font-semibold text-[#8A8A96]">({sec.list.length})</span></h4></div>
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         {sec.list.slice(0, 6).map(e => (
                           <div key={`${sec.title}-${e.name}`} className="rounded-xl border border-[#EBECF2] p-3 hover:border-[#D8C8FB] hover:shadow-md transition-all cursor-pointer bg-[#FAFAFD]" onClick={() => setSelEvent(e)}>
                             <div className="flex items-center gap-2 mb-1.5">
                               <span className="text-xl">{e.emoji}</span>
                               <span className="text-xs font-bold text-[#16161D] truncate flex-1">{e.name}</span>
-                              {e.daysAgo ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{e.daysAgo}d ago</span> : <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{e.daysUntil}d</span>}
+                              {e.daysAgo ? <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{e.daysAgo}d ago</span> : <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{e.daysUntil}d</span>}
                             </div>
-                            <div className="text-[0.6rem] text-[#8A8A96] mb-2">{e.country || 'Global'} · {e.type} · trend {e.trend}%</div>
+                            <div className="text-[0.95rem] text-[#8A8A96] mb-2">{e.country || 'Global'} · {e.type} · trend {e.trend}%</div>
                             <div className="flex items-center gap-1.5">
-                              {eventPlatforms(e).slice(0, 3).map(p => M[p] ? <span key={p} className="text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
-                              {!e.isDrafted && <button onClick={ev => { ev.stopPropagation(); generate(e) }} className="ml-auto text-[0.55rem] font-bold px-2 py-1 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">{generating === e.name ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : '⚡ Generate'}</button>}
-                              {e.isDrafted && <span className="ml-auto text-[0.55rem] font-bold px-2 py-1 rounded-lg bg-emerald-50 text-[#0EA37A]">✓ Ready</span>}
+                              {eventPlatforms(e).slice(0, 3).map(p => M[p] ? <span key={p} className="text-[0.875rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                              {!e.isDrafted && <button onClick={ev => { ev.stopPropagation(); generate(e) }} className="ml-auto text-[0.9rem] font-bold px-2 py-1 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">{generating === e.name ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : '⚡ Generate'}</button>}
+                              {e.isDrafted && <span className="ml-auto text-[0.9rem] font-bold px-2 py-1 rounded-lg bg-emerald-50 text-[#0EA37A]">✓ Ready</span>}
                             </div>
                           </div>
                         ))}
@@ -283,7 +283,7 @@ export default function SeasonalDashboard() {
                     <div className={`${C} p-8 text-center`}>
                       <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-[#7C3AED]/10 to-[#EC4899]/10 flex items-center justify-center mb-3"><Sun className="h-5 w-5 text-[#7C3AED]" /></div>
                       <h4 className="text-sm font-bold text-[#16161D]">The engine found {discovery.total_events} recurring events globally</h4>
-                      <p className="text-[0.7rem] text-[#8A8A96] mt-1 max-w-md mx-auto">All events reappear yearly — every festival, awareness day, conference and holiday is tracked in the permanent database.</p>
+                      <p className="text-[0.875rem] text-[#8A8A96] mt-1 max-w-md mx-auto">All events reappear yearly — every festival, awareness day, conference and holiday is tracked in the permanent database.</p>
                       <button onClick={() => { setDiscWindow('ninetyDays'); setDiscCat('all') }} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899]">Show next 90 days</button>
                     </div>
                   )}
@@ -301,7 +301,7 @@ export default function SeasonalDashboard() {
             <div className="flex-1 min-w-[200px] flex items-center gap-2 rounded-xl bg-white border border-[#EBECF2] px-3.5 py-2.5">
               <Search className="h-4 w-4 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search events, countries, categories…" className="flex-1 bg-transparent text-sm focus:outline-none" />
             </div>
-            <div className="flex items-center gap-1.5 text-[0.6rem] text-[#8A8A96] bg-white border border-[#EBECF2] rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[0.95rem] text-[#8A8A96] bg-white border border-[#EBECF2] rounded-xl px-3 py-2.5">
               <Sparkles className="h-3.5 w-3.5 text-[#7C3AED]" /> <b className="text-[#16161D]">{events.length}</b> events in next 60 days · {queue.length} drafts auto-ready
             </div>
           </div>
@@ -321,9 +321,9 @@ export default function SeasonalDashboard() {
                   { e: 'World HR Day', em: '🤝', d: 'Core audience event — thought leadership', t: 'hr' },
                 ].map(rec => (
                   <div key={rec.e} className="rounded-xl border border-[#EBECF2] p-3.5 bg-[#FAFAFD]">
-                    <div className="flex items-center gap-2 mb-1.5"><span className="text-xl">{rec.em}</span><span className="text-sm font-bold text-[#16161D]">{rec.e}</span><span className="ml-auto text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{rec.t}</span></div>
-                    <p className="text-[0.65rem] text-[#8A8A96] mb-2.5">{rec.d}</p>
-                    <button onClick={() => { setDiscWindow('ninetyDays'); setDiscCat('all'); setTab('discovery') }} className="text-[0.6rem] font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">Find in radar →</button>
+                    <div className="flex items-center gap-2 mb-1.5"><span className="text-xl">{rec.em}</span><span className="text-sm font-bold text-[#16161D]">{rec.e}</span><span className="ml-auto text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{rec.t}</span></div>
+                    <p className="text-[0.85rem] text-[#8A8A96] mb-2.5">{rec.d}</p>
+                    <button onClick={() => { setDiscWindow('ninetyDays'); setDiscCat('all'); setTab('discovery') }} className="text-[0.95rem] font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white">Find in radar →</button>
                   </div>
                 ))}
               </div>
@@ -339,27 +339,27 @@ export default function SeasonalDashboard() {
                       <div className="absolute -top-8 -right-8 h-28 w-28 rounded-full bg-[#EC4899]/25 blur-2xl" />
                       <div className="absolute bottom-2 left-4 flex items-center gap-2">
                         <span className="text-3xl drop-shadow">{ev.emoji}</span>
-                        <div><div className="text-base font-bold text-white leading-tight">{ev.name}</div><div className="text-[0.6rem] text-white/60">{ev.country || 'Global'} · {ev.type} · {ev.industry || 'general'}</div></div>
+                        <div><div className="text-base font-bold text-white leading-tight">{ev.name}</div><div className="text-[0.95rem] text-white/60">{ev.country || 'Global'} · {ev.type} · {ev.industry || 'general'}</div></div>
                       </div>
                       <div className="absolute top-2.5 right-2.5">
-                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: st.c + '22', color: st.c === '#0EA37A' ? '#6EE7B7' : st.c }}>{st.l}</span>
+                        <span className="text-[0.95rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: st.c + '22', color: st.c === '#0EA37A' ? '#6EE7B7' : st.c }}>{st.l}</span>
                       </div>
                     </div>
                     <div className="p-4">
                       <div className="flex items-center gap-2 flex-wrap mb-3">
-                        <span className={`text-[0.6rem] font-bold px-2.5 py-1 rounded-full ${ev.daysUntil === 0 ? 'bg-red-50 text-red-600' : ev.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{ev.daysUntil === 0 ? 'TODAY' : `${ev.daysUntil}d remaining`}</span>
-                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l} priority</span>
-                        <span className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(ev))} reach</span>
+                        <span className={`text-[0.95rem] font-bold px-2.5 py-1 rounded-full ${ev.daysUntil === 0 ? 'bg-red-50 text-red-600' : ev.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{ev.daysUntil === 0 ? 'TODAY' : `${ev.daysUntil}d remaining`}</span>
+                        <span className="text-[0.95rem] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: pr.c + '15', color: pr.c }}>{pr.l} priority</span>
+                        <span className="text-[0.95rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(ev))} reach</span>
                       </div>
                       <div className="mb-3">
-                        <div className="flex justify-between text-[0.6rem] text-[#8A8A96] mb-1"><span className="font-semibold">Trend score</span><span className="font-bold text-[#EC4899]">{eventTrend(ev)}%</span></div>
+                        <div className="flex justify-between text-[0.95rem] text-[#8A8A96] mb-1"><span className="font-semibold">Trend score</span><span className="font-bold text-[#EC4899]">{eventTrend(ev)}%</span></div>
                         <div className="h-2 rounded-full bg-[#F0F1F5] overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${eventTrend(ev)}%` }} transition={{ duration: 0.7 }} className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" /></div>
                       </div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-1.5">
-                          {plats.map(p => M[p] ? <span key={p} className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                          {plats.map(p => M[p] ? <span key={p} className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
                         </div>
-                        <span className="text-[0.6rem] font-semibold text-[#8A8A96]">{assets}/12 assets</span>
+                        <span className="text-[0.95rem] font-semibold text-[#8A8A96]">{assets}/12 assets</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-[#F0F1F5] overflow-hidden mb-4"><div className="h-full rounded-full bg-gradient-to-r from-[#0EA37A] to-[#14B8A6]" style={{ width: `${Math.min(100, assets * 9)}%` }} /></div>
                       <div className="flex gap-2">
@@ -384,7 +384,7 @@ export default function SeasonalDashboard() {
             ].map((s, i) => (
               <div key={i} className={`${C} p-4 flex items-start gap-3`}>
                 <span className="h-9 w-9 rounded-xl flex items-center justify-center text-white shrink-0" style={{ backgroundColor: s.c }}>{s.i}</span>
-                <p className="text-[0.7rem] text-[#16161D] leading-relaxed">{s.t}</p>
+                <p className="text-[0.875rem] text-[#16161D] leading-relaxed">{s.t}</p>
               </div>
             ))}
           </motion.div>
@@ -395,17 +395,17 @@ export default function SeasonalDashboard() {
       {tab === 'queue' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} overflow-hidden`}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0F1F5] flex-wrap gap-2">
-            <div className="flex items-center gap-2"><h3 className="text-base font-bold text-[#16161D]">Generated Campaign Content</h3><span className="text-[0.65rem] px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-semibold">{filteredQueue.length}</span></div>
+            <div className="flex items-center gap-2"><h3 className="text-base font-bold text-[#16161D]">Generated Campaign Content</h3><span className="text-[0.85rem] px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] font-semibold">{filteredQueue.length}</span></div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] px-3 py-1.5"><Search className="h-3.5 w-3.5 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…" className="bg-transparent text-xs w-28 focus:outline-none" /></div>
               <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="rounded-xl border border-[#EBECF2] px-2.5 py-1.5 text-xs bg-white"><option value="">All statuses</option>{Object.keys(STATUS_COLORS).map(s => <option key={s}>{s}</option>)}</select>
-              {selected.length > 0 && <button onClick={bulkApprove} className="text-[0.6rem] font-bold px-3 py-1.5 rounded-lg bg-[#0EA37A] text-white">Approve {selected.length}</button>}
+              {selected.length > 0 && <button onClick={bulkApprove} className="text-[0.95rem] font-bold px-3 py-1.5 rounded-lg bg-[#0EA37A] text-white">Approve {selected.length}</button>}
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs min-w-[900px]">
               <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">
-                {['', 'Event', 'Platform', 'Status', 'Generated', 'Scheduled', 'Approval', 'Reach Prediction', 'Actions'].map(h => <th key={h} className={`py-2.5 px-3 text-left font-semibold text-[0.58rem] uppercase tracking-wider ${h !== 'Event' && h !== 'Platform' && h !== '' ? '' : ''}`}>{h}</th>)}
+                {['', 'Event', 'Platform', 'Status', 'Generated', 'Scheduled', 'Approval', 'Reach Prediction', 'Actions'].map(h => <th key={h} className={`py-2.5 px-3 text-left font-semibold text-[0.78rem] uppercase tracking-wider ${h !== 'Event' && h !== 'Platform' && h !== '' ? '' : ''}`}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {filteredQueue.map(q => {
@@ -414,13 +414,13 @@ export default function SeasonalDashboard() {
                   return (
                     <tr key={q.id} className={`border-b border-[#F0F1F5] hover:bg-[#F8F9FC] transition-colors ${selected.includes(q.id) ? 'bg-[#7C3AED]/5' : ''}`}>
                       <td className="py-2.5 px-3"><input type="checkbox" checked={selected.includes(q.id)} onChange={e => setSelected(sel => e.target.checked ? [...sel, q.id] : sel.filter(x => x !== q.id))} className="accent-[#7C3AED]" /></td>
-                      <td className="py-2.5 px-3"><div className="flex items-center gap-2"><span className="text-xl">{q.emoji || '📅'}</span><div><div className="font-semibold text-[#16161D]">{q.event_name}</div><div className="text-[0.55rem] text-[#8A8A96]">{q.event_month}/{q.event_day} · {q.event_type}</div></div></div></td>
-                      <td className="py-2.5 px-3"><div className="flex gap-1 flex-wrap max-w-[140px]">{plats.slice(0, 3).map(p => M[p] ? <span key={p} className="text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}{plats.length > 3 && <span className="text-[0.55rem] text-[#8A8A96]">+{plats.length - 3}</span>}</div></td>
-                      <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[q.status] + '15', color: STATUS_COLORS[q.status] }}>{q.status.replace(/_/g, ' ')}</span></td>
+                      <td className="py-2.5 px-3"><div className="flex items-center gap-2"><span className="text-xl">{q.emoji || '📅'}</span><div><div className="font-semibold text-[#16161D]">{q.event_name}</div><div className="text-[0.9rem] text-[#8A8A96]">{q.event_month}/{q.event_day} · {q.event_type}</div></div></div></td>
+                      <td className="py-2.5 px-3"><div className="flex gap-1 flex-wrap max-w-[140px]">{plats.slice(0, 3).map(p => M[p] ? <span key={p} className="text-[0.9rem] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}{plats.length > 3 && <span className="text-[0.9rem] text-[#8A8A96]">+{plats.length - 3}</span>}</div></td>
+                      <td className="py-2.5 px-3"><span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[q.status] + '15', color: STATUS_COLORS[q.status] }}>{q.status.replace(/_/g, ' ')}</span></td>
                       <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{q.created_at ? new Date(q.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
                       <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{q.scheduled_for ? new Date(q.scheduled_for).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
-                      <td className="py-2.5 px-3"><span className={`text-[0.55rem] px-2 py-0.5 rounded-full font-semibold ${q.status === 'approved' ? 'bg-emerald-50 text-[#0EA37A]' : q.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{q.status === 'pending_approval' ? 'Pending' : q.status === 'approved' ? 'Approved' : '—'}</span></td>
-                      <td className="py-2.5 px-3"><span className="font-mono font-semibold text-[#16161D]">~{short(predReach(q))}</span><span className="text-[0.55rem] text-[#0EA37A]"> · {predEng(q)}% eng</span></td>
+                      <td className="py-2.5 px-3"><span className={`text-[0.9rem] px-2 py-0.5 rounded-full font-semibold ${q.status === 'approved' ? 'bg-emerald-50 text-[#0EA37A]' : q.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{q.status === 'pending_approval' ? 'Pending' : q.status === 'approved' ? 'Approved' : '—'}</span></td>
+                      <td className="py-2.5 px-3"><span className="font-mono font-semibold text-[#16161D]">~{short(predReach(q))}</span><span className="text-[0.9rem] text-[#0EA37A]"> · {predEng(q)}% eng</span></td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1">
                           {q.status === 'draft' && <button onClick={() => updateItem(q.id, { status: 'pending_approval' }, 'Sent for approval')} className="h-7 w-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100" title="Send for approval"><Send className="h-3 w-3" /></button>}
@@ -453,27 +453,27 @@ export default function SeasonalDashboard() {
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1.5">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-center text-[0.6rem] font-bold text-[#8A8A96] py-1.5">{d}</div>)}
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-center text-[0.95rem] font-bold text-[#8A8A96] py-1.5">{d}</div>)}
             {calDays.map((d, i) => {
               const evs = eventForDay(d)
               const hasCampaign = evs.some(e => assetCount(e.name) > 0)
               const isToday = d.toDateString() === new Date().toDateString()
               return (
                 <div key={i} className={`rounded-xl border min-h-[88px] p-1.5 ${isToday ? 'border-[#7C3AED] bg-[#7C3AED]/4' : 'border-[#F0F1F5]'} ${d.getMonth() !== calMonth ? 'opacity-40' : ''}`}>
-                  <div className={`text-[0.6rem] font-semibold mb-1 ${isToday ? 'text-[#7C3AED]' : 'text-[#8A8A96]'}`}>{d.getDate()}</div>
+                  <div className={`text-[0.95rem] font-semibold mb-1 ${isToday ? 'text-[#7C3AED]' : 'text-[#8A8A96]'}`}>{d.getDate()}</div>
                   <div className="space-y-1">
                     {evs.slice(0, 2).map(e => (
-                      <div key={e.name} className={`rounded-lg px-1.5 py-1 text-[0.55rem] font-semibold truncate cursor-pointer ${hasCampaign ? 'bg-gradient-to-r from-[#7C3AED]/15 to-[#EC4899]/15 text-[#7C3AED] border border-[#D8C8FB]' : 'bg-[#F8F9FC] text-[#8A8A96] border border-[#F0F1F5]'}`} title={`${e.name}${hasCampaign ? ' · campaign ready' : ''}`} onClick={() => setSelEvent(e)}>
+                      <div key={e.name} className={`rounded-lg px-1.5 py-1 text-[0.9rem] font-semibold truncate cursor-pointer ${hasCampaign ? 'bg-gradient-to-r from-[#7C3AED]/15 to-[#EC4899]/15 text-[#7C3AED] border border-[#D8C8FB]' : 'bg-[#F8F9FC] text-[#8A8A96] border border-[#F0F1F5]'}`} title={`${e.name}${hasCampaign ? ' · campaign ready' : ''}`} onClick={() => setSelEvent(e)}>
                         {e.emoji} {e.name}
                       </div>
                     ))}
-                    {evs.length > 2 && <div className="text-[0.55rem] text-[#7C3AED] font-semibold text-center">+{evs.length - 2}</div>}
+                    {evs.length > 2 && <div className="text-[0.9rem] text-[#7C3AED] font-semibold text-center">+{evs.length - 2}</div>}
                   </div>
                 </div>
               )
             })}
           </div>
-          <div className="flex gap-4 mt-4 text-[0.6rem] text-[#8A8A96] flex-wrap">
+          <div className="flex gap-4 mt-4 text-[0.95rem] text-[#8A8A96] flex-wrap">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899]" /> Campaign ready</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#EEEFF4]" /> Event detected</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border border-[#D8D9E3]" /> No events</span>
@@ -494,7 +494,7 @@ export default function SeasonalDashboard() {
               <div className="relative flex items-center justify-between">
                 <div>
                   <div className="text-sm font-bold text-white">Auto Campaign Mode</div>
-                  <div className="text-[0.65rem] text-white/60">Detect → Generate → Schedule → Notify. You only approve.</div>
+                  <div className="text-[0.85rem] text-white/60">Detect → Generate → Schedule → Notify. You only approve.</div>
                 </div>
                 <button onClick={() => { const v = !settings.autoCampaign; setSettings(s => ({ ...s, autoCampaign: v })); api('/seasonal/settings', { method: 'POST', body: { ...settings, autoCampaign: v } }).then(() => toast.success(v ? 'Auto Campaign Mode ON — saved' : 'Auto Campaign Mode OFF — saved')).catch(e => toast.error(e.message)) }} className={`h-7 w-13 w-[52px] rounded-full transition-colors relative ${settings.autoCampaign ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-[#3A2A5C]'}`}>
                   <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${settings.autoCampaign ? 'left-[26px]' : 'left-1'}`} />
@@ -547,7 +547,7 @@ export default function SeasonalDashboard() {
                 ].map((x, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <span className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#EC4899] text-white text-xs font-bold flex items-center justify-center shrink-0">{x.s}</span>
-                    <div><div className="text-sm font-semibold text-[#16161D]">{x.t}</div><div className="text-[0.7rem] text-[#8A8A96]">{x.d}</div></div>
+                    <div><div className="text-sm font-semibold text-[#16161D]">{x.t}</div><div className="text-[0.875rem] text-[#8A8A96]">{x.d}</div></div>
                   </div>
                 ))}
               </div>
@@ -564,46 +564,46 @@ export default function SeasonalDashboard() {
               <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#EC4899]/25 blur-2xl" />
               <div className="relative flex items-center gap-3">
                 <span className="text-3xl">{selEvent.emoji}</span>
-                <div><h3 className="text-base font-bold text-white">{selEvent.name}</h3><div className="text-[0.65rem] text-white/60">{selEvent.country || 'Global'} · {selEvent.type} · {selEvent.industry || 'general'}</div></div>
+                <div><h3 className="text-base font-bold text-white">{selEvent.name}</h3><div className="text-[0.85rem] text-white/60">{selEvent.country || 'Global'} · {selEvent.type} · {selEvent.industry || 'general'}</div></div>
                 <button onClick={() => setSelEvent(null)} className="ml-auto h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[0.65rem] font-bold px-2.5 py-1 rounded-full ${selEvent.daysUntil === 0 ? 'bg-red-50 text-red-600' : selEvent.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{selEvent.daysUntil === 0 ? 'Happening TODAY' : `${selEvent.daysUntil} days remaining`}</span>
-                <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-full bg-[#EC4899]/10 text-[#EC4899]">Trend {eventTrend(selEvent)}%</span>
-                <span className="text-[0.65rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(selEvent))} reach</span>
+                <span className={`text-[0.85rem] font-bold px-2.5 py-1 rounded-full ${selEvent.daysUntil === 0 ? 'bg-red-50 text-red-600' : selEvent.daysUntil <= 7 ? 'bg-amber-50 text-amber-600' : 'bg-[#7C3AED]/10 text-[#7C3AED]'}`}>{selEvent.daysUntil === 0 ? 'Happening TODAY' : `${selEvent.daysUntil} days remaining`}</span>
+                <span className="text-[0.85rem] font-bold px-2.5 py-1 rounded-full bg-[#EC4899]/10 text-[#EC4899]">Trend {eventTrend(selEvent)}%</span>
+                <span className="text-[0.85rem] font-bold px-2.5 py-1 rounded-full bg-[#0EA37A]/10 text-[#0EA37A]">~{short(eventReach(selEvent))} reach</span>
               </div>
 
               <div className="rounded-xl border border-[#EBECF2] p-3.5 bg-[#FAFAFD]">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1.5"><Target className="h-3 w-3" /> AI Strategy</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-1.5 flex items-center gap-1.5"><Target className="h-3 w-3" /> AI Strategy</div>
                 <p className="text-xs text-[#16161D] leading-relaxed">Post 2-3 days before {selEvent.name} for peak visibility. Lead with the occasion's emotional hook, tie it to your industry ({selEvent.industry || 'general'}), and close with a CTA.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider">Recommended tone</div><div className="text-sm font-bold text-[#16161D]">{selEvent.type === 'industry' ? 'Professional' : selEvent.type === 'festival' ? 'Festive & warm' : 'Inspirational'}</div></div>
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider">Best window</div><div className="text-sm font-bold text-[#16161D]">10:00 AM · {selEvent.daysUntil > 3 ? `${selEvent.daysUntil - 2}d before` : 'today'}</div></div>
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider">Expected engagement</div><div className="text-sm font-bold text-[#0EA37A]">{Math.round((selEvent.engagementPotential || 5) * 7.2)}%</div></div>
-                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider">Suggested CTA</div><div className="text-sm font-bold text-[#7C3AED]">{selEvent.type === 'national' ? 'Share your celebration' : selEvent.type === 'industry' ? 'Join the conversation' : 'Tag someone'}</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider">Recommended tone</div><div className="text-sm font-bold text-[#16161D]">{selEvent.type === 'industry' ? 'Professional' : selEvent.type === 'festival' ? 'Festive & warm' : 'Inspirational'}</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider">Best window</div><div className="text-sm font-bold text-[#16161D]">10:00 AM · {selEvent.daysUntil > 3 ? `${selEvent.daysUntil - 2}d before` : 'today'}</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider">Expected engagement</div><div className="text-sm font-bold text-[#0EA37A]">{Math.round((selEvent.engagementPotential || 5) * 7.2)}%</div></div>
+                <div className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5"><div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider">Suggested CTA</div><div className="text-sm font-bold text-[#7C3AED]">{selEvent.type === 'national' ? 'Share your celebration' : selEvent.type === 'industry' ? 'Join the conversation' : 'Tag someone'}</div></div>
               </div>
 
               <div>
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Recommended platforms</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Recommended platforms</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {eventPlatforms(selEvent).map(p => M[p] ? <span key={p} className="text-[0.65rem] font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
+                  {eventPlatforms(selEvent).map(p => M[p] ? <span key={p} className="text-[0.85rem] font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: M[p].color + '12', color: M[p].color }}>{M[p].label}</span> : null)}
                 </div>
               </div>
 
               <div>
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Trending keywords & hashtags</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Trending keywords & hashtags</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {[selEvent.industry, selEvent.type, 'festival', 'celebration', 'moment'].filter(Boolean).map(k => <span key={k} className="text-[0.65rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2.5 py-1 rounded-full">#{k}</span>)}
-                  <span className="text-[0.65rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2.5 py-1 rounded-full">#{selEvent.name.toLowerCase().replace(/\s+/g, '')}</span>
+                  {[selEvent.industry, selEvent.type, 'festival', 'celebration', 'moment'].filter(Boolean).map(k => <span key={k} className="text-[0.85rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2.5 py-1 rounded-full">#{k}</span>)}
+                  <span className="text-[0.85rem] text-[#7C3AED] bg-[#7C3AED]/5 border border-[#7C3AED]/10 px-2.5 py-1 rounded-full">#{selEvent.name.toLowerCase().replace(/\s+/g, '')}</span>
                 </div>
               </div>
 
               <div>
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Campaign pipeline · {assetCount(selEvent.name)} assets</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2">Campaign pipeline · {assetCount(selEvent.name)} assets</div>
                 <div className="space-y-2">
                   {[['Idea', true], ['AI Generation', assetCount(selEvent.name) > 0], ['SEO Optimization', true], ['Approval', selEvent.isDrafted], ['Scheduled', eventStatus(selEvent.name).l === 'Scheduled'], ['Published', eventStatus(selEvent.name).l === 'Published']].map(([label, done]) => (
                     <div key={label} className="flex items-center gap-2.5">
@@ -615,10 +615,10 @@ export default function SeasonalDashboard() {
               </div>
 
               <div className="rounded-xl border border-[#EBECF2] p-3.5">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 text-[#0EA37A]" /> Campaign analytics</div>
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 text-[#0EA37A]" /> Campaign analytics</div>
                 <div className="grid grid-cols-2 gap-2">
                   {[['Predicted Reach', short(eventReach(selEvent))], ['Predicted Engagement', `${Math.round((selEvent.engagementPotential || 5) * 7.2)}%`], ['Predicted Saves', short(Math.round(eventReach(selEvent) * 0.08))], ['Predicted Comments', short(Math.round(eventReach(selEvent) * 0.04))], ['Predicted Shares', short(Math.round(eventReach(selEvent) * 0.06))], ['Campaign Readiness', `${Math.min(100, assetCount(selEvent.name) * 9)}%`]].map(([l, v]) => (
-                    <div key={l} className="rounded-lg bg-[#FAFAFD] border border-[#EBECF2] p-2 text-center"><div className="text-sm font-bold text-[#16161D]">{v}</div><div className="text-[0.5rem] text-[#8A8A96] uppercase tracking-wider">{l}</div></div>
+                    <div key={l} className="rounded-lg bg-[#FAFAFD] border border-[#EBECF2] p-2 text-center"><div className="text-sm font-bold text-[#16161D]">{v}</div><div className="text-[0.875rem] text-[#8A8A96] uppercase tracking-wider">{l}</div></div>
                   ))}
                 </div>
               </div>

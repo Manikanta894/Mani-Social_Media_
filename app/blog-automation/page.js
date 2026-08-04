@@ -34,7 +34,7 @@ function Skeleton({ className = '' }) {
 }
 
 function StatusBadge({ status }) {
-  return <span className={`text-[0.55rem] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[status] || 'bg-[#EEEFF4] text-[#8A8A96]'}`}>{status?.replace(/_/g, ' ') || 'pending'}</span>
+  return <span className={`text-[0.9rem] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[status] || 'bg-[#EEEFF4] text-[#8A8A96]'}`}>{status?.replace(/_/g, ' ') || 'pending'}</span>
 }
 
 function MetricCard({ label, value, icon, gradient, sub }) {
@@ -42,9 +42,9 @@ function MetricCard({ label, value, icon, gradient, sub }) {
     <motion.div variants={fadeUp} className="rounded-2xl border border-[#EBECF2] bg-white p-4 shadow-sm transition-all hover:shadow-[0_8px_24px_rgba(124,58,237,0.08)] hover:-translate-y-0.5">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{label}</div>
+          <div className="text-[0.95rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{label}</div>
           <div className="text-2xl font-bold text-[#16161D] mt-1.5">{value}</div>
-          {sub && <div className="text-[0.6rem] text-[#8A8A96] mt-1">{sub}</div>}
+          {sub && <div className="text-[0.95rem] text-[#8A8A96] mt-1">{sub}</div>}
         </div>
         <div className={`h-9 w-9 rounded-xl flex items-center justify-center text-white shrink-0 ${gradient}`}>{icon}</div>
       </div>
@@ -168,7 +168,7 @@ function BlogDashboard() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#16161D]">Editorial Engine {settings.enabled ? 'Live' : 'Off'}</h2>
-              <span className={`text-[0.6rem] font-medium px-2 py-0.5 rounded-full ${settings.enabled ? 'bg-[#0EA37A]/10 text-[#0EA37A]' : 'bg-[#EEEFF4] text-[#8A8A96]'}`}>{settings.enabled ? 'AUTONOMOUS' : 'DISABLED'}</span>
+              <span className={`text-[0.95rem] font-medium px-2 py-0.5 rounded-full ${settings.enabled ? 'bg-[#0EA37A]/10 text-[#0EA37A]' : 'bg-[#EEEFF4] text-[#8A8A96]'}`}>{settings.enabled ? 'AUTONOMOUS' : 'DISABLED'}</span>
             </div>
             <div className="text-xs text-[#8A8A96] mt-0.5">
               Daily: <b className="text-[#16161D]">{settings.articles_per_day || 1}</b> article(s) at <b className="text-[#16161D]">{settings.publishing_time || '10:00'}</b> {settings.timezone || ''}
@@ -188,30 +188,30 @@ function BlogDashboard() {
             <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#8B5CF6] flex items-center justify-center"><Sparkles className="h-3.5 w-3.5 text-white" /></div>
             <h3 className="text-sm font-semibold text-[#16161D]">AI Status</h3>
           </div>
-          <span className="text-[0.6rem] font-medium px-2 py-1 rounded-full bg-[#3B82F6]/8 text-[#3B82F6]">Live</span>
+          <span className="text-[0.95rem] font-medium px-2 py-1 rounded-full bg-[#3B82F6]/8 text-[#3B82F6]">Live</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Current Topic</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Current Topic</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D] truncate">
               {(topics || []).find(t => t.status === 'processing')?.topic || (stats.processing > 0 ? 'Generating…' : 'Idle')}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Generation Progress</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Generation Progress</div>
             <div className="mt-2">
               <div className="h-1.5 rounded-full bg-[#EEEFF4] overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] transition-all duration-500" style={{ width: stats.processing > 0 ? '45%' : pending > 0 ? '10%' : '0%' }} />
               </div>
-              <div className="text-[0.6rem] text-[#8A8A96] mt-1">{stats.processing > 0 ? 'In progress' : pending > 0 ? `${pending} topics queued` : 'No active generation'}</div>
+              <div className="text-[0.95rem] text-[#8A8A96] mt-1">{stats.processing > 0 ? 'In progress' : pending > 0 ? `${pending} topics queued` : 'No active generation'}</div>
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Next Publish</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Next Publish</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D]">{settings.publishing_time || '—'} {settings.timezone || ''}</div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">Avg Generation</div>
+            <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">Avg Generation</div>
             <div className="text-sm font-semibold mt-1 text-[#16161D]">~{settings.articles_per_day || 1} article(s) / day</div>
           </div>
         </div>
@@ -225,14 +225,14 @@ function BlogDashboard() {
       <motion.div variants={fadeUp} className="rounded-2xl border border-[#EBECF2] bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-sm font-semibold text-[#16161D]">Article Generation Pipeline</h3>
-          <span className="text-[0.6rem] text-[#8A8A96]">Topic → Published</span>
+          <span className="text-[0.95rem] text-[#8A8A96]">Topic → Published</span>
         </div>
         <div className="flex items-center gap-1 overflow-x-auto pb-2">
           {genPipeline.map((stage, i) => (
             <div key={i} className="flex items-center shrink-0">
               <div className={`rounded-xl border px-3 py-2 text-center ${i === 1 && stats.processing > 0 ? 'border-[#3B82F6]/40 bg-[#3B82F6]/5' : 'border-[#EBECF2] bg-[#FAFAFC]'}`}>
                 <div className="text-sm">{stage.icon}</div>
-                <div className="text-[0.5rem] font-semibold uppercase tracking-wide mt-0.5 text-[#16161D]">{stage.label}</div>
+                <div className="text-[0.875rem] font-semibold uppercase tracking-wide mt-0.5 text-[#16161D]">{stage.label}</div>
               </div>
               {i < genPipeline.length - 1 && <span className="text-[#C9CBD4] mx-1">›</span>}
             </div>
@@ -434,7 +434,7 @@ function TopicManager() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[0.6rem] uppercase tracking-wider text-[#8A8A96] border-b border-[#F0F1F5]">
+                <tr className="text-left text-[0.95rem] uppercase tracking-wider text-[#8A8A96] border-b border-[#F0F1F5]">
                   <th className="px-4 py-3 font-semibold">#</th>
                   <th className="px-4 py-3 font-semibold">Topic</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
@@ -449,7 +449,7 @@ function TopicManager() {
                   <tr key={t.id} className="hover:bg-[#F8F9FC] transition-colors">
                     <td className="px-4 py-2.5 text-[#8A8A96]">{i + 1}</td>
                     <td className="px-4 py-2.5 font-medium text-[#16161D] max-w-[300px] truncate">{t.topic}</td>
-                    <td className="px-4 py-2.5"><span className="text-[0.55rem] font-semibold px-2 py-0.5 rounded-full bg-[#3B82F6]/8 text-[#3B82F6] capitalize">{t.category || 'tech'}</span></td>
+                    <td className="px-4 py-2.5"><span className="text-[0.9rem] font-semibold px-2 py-0.5 rounded-full bg-[#3B82F6]/8 text-[#3B82F6] capitalize">{t.category || 'tech'}</span></td>
                     <td className="px-4 py-2.5 text-xs text-[#8A8A96] max-w-[180px] truncate">{t.keywords || '—'}</td>
                     <td className="px-4 py-2.5 text-xs capitalize text-[#8A8A96]">{t.priority || 'medium'}</td>
                     <td className="px-4 py-2.5"><StatusBadge status={t.status} /></td>
@@ -571,7 +571,7 @@ function BlogQueueTable() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[0.6rem] uppercase tracking-wider text-[#8A8A96] border-b border-[#F0F1F5]">
+                <tr className="text-left text-[0.95rem] uppercase tracking-wider text-[#8A8A96] border-b border-[#F0F1F5]">
                   <th className="px-3 py-3"><input type="checkbox" className="rounded accent-[#3B82F6]" checked={selected.size === filtered.length && filtered.length > 0} onChange={() => { if (selected.size === filtered.length) setSelected(new Set()); else setSelected(new Set(filtered.map(x => x.file_id))) }} /></th>
                   <th className="px-3 py-3 font-semibold cursor-pointer" onClick={() => toggleSort('queue_position')}># {sortKey === 'queue_position' && (sortDir === 'asc' ? '↑' : '↓')}</th>
                   <th className="px-3 py-3 font-semibold cursor-pointer" onClick={() => toggleSort('file_name')}>Topic</th>
@@ -589,7 +589,7 @@ function BlogQueueTable() {
                     <td className="px-3 py-2.5"><input type="checkbox" className="rounded accent-[#3B82F6]" checked={selected.has(row.file_id)} onChange={() => { const n = new Set(selected); if (n.has(row.file_id)) n.delete(row.file_id); else n.add(row.file_id); setSelected(n) }} /></td>
                     <td className="px-3 py-2.5 text-[#8A8A96]">{row.queue_position}</td>
                     <td className="px-3 py-2.5 font-medium text-[#16161D] max-w-[260px] truncate">{row.article_data?.title || row.file_name}</td>
-                    <td className="px-3 py-2.5"><span className="text-[0.55rem] font-semibold px-2 py-0.5 rounded-full bg-[#3B82F6]/8 text-[#3B82F6] capitalize">{row.article_data?.category || '—'}</span></td>
+                    <td className="px-3 py-2.5"><span className="text-[0.9rem] font-semibold px-2 py-0.5 rounded-full bg-[#3B82F6]/8 text-[#3B82F6] capitalize">{row.article_data?.category || '—'}</span></td>
                     <td className="px-3 py-2.5 text-xs font-semibold text-[#0EA37A]">{row.article_data?.quality?.score != null ? `${row.article_data.quality.score}/100` : '—'}</td>
                     <td className="px-3 py-2.5 text-xs text-[#8A8A96]">{row.article_data?.quality?.wordCount || '—'}</td>
                     <td className="px-3 py-2.5 text-xs text-[#8A8A96]">{row.article_data?.readingTime || '—'}m</td>
@@ -600,7 +600,7 @@ function BlogQueueTable() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2.5 text-[0.6rem] text-[#8A8A96] border-t border-[#F0F1F5]">{filtered.length} of {queue.length} items</div>
+          <div className="px-4 py-2.5 text-[0.95rem] text-[#8A8A96] border-t border-[#F0F1F5]">{filtered.length} of {queue.length} items</div>
         </div>
       )}
     </div>
@@ -664,7 +664,7 @@ function BlogLibrary() {
                 <StatusBadge status={p.status || 'draft'} />
               </div>
               <div className="text-sm font-semibold text-[#16161D] mt-3 line-clamp-2">{p.title || 'Untitled'}</div>
-              <div className="flex items-center gap-3 mt-2 text-[0.6rem] text-[#8A8A96]">
+              <div className="flex items-center gap-3 mt-2 text-[0.95rem] text-[#8A8A96]">
                 <span>SEO: <b className="text-[#0EA37A]">{p.article_data?.quality?.score ?? '—'}</b></span>
                 <span>· {p.article_data?.readingTime || '—'}m read</span>
                 <span>· {p.updated_at ? new Date(p.updated_at).toLocaleDateString() : ''}</span>
@@ -688,7 +688,7 @@ function BlogLibrary() {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={e => e.stopPropagation()}
               className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2"><StatusBadge status={preview.status || 'draft'} /><span className="text-[0.6rem] text-[#8A8A96]">{preview.updated_at ? new Date(preview.updated_at).toLocaleString() : ''}</span></div>
+                <div className="flex items-center gap-2"><StatusBadge status={preview.status || 'draft'} /><span className="text-[0.95rem] text-[#8A8A96]">{preview.updated_at ? new Date(preview.updated_at).toLocaleString() : ''}</span></div>
                 <Button size="sm" variant="ghost" className="rounded-lg" onClick={() => setPreview(null)}><X className="h-4 w-4" /></Button>
               </div>
               <h2 className="text-xl font-bold text-[#16161D] mb-2">{preview.title || 'Untitled'}</h2>
@@ -759,7 +759,7 @@ function BlogAnalytics() {
           <div className="grid grid-cols-2 gap-3">
             {[['In queue', (topics || []).filter(t => t.status === 'pending').length], ['Published', (topics || []).filter(t => t.status === 'published').length], ['Failed', failed], ['Total', (topics || []).length]].map(([l, v]) => (
               <div key={l} className="rounded-xl bg-[#FAFAFC] border border-[#EBECF2] p-3.5">
-                <div className="text-[0.6rem] uppercase tracking-wider text-[#8A8A96]">{l}</div>
+                <div className="text-[0.95rem] uppercase tracking-wider text-[#8A8A96]">{l}</div>
                 <div className="text-xl font-bold text-[#16161D] mt-1">{v}</div>
               </div>
             ))}

@@ -45,3 +45,13 @@ jobs:
             -X POST "https://social.manikantar.in/api/automation/news" \
             -H "x-automation-secret: ${SECRET}" || true
           cat /tmp/news_tick.json || true
+
+      - name: LinkedIn engagement discovery (every 30 min via server-side throttle)
+        run: |
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
+          curl -sS -o /tmp/li_intel.json -w "linkedin-intel: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/linkedin-intel/check" \
+            -H "x-automation-secret: ${SECRET}" \
+            -H "Content-Type: application/json" \
+            -d '{"limit":3}' || true
+          cat /tmp/li_intel.json || true

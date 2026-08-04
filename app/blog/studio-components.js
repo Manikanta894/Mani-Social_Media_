@@ -51,21 +51,21 @@ export function SeoPanel({ post }) {
   return (
     <div className={`${C} p-4`}>
       <div className="flex items-center gap-2 mb-3"><Gauge className="h-4 w-4 text-[#7C3AED]" /><h4 className="text-sm font-semibold text-[#16161D]">SEO Center</h4>
-        <span className="ml-auto h-8 w-8 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white" style={{ backgroundColor: s.seo >= 70 ? '#0EA37A' : s.seo >= 45 ? '#F59E0B' : '#EF4444' }}>{s.seo}</span>
+        <span className="ml-auto h-8 w-8 rounded-full flex items-center justify-center text-[0.85rem] font-bold text-white" style={{ backgroundColor: s.seo >= 70 ? '#0EA37A' : s.seo >= 45 ? '#F59E0B' : '#EF4444' }}>{s.seo}</span>
       </div>
       <div className="space-y-2">
         {rows.map(r => (
-          <div key={r[0]}><div className="flex justify-between text-[0.6rem] text-[#8A8A96] mb-0.5"><span>{r[0]}</span><span className="font-mono">{r[1]}%</span></div>
+          <div key={r[0]}><div className="flex justify-between text-[0.95rem] text-[#8A8A96] mb-0.5"><span>{r[0]}</span><span className="font-mono">{r[1]}%</span></div>
             <div className="h-1.5 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${r[1]}%`, backgroundColor: r[2] }} /></div>
           </div>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-[#F0F1F5] text-center">
-        <div><div className="text-sm font-bold text-[#16161D]">{s.words}</div><div className="text-[0.5rem] text-[#8A8A96]">Words</div></div>
-        <div><div className="text-sm font-bold text-[#16161D]">{s.readTime}m</div><div className="text-[0.5rem] text-[#8A8A96]">Read</div></div>
-        <div><div className="text-sm font-bold text-[#0EA37A]">{s.density}%</div><div className="text-[0.5rem] text-[#8A8A96]">Density</div></div>
+        <div><div className="text-sm font-bold text-[#16161D]">{s.words}</div><div className="text-[0.875rem] text-[#8A8A96]">Words</div></div>
+        <div><div className="text-sm font-bold text-[#16161D]">{s.readTime}m</div><div className="text-[0.875rem] text-[#8A8A96]">Read</div></div>
+        <div><div className="text-sm font-bold text-[#0EA37A]">{s.density}%</div><div className="text-[0.875rem] text-[#8A8A96]">Density</div></div>
       </div>
-      {s.top && <div className="mt-2 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10 p-2 text-[0.65rem] text-[#7C3AED]">Primary keyword: <b>"{s.top}"</b> · H2: {s.h2s} · Links: {s.links} · Alt tags: {s.alts}</div>}
+      {s.top && <div className="mt-2 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10 p-2 text-[0.85rem] text-[#7C3AED]">Primary keyword: <b>"{s.top}"</b> · H2: {s.h2s} · Links: {s.links} · Alt tags: {s.alts}</div>}
     </div>
   )
 }
@@ -80,7 +80,7 @@ export function SeoSuggestions({ post, onApply }) {
         {s.suggestions.map((sg, i) => (
           <div key={i} className="flex items-start gap-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
-            <span className="text-[0.7rem] text-[#16161D] leading-snug flex-1">{sg}</span>
+            <span className="text-[0.875rem] text-[#16161D] leading-snug flex-1">{sg}</span>
           </div>
         ))}
       </div>
@@ -96,15 +96,15 @@ export function GooglePreview({ post }) {
       <h4 className="text-sm font-semibold text-[#16161D] mb-3 flex items-center gap-2"><Search className="h-4 w-4 text-[#3B82F6]" /> Google Search Preview</h4>
       <div className="rounded-xl border border-[#EBECF2] bg-white p-3.5">
         <div className="flex items-center gap-1.5 mb-2">
-          <span className="h-6 w-6 rounded-full bg-gradient-to-br from-[#4285F4] to-[#EA4335] flex items-center justify-center text-[0.5rem] font-bold text-white">G</span>
-          <div><div className="text-[0.6rem] text-[#16161D] font-medium">insights.manikantar.in</div><div className="text-[0.5rem] text-[#8A8A96]">https://insights.manikantar.in/{post?.slug || 'article'}</div></div>
+          <span className="h-6 w-6 rounded-full bg-gradient-to-br from-[#4285F4] to-[#EA4335] flex items-center justify-center text-[0.875rem] font-bold text-white">G</span>
+          <div><div className="text-[0.95rem] text-[#16161D] font-medium">insights.manikantar.in</div><div className="text-[0.875rem] text-[#8A8A96]">https://insights.manikantar.in/{post?.slug || 'article'}</div></div>
         </div>
-        <div className="text-[0.75rem] leading-snug text-[#1A0DAB] font-medium mb-1">{post?.title || 'Untitled article'}</div>
-        <p className="text-[0.65rem] text-[#4D5156] leading-relaxed">{post?.seo_description || 'Meta description will appear here — write 120-165 characters.'}</p>
+        <div className="text-[0.9rem] leading-snug text-[#1A0DAB] font-medium mb-1">{post?.title || 'Untitled article'}</div>
+        <p className="text-[0.85rem] text-[#4D5156] leading-relaxed">{post?.seo_description || 'Meta description will appear here — write 120-165 characters.'}</p>
       </div>
       <div className="grid grid-cols-2 gap-2 mt-3 text-center">
-        <div className="rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2"><div className="text-sm font-bold text-[#16161D]">{s.words}w</div><div className="text-[0.5rem] text-[#8A8A96]">Length</div></div>
-        <div className="rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2"><div className="text-sm font-bold text-[#0EA37A]">{s.readTime}m</div><div className="text-[0.5rem] text-[#8A8A96]">Read time</div></div>
+        <div className="rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2"><div className="text-sm font-bold text-[#16161D]">{s.words}w</div><div className="text-[0.875rem] text-[#8A8A96]">Length</div></div>
+        <div className="rounded-lg bg-[#F8F9FC] border border-[#EBECF2] p-2"><div className="text-sm font-bold text-[#0EA37A]">{s.readTime}m</div><div className="text-[0.875rem] text-[#8A8A96]">Read time</div></div>
       </div>
     </div>
   )
@@ -140,7 +140,7 @@ export function AssistantPanel({ title, body, onInsert }) {
       <h4 className="text-sm font-semibold text-[#16161D] mb-3 flex items-center gap-2"><Wand2 className="h-4 w-4 text-[#7C3AED]" /> AI Article Assistant</h4>
       <div className="grid grid-cols-2 gap-1.5">
         {actions.map(([k, l, Ic]) => (
-          <button key={k} onClick={() => generate(k)} className="flex items-center gap-1.5 text-[0.62rem] font-semibold px-2 py-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">
+          <button key={k} onClick={() => generate(k)} className="flex items-center gap-1.5 text-[0.95rem] font-semibold px-2 py-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">
             <Ic className="h-3.5 w-3.5" />{l}
           </button>
         ))}
@@ -148,14 +148,14 @@ export function AssistantPanel({ title, body, onInsert }) {
       {gen && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 rounded-xl bg-[#FAFAFD] border border-[#EBECF2] p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[0.6rem] font-bold uppercase tracking-wider text-[#7C3AED]">{gen.kind.replace('_', ' ')}</span>
+            <span className="text-[0.95rem] font-bold uppercase tracking-wider text-[#7C3AED]">{gen.kind.replace('_', ' ')}</span>
             <div className="flex gap-1.5">
-              <button onClick={() => onInsert(gen.items.join('\n\n'))} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-[#7C3AED] text-white"><Check className="h-3 w-3 inline mr-1" />Insert</button>
-              <button onClick={() => { navigator.clipboard.writeText(gen.items.join('\n\n')); toast.success('Copied') }} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-[#F4F5F9]"><Copy className="h-3 w-3 inline mr-1" />Copy</button>
+              <button onClick={() => onInsert(gen.items.join('\n\n'))} className="text-[0.95rem] font-bold px-2 py-1 rounded-lg bg-[#7C3AED] text-white"><Check className="h-3 w-3 inline mr-1" />Insert</button>
+              <button onClick={() => { navigator.clipboard.writeText(gen.items.join('\n\n')); toast.success('Copied') }} className="text-[0.95rem] font-bold px-2 py-1 rounded-lg bg-[#F4F5F9]"><Copy className="h-3 w-3 inline mr-1" />Copy</button>
             </div>
           </div>
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
-            {gen.items.map((it, i) => <p key={i} className="text-[0.7rem] text-[#16161D] leading-relaxed whitespace-pre-wrap">{it}</p>)}
+            {gen.items.map((it, i) => <p key={i} className="text-[0.875rem] text-[#16161D] leading-relaxed whitespace-pre-wrap">{it}</p>)}
           </div>
         </motion.div>
       )}
@@ -182,9 +182,9 @@ export function RepurposePanel({ title, body, onDrip }) {
       <div className="space-y-1.5">
         {Object.entries(items).map(([k, v]) => (
           <div key={k} className="group flex items-center gap-2 rounded-lg border border-[#EBECF2] p-2 hover:border-[#D8C8FB] transition-colors">
-            <span className="text-[0.65rem] font-bold capitalize text-[#7C3AED] w-20 shrink-0">{k}</span>
-            <span className="text-[0.6rem] text-[#8A8A96] truncate flex-1">{v.slice(0, 60)}…</span>
-            <button onClick={() => { navigator.clipboard.writeText(v); toast.success(`${k} copied`) }} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-[#F4F5F9] opacity-0 group-hover:opacity-100"><Copy className="h-3 w-3 inline mr-1" />Copy</button>
+            <span className="text-[0.85rem] font-bold capitalize text-[#7C3AED] w-20 shrink-0">{k}</span>
+            <span className="text-[0.95rem] text-[#8A8A96] truncate flex-1">{v.slice(0, 60)}…</span>
+            <button onClick={() => { navigator.clipboard.writeText(v); toast.success(`${k} copied`) }} className="text-[0.95rem] font-bold px-2 py-1 rounded-lg bg-[#F4F5F9] opacity-0 group-hover:opacity-100"><Copy className="h-3 w-3 inline mr-1" />Copy</button>
           </div>
         ))}
       </div>

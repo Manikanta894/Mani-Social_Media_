@@ -106,24 +106,24 @@ function ScoreCard({ title, icon, color, score, problems, fixes, onFix, children
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-[#F0F1F5] bg-[#FAFAFD]">
         <span className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}12`, color }}>{icon}</span>
         <span className="text-xs font-bold text-[#16161D] flex-1">{title}</span>
-        <div className="h-7 w-7 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white" style={{ backgroundColor: score >= 70 ? '#0EA37A' : score >= 45 ? '#F59E0B' : '#EF4444' }}>{score}</div>
+        <div className="h-7 w-7 rounded-full flex items-center justify-center text-[0.95rem] font-bold text-white" style={{ backgroundColor: score >= 70 ? '#0EA37A' : score >= 45 ? '#F59E0B' : '#EF4444' }}>{score}</div>
       </div>
       <div className="p-3 space-y-2.5">
         {problems.length > 0 && (
           <div>
-            <div className="text-[0.55rem] font-bold uppercase tracking-wider text-[#8A8A96] mb-1.5">Problems found</div>
+            <div className="text-[0.9rem] font-bold uppercase tracking-wider text-[#8A8A96] mb-1.5">Problems found</div>
             {problems.slice(0, 3).map((p, i) => (
-              <div key={i} className="flex items-start gap-1.5 text-[0.65rem] text-[#16161D] py-0.5">
+              <div key={i} className="flex items-start gap-1.5 text-[0.85rem] text-[#16161D] py-0.5">
                 <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" /><span>{p}</span>
               </div>
             ))}
           </div>
         )}
-        {problems.length === 0 && <div className="text-[0.65rem] text-[#0EA37A] font-medium">No problems detected — great job!</div>}
+        {problems.length === 0 && <div className="text-[0.85rem] text-[#0EA37A] font-medium">No problems detected — great job!</div>}
         {fixes.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {fixes.map(f => (
-              <button key={f.key} onClick={() => onFix(f.key)} className="text-[0.6rem] font-semibold px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#D8C8FB]/50 text-[#7C3AED] hover:bg-gradient-to-r hover:from-[#7C3AED] hover:to-[#EC4899] hover:text-white transition-all flex items-center gap-1">
+              <button key={f.key} onClick={() => onFix(f.key)} className="text-[0.95rem] font-semibold px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED]/8 to-[#EC4899]/8 border border-[#D8C8FB]/50 text-[#7C3AED] hover:bg-gradient-to-r hover:from-[#7C3AED] hover:to-[#EC4899] hover:text-white transition-all flex items-center gap-1">
                 <Wand2 className="h-3 w-3" />{f.label}
               </button>
             ))}
@@ -171,7 +171,7 @@ export function AnalysisPanel({ text, hashtags, onAction }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-[#16161D] flex items-center gap-2"><BrainCircuit className="h-4 w-4 text-[#7C3AED]" /> AI Content Coach</h4>
-        <button onClick={fixAllClick} className="text-[0.6rem] font-bold px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white flex items-center gap-1"><Zap className="h-3 w-3" /> Fix All</button>
+        <button onClick={fixAllClick} className="text-[0.95rem] font-bold px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white flex items-center gap-1"><Zap className="h-3 w-3" /> Fix All</button>
       </div>
 
       <ScoreCard title="Content Quality" icon={<Gauge className="h-3.5 w-3.5" />} color="#7C3AED" score={a.quality}
@@ -224,17 +224,17 @@ export function AnalysisPanel({ text, hashtags, onAction }) {
         <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#EC4899]/20 blur-2xl" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-2.5"><Bot className="h-4 w-4 text-[#C4B5FD]" /><span className="text-xs font-bold uppercase tracking-wider text-[#C4B5FD]">AI Coach Summary</span></div>
-          <p className="text-[0.7rem] text-white/85 leading-relaxed">{coach.summary}</p>
+          <p className="text-[0.875rem] text-white/85 leading-relaxed">{coach.summary}</p>
           <div className="mt-3">
-            <div className="text-[0.6rem] text-white/50 uppercase tracking-wider font-semibold mb-1.5">Recommended priority</div>
+            <div className="text-[0.95rem] text-white/50 uppercase tracking-wider font-semibold mb-1.5">Recommended priority</div>
             <div className="flex flex-wrap gap-1.5">
-              {coach.priority.map(p => <span key={p} className="text-[0.6rem] font-bold px-2.5 py-1 rounded-full bg-white/10 border border-white/15">{p}</span>)}
+              {coach.priority.map(p => <span key={p} className="text-[0.95rem] font-bold px-2.5 py-1 rounded-full bg-white/10 border border-white/15">{p}</span>)}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-3">
             {[['Quality', a.quality, coach.projected.quality, '#C4B5FD'], ['SEO', a.seo, coach.projected.seo, '#F9A8D4'], ['Engagement', a.engagement, coach.projected.engagement, '#6EE7B7'], ['Est. Reach', Math.round((1000 + a.engagement * 60) / 1000) + 'K', (coach.projected.reach / 1000).toFixed(1) + 'K', '#93C5FD']].map(([l, from, to, col]) => (
               <div key={l} className="rounded-xl bg-white/5 border border-white/10 p-2">
-                <div className="text-[0.55rem] text-white/50 uppercase tracking-wider">{l}</div>
+                <div className="text-[0.9rem] text-white/50 uppercase tracking-wider">{l}</div>
                 <div className="text-sm font-bold" style={{ color: col }}>{from} <span className="text-white/40">→</span> {to}</div>
               </div>
             ))}
@@ -247,14 +247,14 @@ export function AnalysisPanel({ text, hashtags, onAction }) {
         <h4 className="text-xs font-bold text-[#16161D] mb-2.5 flex items-center gap-2"><Zap className="h-4 w-4 text-[#EC4899]" /> Quick AI Actions</h4>
         <div className="grid grid-cols-2 gap-1.5">
           {quickActions.map(q => (
-            <button key={q.key} onClick={() => fix(q.key)} className="flex items-center gap-1.5 text-[0.62rem] font-semibold px-2 py-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{q.icon}{q.label}</button>
+            <button key={q.key} onClick={() => fix(q.key)} className="flex items-center gap-1.5 text-[0.95rem] font-semibold px-2 py-2 rounded-lg bg-[#F8F9FC] border border-[#EBECF2] text-[#16161D] hover:border-[#D8C8FB] hover:text-[#7C3AED] transition-colors">{q.icon}{q.label}</button>
           ))}
         </div>
       </div>
 
       <AnimatePresence>
         {fixAll && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-xl bg-[#0EA37A]/8 border border-[#0EA37A]/20 p-3 text-[0.65rem] text-[#0EA37A] font-medium flex items-center gap-2">
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-xl bg-[#0EA37A]/8 border border-[#0EA37A]/20 p-3 text-[0.85rem] text-[#0EA37A] font-medium flex items-center gap-2">
             <Wand2 className="h-3.5 w-3.5 animate-pulse" /> Fixes applied — review the editor and hit AI Rewrite for a fully polished version.
           </motion.div>
         )}

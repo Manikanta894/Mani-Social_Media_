@@ -360,8 +360,8 @@ export default function NewsRadarPage() {
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 flex items-center gap-3">
               <div>
-                <div className="text-[0.6rem] text-white/50 uppercase tracking-wider font-semibold">Autonomous News Mode</div>
-                <div className="text-[0.65rem] text-white/70">Detect → Score → Telegram → Generate → Schedule</div>
+                <div className="text-[0.95rem] text-white/50 uppercase tracking-wider font-semibold">Autonomous News Mode</div>
+                <div className="text-[0.85rem] text-white/70">Detect → Score → Telegram → Generate → Schedule</div>
               </div>
               <button onClick={toggleAuto} className={`h-7 w-13 w-[52px] rounded-full transition-colors relative ${autoMode ? 'bg-gradient-to-r from-[#7C3AED] to-[#EC4899]' : 'bg-white/15'}`}>
                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${autoMode ? 'left-[26px]' : 'left-1'}`} />
@@ -375,7 +375,7 @@ export default function NewsRadarPage() {
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
           <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all`}>
-            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>
         ))}
@@ -385,7 +385,7 @@ export default function NewsRadarPage() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <h4 className="text-sm font-bold text-[#16161D]">Editorial funnel</h4>
-          <span className="text-[0.6rem] text-[#8A8A96]">Internet → detected → matched → AI approved → generated → published → impact</span>
+          <span className="text-[0.95rem] text-[#8A8A96]">Internet → detected → matched → AI approved → generated → published → impact</span>
         </div>
         <div className="grid grid-cols-7 gap-2 text-center">
           {[
@@ -400,7 +400,7 @@ export default function NewsRadarPage() {
             <div key={s.l} className="flex items-center gap-1.5">
               <div className={`flex-1 rounded-xl border p-2.5 ${i === 0 ? 'bg-[#F8F9FC] border-[#EBECF2]' : 'bg-[#FAFAFD] border-[#EBECF2] hover:border-[#D8C8FB] transition-colors'}`}>
                 <div className="text-lg font-bold" style={{ color: s.c }}>{s.v}</div>
-                <div className="text-[0.55rem] text-[#8A8A96] uppercase tracking-wider">{s.l}</div>
+                <div className="text-[0.9rem] text-[#8A8A96] uppercase tracking-wider">{s.l}</div>
               </div>
               {i < 6 && <span className="text-[#C4C5CE] text-xs">→</span>}
             </div>
@@ -411,14 +411,14 @@ export default function NewsRadarPage() {
       {/* Topics + workflow */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className={`${C} p-4 lg:col-span-2`}>
-          <h4 className="text-sm font-bold text-[#16161D] mb-2.5 flex items-center gap-2"><Target className="h-4 w-4 text-[#7C3AED]" /> Monitored topics {autoMode && <span className="text-[0.6rem] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A] flex items-center gap-1"><Zap className="h-3 w-3" /> Auto-scanning</span>}</h4>
+          <h4 className="text-sm font-bold text-[#16161D] mb-2.5 flex items-center gap-2"><Target className="h-4 w-4 text-[#7C3AED]" /> Monitored topics {autoMode && <span className="text-[0.95rem] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A] flex items-center gap-1"><Zap className="h-3 w-3" /> Auto-scanning</span>}</h4>
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {topics.map(t => <span key={t} className="flex items-center gap-1.5 text-[0.65rem] font-semibold px-3 py-1.5 rounded-full bg-[#7C3AED]/8 text-[#7C3AED] border border-[#D8C8FB]">{t}<button onClick={() => persistTopics(topics.filter(x => x !== t))} className="opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button></span>)}
-            <input value={newTopic} onChange={e => setNewTopic(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newTopic.trim()) { persistTopics([...topics, newTopic.trim()]); setNewTopic('') } }} placeholder="+ Add topic…" className="w-32 text-[0.65rem] rounded-full border border-dashed border-[#D8C8FB] px-3 py-1.5 bg-transparent focus:outline-none" />
+            {topics.map(t => <span key={t} className="flex items-center gap-1.5 text-[0.85rem] font-semibold px-3 py-1.5 rounded-full bg-[#7C3AED]/8 text-[#7C3AED] border border-[#D8C8FB]">{t}<button onClick={() => persistTopics(topics.filter(x => x !== t))} className="opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button></span>)}
+            <input value={newTopic} onChange={e => setNewTopic(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newTopic.trim()) { persistTopics([...topics, newTopic.trim()]); setNewTopic('') } }} placeholder="+ Add topic…" className="w-32 text-[0.85rem] rounded-full border border-dashed border-[#D8C8FB] px-3 py-1.5 bg-transparent focus:outline-none" />
           </div>
           <div className="flex flex-wrap gap-1.5">
             {TOPIC_SUGGESTIONS.filter(t => !topics.includes(t)).slice(0, 14).map(t => (
-              <button key={t} onClick={() => persistTopics([...topics, t])} className="text-[0.6rem] px-2.5 py-1 rounded-full bg-[#F4F5F9] text-[#8A8A96] hover:bg-[#EDE9FE] hover:text-[#7C3AED] transition-colors">+ {t}</button>
+              <button key={t} onClick={() => persistTopics([...topics, t])} className="text-[0.95rem] px-2.5 py-1 rounded-full bg-[#F4F5F9] text-[#8A8A96] hover:bg-[#EDE9FE] hover:text-[#7C3AED] transition-colors">+ {t}</button>
             ))}
           </div>
         </div>
@@ -427,8 +427,8 @@ export default function NewsRadarPage() {
           <div className="space-y-1.5">
             {[['Detect', 'Breaking news matched to your topics'], ['Score', 'Impact, virality, trust & sentiment'], ['Telegram', 'Approval request with buttons'], ['Generate', 'Platform content + blog + newsletter'], ['Schedule', 'Queued with conflict detection']].map(([s, d], i) => (
               <div key={s} className="flex items-start gap-2.5">
-                <span className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#EC4899] text-white text-[0.6rem] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                <div><div className="text-xs font-bold text-[#16161D]">{s}</div><div className="text-[0.6rem] text-[#8A8A96]">{d}</div></div>
+                <span className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#EC4899] text-white text-[0.95rem] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                <div><div className="text-xs font-bold text-[#16161D]">{s}</div><div className="text-[0.95rem] text-[#8A8A96]">{d}</div></div>
               </div>
             ))}
           </div>
@@ -448,9 +448,9 @@ export default function NewsRadarPage() {
                 {sources.length === 0 && <div className="text-sm text-[#8A8A96] col-span-full py-4 text-center">No sources yet — add an RSS/Atom feed, Google News URL or custom page.</div>}
                 {sources.map(s => (
                   <div key={s.id} className="flex items-center gap-2.5 rounded-xl border border-[#EBECF2] p-3 bg-[#FAFAFD]">
-                    <span className="h-8 w-8 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center text-[0.6rem] font-bold text-[#3B82F6] shrink-0">{s.name?.slice(0, 2).toUpperCase()}</span>
-                    <div className="flex-1 min-w-0"><div className="text-xs font-semibold text-[#16161D] truncate">{s.name}</div><div className="text-[0.6rem] text-[#8A8A96] truncate">{s.url}</div></div>
-                    <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] shrink-0">{s.category || 'general'}</span>
+                    <span className="h-8 w-8 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center text-[0.95rem] font-bold text-[#3B82F6] shrink-0">{s.name?.slice(0, 2).toUpperCase()}</span>
+                    <div className="flex-1 min-w-0"><div className="text-xs font-semibold text-[#16161D] truncate">{s.name}</div><div className="text-[0.95rem] text-[#8A8A96] truncate">{s.url}</div></div>
+                    <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED] shrink-0">{s.category || 'general'}</span>
                     <span className={`h-2 w-2 rounded-full shrink-0 ${s.is_active ? 'bg-[#0EA37A]' : 'bg-[#C4C5CE]'}`} />
                     <button onClick={() => deleteSource(s.id)} className="text-[#8A8A96] hover:text-red-500 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
@@ -474,21 +474,21 @@ export default function NewsRadarPage() {
         </select>
         {selected.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[0.65rem] text-[#8A8A96]">{selected.length}</span>
-            <button onClick={() => bulk('approve')} className="text-[0.6rem] font-bold px-3 py-1.5 rounded-lg bg-[#0EA37A] text-white">Approve</button>
-            <button onClick={() => bulk('reject')} className="text-[0.6rem] font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-500">Reject</button>
-            <button onClick={() => setSelected([])} className="text-[0.6rem] font-bold px-2 py-1.5 rounded-lg text-[#8A8A96]">✕</button>
+            <span className="text-[0.85rem] text-[#8A8A96]">{selected.length}</span>
+            <button onClick={() => bulk('approve')} className="text-[0.95rem] font-bold px-3 py-1.5 rounded-lg bg-[#0EA37A] text-white">Approve</button>
+            <button onClick={() => bulk('reject')} className="text-[0.95rem] font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-500">Reject</button>
+            <button onClick={() => setSelected([])} className="text-[0.95rem] font-bold px-2 py-1.5 rounded-lg text-[#8A8A96]">✕</button>
           </div>
         )}
       </motion.div>
 
       {/* Trend strip */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-3.5 flex items-center gap-2 flex-wrap`}>
-        <span className="text-[0.65rem] font-bold text-[#16161D] flex items-center gap-1.5"><Flame className="h-4 w-4 text-[#EF4444]" /> Trending keywords</span>
+        <span className="text-[0.85rem] font-bold text-[#16161D] flex items-center gap-1.5"><Flame className="h-4 w-4 text-[#EF4444]" /> Trending keywords</span>
         {trendKeywords.map(([k, c]) => (
-          <button key={k} onClick={() => setSearch(k)} className="text-[0.6rem] font-semibold px-2.5 py-1 rounded-full bg-[#EF4444]/8 text-[#EF4444] hover:bg-[#EF4444]/15 transition-colors">{k} · {c}</button>
+          <button key={k} onClick={() => setSearch(k)} className="text-[0.95rem] font-semibold px-2.5 py-1 rounded-full bg-[#EF4444]/8 text-[#EF4444] hover:bg-[#EF4444]/15 transition-colors">{k} · {c}</button>
         ))}
-        {trendKeywords.length === 0 && <span className="text-[0.65rem] text-[#8A8A96]">Trending keywords appear after news is detected.</span>}
+        {trendKeywords.length === 0 && <span className="text-[0.85rem] text-[#8A8A96]">Trending keywords appear after news is detected.</span>}
       </motion.div>
 
       {/* News cards */}
@@ -497,7 +497,7 @@ export default function NewsRadarPage() {
           <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-[#EF4444]/10 to-[#EC4899]/10 flex items-center justify-center mb-4"><Radio className="h-6 w-6 text-[#EF4444]" /></div>
           <h3 className="text-base font-bold text-[#16161D]">Radar is scanning</h3>
           <p className="text-sm text-[#8A8A96] mt-1.5 max-w-md mx-auto">Add monitored topics and sources, then hit "Check for News". Breaking headlines, AI analysis and approval-ready campaigns appear here.</p>
-          <div className="flex items-center justify-center gap-2 mt-5 flex-wrap text-[0.65rem] text-[#8A8A96]">
+          <div className="flex items-center justify-center gap-2 mt-5 flex-wrap text-[0.85rem] text-[#8A8A96]">
             <span className="px-3 py-1.5 rounded-full bg-[#7C3AED]/8 text-[#7C3AED] font-semibold">1 · Add topics</span><span>→</span>
             <span className="px-3 py-1.5 rounded-full bg-[#EC4899]/8 text-[#EC4899] font-semibold">2 · Scan sources</span><span>→</span>
             <span className="px-3 py-1.5 rounded-full bg-[#0EA37A]/8 text-[#0EA37A] font-semibold">3 · Approve & publish</span>
@@ -511,42 +511,42 @@ export default function NewsRadarPage() {
             const generatedCount = item.generated_posts ? Object.keys(item.generated_posts).length : 0
             return (
               <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className={`${C} overflow-hidden hover:shadow-[0_10px_28px_rgba(124,58,237,0.1)] hover:-translate-y-0.5 transition-all cursor-pointer relative ${item.is_urgent ? 'ring-1 ring-red-300' : ''}`} onClick={() => loadCampaign(item)}>
-                {item.image_url ? <img src={item.image_url} alt="" className="h-32 w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} /> : <div className="h-16 bg-gradient-to-r from-[#1A1037] to-[#4C1D63] flex items-center px-4"><Newspaper className="h-5 w-5 text-[#C4B5FD]" /><span className="text-[0.6rem] text-white/50 ml-2">News Radar · {item.source_name}</span></div>}
+                {item.image_url ? <img src={item.image_url} alt="" className="h-32 w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} /> : <div className="h-16 bg-gradient-to-r from-[#1A1037] to-[#4C1D63] flex items-center px-4"><Newspaper className="h-5 w-5 text-[#C4B5FD]" /><span className="text-[0.95rem] text-white/50 ml-2">News Radar · {item.source_name}</span></div>}
                 <div className="p-4">
                   <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                    {item.is_urgent && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 flex items-center gap-1"><ZapIcon className="h-2.5 w-2.5" /> BREAKING</span>}
-                    {item.is_trending && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><Flame className="h-2.5 w-2.5" /> TRENDING</span>}
-                    <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span>
+                    {item.is_urgent && <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 flex items-center gap-1"><ZapIcon className="h-2.5 w-2.5" /> BREAKING</span>}
+                    {item.is_trending && <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><Flame className="h-2.5 w-2.5" /> TRENDING</span>}
+                    <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span>
                     {item.ai_analysis?.opportunity_score ? (
-                      <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.opportunity_score >= 85 ? 'bg-red-50 text-red-600' : item.ai_analysis.opportunity_score >= 70 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>AI {item.ai_analysis.opportunity_score}/100</span>
+                      <span className={`text-[0.9rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.opportunity_score >= 85 ? 'bg-red-50 text-red-600' : item.ai_analysis.opportunity_score >= 70 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>AI {item.ai_analysis.opportunity_score}/100</span>
                     ) : null}
                     {item.ai_analysis?.confidence ? (
-                      <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.confidence >= 75 ? 'bg-emerald-50 text-[#0EA37A]' : item.ai_analysis.confidence >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'}`} title="Multi-source verification">{item.ai_analysis.confidence >= 75 ? '✔ Verified' : '⚠ Verify'}</span>
+                      <span className={`text-[0.9rem] font-bold px-2 py-0.5 rounded-full ${item.ai_analysis.confidence >= 75 ? 'bg-emerald-50 text-[#0EA37A]' : item.ai_analysis.confidence >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'}`} title="Multi-source verification">{item.ai_analysis.confidence >= 75 ? '✔ Verified' : '⚠ Verify'}</span>
                     ) : null}
                     {item.ai_analysis?.lifecycle ? (
-                      <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{item.ai_analysis.lifecycle}</span>
+                      <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{item.ai_analysis.lifecycle}</span>
                     ) : null}
-                    <span className="ml-auto text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: pr + '12', color: pr }}>{a.priority}</span>
+                    <span className="ml-auto text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: pr + '12', color: pr }}>{a.priority}</span>
                   </div>
                   {item.ai_analysis && (
                     <div className="flex items-center gap-1.5 flex-wrap mb-2">
                       {[['MBA', item.ai_analysis.mba_score], ['HR', item.ai_analysis.hr_score], ['BA', item.ai_analysis.business_analytics_score], ['Mkt', item.ai_analysis.marketing_score], ['Tech', item.ai_analysis.technology_score], ['Viral', item.ai_analysis.virality_score], ['SEO', item.ai_analysis.seo_opportunity]].map(([l, v]) => v != null ? (
-                        <span key={l} title={`${l} relevance`} className={`text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full ${v >= 70 ? 'bg-emerald-50 text-[#0EA37A]' : v >= 45 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l} {v}</span>
+                        <span key={l} title={`${l} relevance`} className={`text-[0.875rem] font-bold px-1.5 py-0.5 rounded-full ${v >= 70 ? 'bg-emerald-50 text-[#0EA37A]' : v >= 45 ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{l} {v}</span>
                       ) : null)}
                     </div>
                   )}
                   <h4 className="text-sm font-bold text-[#16161D] leading-snug mb-1.5">{item.title}</h4>
-                  {item.summary && <p className="text-[0.7rem] text-[#8A8A96] line-clamp-2 leading-relaxed">{item.summary}</p>}
+                  {item.summary && <p className="text-[0.875rem] text-[#8A8A96] line-clamp-2 leading-relaxed">{item.summary}</p>}
                   <div className="grid grid-cols-3 gap-2 mt-3">
-                    <div><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>Impact</span><span className="font-bold" style={{ color: a.impact >= 70 ? '#EF4444' : '#F59E0B' }}>{a.impact}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-[#EF4444]" style={{ width: `${a.impact}%` }} /></div></div>
-                    <div><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>Viral</span><span className="font-bold text-[#EC4899]">{a.virality}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-[#EC4899]" style={{ width: `${a.virality}%` }} /></div></div>
-                    <div><div className="flex justify-between text-[0.5rem] text-[#8A8A96] mb-0.5"><span>Trust</span><span className="font-bold text-[#0EA37A]">{a.trust}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-[#0EA37A]" style={{ width: `${a.trust}%` }} /></div></div>
+                    <div><div className="flex justify-between text-[0.875rem] text-[#8A8A96] mb-0.5"><span>Impact</span><span className="font-bold" style={{ color: a.impact >= 70 ? '#EF4444' : '#F59E0B' }}>{a.impact}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-[#EF4444]" style={{ width: `${a.impact}%` }} /></div></div>
+                    <div><div className="flex justify-between text-[0.875rem] text-[#8A8A96] mb-0.5"><span>Viral</span><span className="font-bold text-[#EC4899]">{a.virality}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-[#EC4899]" style={{ width: `${a.virality}%` }} /></div></div>
+                    <div><div className="flex justify-between text-[0.875rem] text-[#8A8A96] mb-0.5"><span>Trust</span><span className="font-bold text-[#0EA37A]">{a.trust}</span></div><div className="h-1 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-[#0EA37A]" style={{ width: `${a.trust}%` }} /></div></div>
                   </div>
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#F0F1F5]">
-                    <span className="text-[0.55rem] font-semibold text-[#8A8A96]">{item.source_name || '—'} · {item.published_at ? new Date(item.published_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</span>
-                    <span className="text-[0.55rem] font-bold text-[#0EA37A]">~{short(a.reach)} reach</span>
-                    {generatedCount > 0 && <span className="text-[0.55rem] font-bold text-[#7C3AED]">⚡ {generatedCount} ready</span>}
-                    <span className="ml-auto flex items-center gap-1 text-[0.55rem] font-semibold text-[#8A8A96]">{a.sentiment}</span>
+                    <span className="text-[0.9rem] font-semibold text-[#8A8A96]">{item.source_name || '—'} · {item.published_at ? new Date(item.published_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</span>
+                    <span className="text-[0.9rem] font-bold text-[#0EA37A]">~{short(a.reach)} reach</span>
+                    {generatedCount > 0 && <span className="text-[0.9rem] font-bold text-[#7C3AED]">⚡ {generatedCount} ready</span>}
+                    <span className="ml-auto flex items-center gap-1 text-[0.9rem] font-semibold text-[#8A8A96]">{a.sentiment}</span>
                   </div>
                   <div className="flex gap-1.5 mt-3" onClick={e => e.stopPropagation()}>
                     {item.status === 'new' && <button onClick={() => loadCampaign(item)} disabled={generating === item.id} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-[#EC4899] flex items-center justify-center gap-1 hover:opacity-90">{generating === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Layers className="h-3 w-3" />}Generate All</button>}
@@ -569,20 +569,20 @@ export default function NewsRadarPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs min-w-[900px]">
               <thead><tr className="text-[#8A8A96] border-b border-[#F0F1F5]">
-                {['Headline', 'Source', 'Category', 'Priority', 'Impact', 'Viral', 'Status', 'Detected', 'Actions'].map(h => <th key={h} className="py-2.5 px-3 text-left font-semibold text-[0.58rem] uppercase tracking-wider">{h}</th>)}
+                {['Headline', 'Source', 'Category', 'Priority', 'Impact', 'Viral', 'Status', 'Detected', 'Actions'].map(h => <th key={h} className="py-2.5 px-3 text-left font-semibold text-[0.78rem] uppercase tracking-wider">{h}</th>)}
               </tr></thead>
               <tbody>
                 {filtered.slice(0, 12).map(item => {
                   const a = analyzeItem(item)
                   return (
                     <tr key={item.id} className="border-b border-[#F0F1F5] hover:bg-[#F8F9FC] transition-colors cursor-pointer" onClick={() => loadCampaign(item)}>
-                      <td className="py-2.5 px-3 max-w-[260px]"><span className="font-semibold text-[#16161D] truncate block">{item.title}</span><span className="text-[0.55rem] text-[#8A8A96]">{item.summary?.slice(0, 60)}</span></td>
+                      <td className="py-2.5 px-3 max-w-[260px]"><span className="font-semibold text-[#16161D] truncate block">{item.title}</span><span className="text-[0.9rem] text-[#8A8A96]">{item.summary?.slice(0, 60)}</span></td>
                       <td className="py-2.5 px-3 text-[#8A8A96]">{item.source_name || '—'}</td>
-                      <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{item.category || 'general'}</span></td>
-                      <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ({ High: '#EF4444', Medium: '#F59E0B', Low: '#8A8A96' }[a.priority] || '#8A8A96') + '12', color: { High: '#EF4444', Medium: '#F59E0B', Low: '#8A8A96' }[a.priority] || '#8A8A96' }}>{a.priority}</span></td>
+                      <td className="py-2.5 px-3"><span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{item.category || 'general'}</span></td>
+                      <td className="py-2.5 px-3"><span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: ({ High: '#EF4444', Medium: '#F59E0B', Low: '#8A8A96' }[a.priority] || '#8A8A96') + '12', color: { High: '#EF4444', Medium: '#F59E0B', Low: '#8A8A96' }[a.priority] || '#8A8A96' }}>{a.priority}</span></td>
                       <td className="py-2.5 px-3 font-mono">{a.impact}</td>
                       <td className="py-2.5 px-3 font-mono text-[#EC4899]">{a.virality}</td>
-                      <td className="py-2.5 px-3"><span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span></td>
+                      <td className="py-2.5 px-3"><span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[item.status] + '15', color: STATUS_COLORS[item.status] }}>{statusLabels[item.status] || item.status}</span></td>
                       <td className="py-2.5 px-3 text-[#8A8A96] font-mono">{item.created_at ? new Date(item.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
                       <td className="py-2.5 px-3" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
@@ -606,7 +606,7 @@ export default function NewsRadarPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4">
             <div className="flex items-center gap-2 text-amber-700 font-bold text-sm mb-2"><AlertTriangle className="h-4 w-4" /> Scheduling conflict detected</div>
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {conflicts.conflicts.map((c, i) => <span key={i} className="text-[0.65rem] px-2.5 py-1 rounded-full bg-white border border-amber-200 text-amber-700">{c.platform}: "{c.title?.slice(0, 40)}"</span>)}
+              {conflicts.conflicts.map((c, i) => <span key={i} className="text-[0.85rem] px-2.5 py-1 rounded-full bg-white border border-amber-200 text-amber-700">{c.platform}: "{c.title?.slice(0, 40)}"</span>)}
             </div>
             <div className="flex gap-2">
               <button onClick={() => publishNow(conflicts.item)} className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white">Publish anyway</button>
@@ -625,24 +625,24 @@ export default function NewsRadarPage() {
               <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#EF4444]/20 blur-2xl" />
               <div className="relative flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#EF4444] to-[#EC4899] flex items-center justify-center"><Radio className="h-4 w-4 text-white" /></div>
-                <div><h3 className="text-sm font-bold text-white">AI News Analysis</h3><div className="text-[0.6rem] text-white/60">{selItem.source_name || 'News Radar'}</div></div>
+                <div><h3 className="text-sm font-bold text-white">AI News Analysis</h3><div className="text-[0.95rem] text-white/60">{selItem.source_name || 'News Radar'}</div></div>
                 <button onClick={() => { setSelItem(null); stopCampaignPolling() }} className="ml-auto h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20"><X className="h-4 w-4" /></button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {selItem.image_url && <img src={selItem.image_url} alt="" className="rounded-xl w-full max-h-44 object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />}
               <div className="flex items-center gap-1.5 flex-wrap">
-                {selItem.is_urgent && <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">BREAKING</span>}
-                {selItem.is_trending && <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">TRENDING</span>}
-                <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[selItem.status] + '15', color: STATUS_COLORS[selItem.status] }}>{statusLabels[selItem.status]}</span>
-                <span className="text-[0.6rem] text-[#8A8A96]">{selItem.published_at ? new Date(selItem.published_at).toLocaleString() : ''}</span>
+                {selItem.is_urgent && <span className="text-[0.95rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">BREAKING</span>}
+                {selItem.is_trending && <span className="text-[0.95rem] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">TRENDING</span>}
+                <span className="text-[0.95rem] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[selItem.status] + '15', color: STATUS_COLORS[selItem.status] }}>{statusLabels[selItem.status]}</span>
+                <span className="text-[0.95rem] text-[#8A8A96]">{selItem.published_at ? new Date(selItem.published_at).toLocaleString() : ''}</span>
               </div>
               <h3 className="text-base font-bold text-[#16161D] leading-snug">{selItem.title}</h3>
               <p className="text-xs text-[#8A8A96] leading-relaxed">{selItem.summary}</p>
               {(() => { const a = analyzeItem(selItem); return (
                 <div className="grid grid-cols-2 gap-2">
                   {[['Impact Score', a.impact, '#EF4444'], ['Virality', a.virality, '#EC4899'], ['Trust Score', a.trust, '#0EA37A'], ['Opportunity', a.opportunity, '#7C3AED'], ['Est. Reach', short(a.reach), '#3B82F6'], ['Sentiment', a.sentiment, '#F59E0B']].map(([l, v, c]) => (
-                    <div key={l} className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold" style={{ color: c }}>{v}</div><div className="text-[0.5rem] text-[#8A8A96] uppercase tracking-wider">{l}</div></div>
+                    <div key={l} className="rounded-xl bg-[#F8F9FC] border border-[#EBECF2] p-2.5 text-center"><div className="text-base font-bold" style={{ color: c }}>{v}</div><div className="text-[0.875rem] text-[#8A8A96] uppercase tracking-wider">{l}</div></div>
                   ))}
                 </div>
               ) })()}
@@ -650,8 +650,8 @@ export default function NewsRadarPage() {
               {/* ============ CAMPAIGN / GENERATION PIPELINE ============ */}
               <div className="rounded-xl border border-[#EBECF2] p-3.5 space-y-3">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold flex items-center gap-1.5"><Layers className="h-3 w-3 text-[#7C3AED]" /> Generation Pipeline — one research pass, every platform</h4>
-                  {campaignRunning && <span className="ml-auto text-[0.6rem] font-bold text-[#7C3AED] animate-pulse flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> {campaignProgress}%</span>}
+                  <h4 className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold flex items-center gap-1.5"><Layers className="h-3 w-3 text-[#7C3AED]" /> Generation Pipeline — one research pass, every platform</h4>
+                  {campaignRunning && <span className="ml-auto text-[0.95rem] font-bold text-[#7C3AED] animate-pulse flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> {campaignProgress}%</span>}
                 </div>
 
                 {/* No campaign yet → platform picker */}
@@ -659,7 +659,7 @@ export default function NewsRadarPage() {
                   <div className="space-y-2.5">
                     <div className="flex flex-wrap gap-1.5">
                       {PLATFORMS.map(p => (
-                        <button key={p.key} onClick={() => setGenPlatforms(sel => sel.includes(p.key) ? sel.filter(x => x !== p.key) : [...sel, p.key])} className={`text-[0.6rem] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${genPlatforms.includes(p.key) ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#D8C8FB]' : 'bg-[#F8F9FC] text-[#8A8A96] border-[#EBECF2]'}`}>{P_ICON[p.key]} {p.label}</button>
+                        <button key={p.key} onClick={() => setGenPlatforms(sel => sel.includes(p.key) ? sel.filter(x => x !== p.key) : [...sel, p.key])} className={`text-[0.95rem] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${genPlatforms.includes(p.key) ? 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#D8C8FB]' : 'bg-[#F8F9FC] text-[#8A8A96] border-[#EBECF2]'}`}>{P_ICON[p.key]} {p.label}</button>
                       ))}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -669,7 +669,7 @@ export default function NewsRadarPage() {
                       <button onClick={() => { setGenPlatforms(PLATFORMS.map(p => p.key)); toast.info('All content types selected') }} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">All</button>
                       <button onClick={() => { setGenPlatforms([]); toast.info('Select content types') }} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#F8F9FC] border border-[#EBECF2] text-[#8A8A96]">None</button>
                     </div>
-                    <div className="text-[0.6rem] text-[#8A8A96] leading-relaxed">Research runs <b>once</b> (read article → knowledge pack → supporting sources) and every selected content type is generated from the same context. Failed platforms never block the rest — they show an error and can be retried individually.</div>
+                    <div className="text-[0.95rem] text-[#8A8A96] leading-relaxed">Research runs <b>once</b> (read article → knowledge pack → supporting sources) and every selected content type is generated from the same context. Failed platforms never block the rest — they show an error and can be retried individually.</div>
                   </div>
                 )}
 
@@ -677,10 +677,10 @@ export default function NewsRadarPage() {
                 {campaign && campaign.status === 'running' && (
                   <div className="space-y-2.5">
                     <div className="h-1.5 rounded-full bg-[#F0F1F5] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] transition-all duration-500" style={{ width: `${campaignProgress}%` }} /></div>
-                    {currentStep && <div className="text-[0.65rem] font-semibold text-[#7C3AED] animate-pulse">● {currentStep}</div>}
+                    {currentStep && <div className="text-[0.85rem] font-semibold text-[#7C3AED] animate-pulse">● {currentStep}</div>}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-52 overflow-y-auto pr-1">
                       {campaign.steps.map(s => (
-                        <div key={s.id} className={`flex items-center gap-1.5 text-[0.62rem] rounded-lg px-2 py-1 ${s.status === 'active' ? 'bg-[#7C3AED]/8 text-[#7C3AED] font-semibold' : s.status === 'done' ? 'text-[#0EA37A]' : s.status === 'error' ? 'text-red-500' : 'text-[#8A8A96]'}`}>
+                        <div key={s.id} className={`flex items-center gap-1.5 text-[0.95rem] rounded-lg px-2 py-1 ${s.status === 'active' ? 'bg-[#7C3AED]/8 text-[#7C3AED] font-semibold' : s.status === 'done' ? 'text-[#0EA37A]' : s.status === 'error' ? 'text-red-500' : 'text-[#8A8A96]'}`}>
                           <span>{STEP_ICON[s.status] || '⬜'}</span><span className="truncate">{s.label}</span>
                         </div>
                       ))}
@@ -699,14 +699,14 @@ export default function NewsRadarPage() {
                         const st = a.status
                         const stColor = st === 'done' ? '#0EA37A' : st === 'error' ? '#EF4444' : st === 'scheduled' ? '#8B5CF6' : st === 'published' ? '#3B82F6' : '#8A8A96'
                         return (
-                          <button key={p.key} onClick={() => openAssetEditor(p.key)} className={`text-[0.6rem] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${expandedAsset === p.key ? 'ring-2 ring-[#7C3AED]/30 border-[#7C3AED]' : 'border-[#EBECF2]'}`} style={{ backgroundColor: stColor + '12', color: stColor }}>
+                          <button key={p.key} onClick={() => openAssetEditor(p.key)} className={`text-[0.95rem] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${expandedAsset === p.key ? 'ring-2 ring-[#7C3AED]/30 border-[#7C3AED]' : 'border-[#EBECF2]'}`} style={{ backgroundColor: stColor + '12', color: stColor }}>
                             {st === 'done' ? '✅' : st === 'error' ? '❌' : st === 'published' ? '🚀' : st === 'scheduled' ? '📅' : '⬜'} {P_ICON[p.key]} {p.label}
                           </button>
                         )
                       })}
                     </div>
 
-                    {Object.keys(campaign.assets).length === 0 && <div className="text-[0.65rem] text-[#8A8A96] text-center py-3">No assets yet — choose platforms above and press Generate All.</div>}
+                    {Object.keys(campaign.assets).length === 0 && <div className="text-[0.85rem] text-[#8A8A96] text-center py-3">No assets yet — choose platforms above and press Generate All.</div>}
 
                     {/* Expanded asset editor */}
                     {expandedAsset && campaign.assets[expandedAsset] && (() => {
@@ -717,15 +717,15 @@ export default function NewsRadarPage() {
                         <div className="rounded-xl border border-[#EBECF2] bg-[#FAFAFD] p-3 space-y-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-bold text-[#16161D]">{P_ICON[key]} {meta.label}</span>
-                            {a.status === 'error' ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500">ERROR</span>
-                              : a.status === 'published' ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#3B82F6]">PUBLISHED</span>
-                              : a.status === 'scheduled' ? <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-[#8B5CF6]">SCHEDULED</span>
-                              : <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A]">READY</span>}
-                            {a.scheduled_for && <span className="text-[0.55rem] text-[#8B5CF6] font-semibold">📅 {new Date(a.scheduled_for).toLocaleString()}</span>}
-                            {a.publish_results?.url && <a href={a.publish_results.url} target="_blank" rel="noreferrer" className="text-[0.55rem] font-bold text-[#3B82F6] underline truncate max-w-[180px]">{a.publish_results.url}</a>}
+                            {a.status === 'error' ? <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500">ERROR</span>
+                              : a.status === 'published' ? <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#3B82F6]">PUBLISHED</span>
+                              : a.status === 'scheduled' ? <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-[#8B5CF6]">SCHEDULED</span>
+                              : <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A]">READY</span>}
+                            {a.scheduled_for && <span className="text-[0.9rem] text-[#8B5CF6] font-semibold">📅 {new Date(a.scheduled_for).toLocaleString()}</span>}
+                            {a.publish_results?.url && <a href={a.publish_results.url} target="_blank" rel="noreferrer" className="text-[0.9rem] font-bold text-[#3B82F6] underline truncate max-w-[180px]">{a.publish_results.url}</a>}
                           </div>
-                          {a.error && <div className="text-[0.62rem] text-red-500 bg-red-50 rounded-lg p-2">{a.error}</div>}
-                          {(a.warnings || []).length > 0 && <div className="text-[0.6rem] text-amber-600 bg-amber-50 rounded-lg p-2">⚠ {a.warnings.join(' · ')}</div>}
+                          {a.error && <div className="text-[0.95rem] text-red-500 bg-red-50 rounded-lg p-2">{a.error}</div>}
+                          {(a.warnings || []).length > 0 && <div className="text-[0.95rem] text-amber-600 bg-amber-50 rounded-lg p-2">⚠ {a.warnings.join(' · ')}</div>}
                           <div className="space-y-1.5">
                             {['blog', 'linkedin', 'instagram', 'carousel'].includes(key) && (
                               <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Title" className="w-full text-xs rounded-lg border border-[#EBECF2] px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#7C3AED]" />
@@ -736,12 +736,12 @@ export default function NewsRadarPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <button onClick={() => saveAsset(key)} disabled={busyAsset === key} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#7C3AED] text-white hover:opacity-90 disabled:opacity-50"><Pencil className="h-3 w-3" /> {busyAsset === key ? 'Saving…' : 'Save'}</button>
-                            {a.status === 'error' && <button onClick={() => retryAsset(key)} disabled={busyAsset === key} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-amber-500 text-white hover:opacity-90 disabled:opacity-50"><RefreshCcw className="h-3 w-3" /> Retry</button>}
-                            <button onClick={() => publishAsset(key)} disabled={busyAsset === key || (a.status !== 'done' && a.status !== 'scheduled')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#0EA37A] text-white hover:opacity-90 disabled:opacity-40"><Rocket className="h-3 w-3" /> Publish</button>
+                            <button onClick={() => saveAsset(key)} disabled={busyAsset === key} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.95rem] font-bold bg-[#7C3AED] text-white hover:opacity-90 disabled:opacity-50"><Pencil className="h-3 w-3" /> {busyAsset === key ? 'Saving…' : 'Save'}</button>
+                            {a.status === 'error' && <button onClick={() => retryAsset(key)} disabled={busyAsset === key} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.95rem] font-bold bg-amber-500 text-white hover:opacity-90 disabled:opacity-50"><RefreshCcw className="h-3 w-3" /> Retry</button>}
+                            <button onClick={() => publishAsset(key)} disabled={busyAsset === key || (a.status !== 'done' && a.status !== 'scheduled')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.95rem] font-bold bg-[#0EA37A] text-white hover:opacity-90 disabled:opacity-40"><Rocket className="h-3 w-3" /> Publish</button>
                             <div className="flex items-center gap-1 ml-auto">
-                              <input type="datetime-local" value={scheduleWhen} onChange={e => setScheduleWhen(e.target.value)} className="text-[0.6rem] rounded-lg border border-[#EBECF2] px-1.5 py-1 bg-white" />
-                              <button onClick={() => scheduleAsset(key, scheduleWhen)} disabled={busyAsset === key || !scheduleWhen} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#8B5CF6] text-white hover:opacity-90 disabled:opacity-40"><CalendarClock className="h-3 w-3" /> Sched</button>
+                              <input type="datetime-local" value={scheduleWhen} onChange={e => setScheduleWhen(e.target.value)} className="text-[0.95rem] rounded-lg border border-[#EBECF2] px-1.5 py-1 bg-white" />
+                              <button onClick={() => scheduleAsset(key, scheduleWhen)} disabled={busyAsset === key || !scheduleWhen} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.95rem] font-bold bg-[#8B5CF6] text-white hover:opacity-90 disabled:opacity-40"><CalendarClock className="h-3 w-3" /> Sched</button>
                             </div>
                           </div>
                         </div>
@@ -750,17 +750,17 @@ export default function NewsRadarPage() {
 
                     {/* Publish-all + schedule-all row */}
                     <div className="flex items-center gap-2 flex-wrap pt-1">
-                      <input type="datetime-local" value={scheduleWhen} onChange={e => setScheduleWhen(e.target.value)} className="text-[0.6rem] rounded-lg border border-[#EBECF2] px-1.5 py-1.5 bg-white" />
-                      <button onClick={scheduleAll} disabled={busyAsset === 'all' || !scheduleWhen} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#E4D8FB] hover:opacity-90 disabled:opacity-40"><CalendarDays className="h-3 w-3" /> Schedule all</button>
-                      <button onClick={publishAll} disabled={publishing === 'all'} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-[0.65rem] font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] hover:opacity-90 disabled:opacity-50">{publishing === 'all' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />} Publish all {Object.values(campaign.assets || {}).filter(a => a.status === 'done' || a.status === 'scheduled').length ? `(${Object.values(campaign.assets).filter(a => a.status === 'done' || a.status === 'scheduled').length})` : ''}</button>
+                      <input type="datetime-local" value={scheduleWhen} onChange={e => setScheduleWhen(e.target.value)} className="text-[0.95rem] rounded-lg border border-[#EBECF2] px-1.5 py-1.5 bg-white" />
+                      <button onClick={scheduleAll} disabled={busyAsset === 'all' || !scheduleWhen} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[0.95rem] font-bold bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#E4D8FB] hover:opacity-90 disabled:opacity-40"><CalendarDays className="h-3 w-3" /> Schedule all</button>
+                      <button onClick={publishAll} disabled={publishing === 'all'} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-[0.85rem] font-bold text-white bg-gradient-to-r from-[#0EA37A] to-[#14B8A6] hover:opacity-90 disabled:opacity-50">{publishing === 'all' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />} Publish all {Object.values(campaign.assets || {}).filter(a => a.status === 'done' || a.status === 'scheduled').length ? `(${Object.values(campaign.assets).filter(a => a.status === 'done' || a.status === 'scheduled').length})` : ''}</button>
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="rounded-xl border border-[#EBECF2] p-3.5 bg-[#FAFAFD]">
-                <div className="text-[0.6rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><BrainCircuit className="h-3 w-3 text-[#7C3AED]" /> Why this matters</div>
-                <div className="space-y-1.5 text-[0.7rem] text-[#16161D] leading-relaxed">
+                <div className="text-[0.95rem] text-[#8A8A96] uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5"><BrainCircuit className="h-3 w-3 text-[#7C3AED]" /> Why this matters</div>
+                <div className="space-y-1.5 text-[0.875rem] text-[#16161D] leading-relaxed">
                   <div>• This story impacts the <b>{selItem.category || 'general'}</b> industry and related businesses.</div>
                   <div>• Affected audience: {selItem.is_trending ? 'broad public + industry professionals' : 'industry professionals, analysts and decision-makers'}.</div>
                   <div>• Risk level: <b style={{ color: analyzeItem(selItem).sentiment === 'Negative' ? '#EF4444' : '#0EA37A' }}>{analyzeItem(selItem).sentiment === 'Negative' ? 'Monitor closely' : 'Low'}</b>.</div>

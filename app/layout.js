@@ -126,7 +126,7 @@ export default function RootLayout({ children }) {
                 </div>
                 <div>
                   <div className="studio-title text-lg text-foreground">Studio</div>
-                  <div className="studio-mono text-[0.5rem] text-muted-foreground">creator command</div>
+                  <div className="studio-mono text-[0.875rem] text-muted-foreground">creator command</div>
                 </div>
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function RootLayout({ children }) {
                   <Icon className={`h-4 w-4 ${pathname === key ? 'text-[#7C3AED]' : ''}`} />
                   <span className="flex-1 text-left">{label}</span>
                   {key === '/commcenter' && commUnread > 0 && (
-                    <span className="h-5 min-w-5 px-1 rounded-full bg-[#EF4444] text-white text-[0.55rem] font-bold flex items-center justify-center">{commUnread}</span>
+                    <span className="h-5 min-w-5 px-1 rounded-full bg-[#EF4444] text-white text-[0.9rem] font-bold flex items-center justify-center">{commUnread}</span>
                   )}
                 </button>
               ))}
@@ -191,7 +191,7 @@ export default function RootLayout({ children }) {
                 <SettingsIcon className="h-4 w-4" />
                 Settings
                 {!providersConfigured && (
-                  <span className="ml-auto studio-mono text-[0.5rem] text-[#D97706] bg-[#D97706]/10 border border-[#D97706]/20 px-1.5 py-0.5 rounded-full">SETUP</span>
+                  <span className="ml-auto studio-mono text-[0.875rem] text-[#D97706] bg-[#D97706]/10 border border-[#D97706]/20 px-1.5 py-0.5 rounded-full">SETUP</span>
                 )}
               </button>
               <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all mt-1">

@@ -33,7 +33,7 @@ async function route(request, method) {
   const PUBLIC_API = ['auth', 'health', 'telegram', 'approve']
   const PUBLIC_RESOURCES = ['health', 'telegram', 'approve']
   const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
-  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief' || resource === 'automation' && id === 'news-publish'
+  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief' || resource === 'automation' && id === 'news-publish' || resource === 'linkedin-intel'
   if (!isPublic && !isTick) {
     // Single-user session cookie (lib/auth) — defense in depth alongside middleware
     const { verifySession, COOKIE_NAME } = await import('@/lib/auth')
@@ -93,6 +93,39 @@ async function route(request, method) {
       const r = await migrateAllToSheets()
       if (!r.ok) return ok(r)
       return ok({ total_migrated: r.total_migrated, results: r.results.map(x => ({ table: x.table, migrated: x.migrated, error: x.error })) })
+    }
+
+    // --- Sheets OS — universal CRUD over every sheet in the spreadsheet ---
+    if (resource === 'sheets') {
+      const { listTableMeta } = await import('@/lib/table')
+      const { tableList, tableGet, tableInsert, tableUpdate, tableRemove, TABLES } = await import('@/lib/table')
+      const { spreadsheetUrl } = await import('@/lib/gsheets')
+
+      if (id === 'meta' && method === 'GET') {
+        const meta = await listTableMeta()
+        return ok({ spreadsheet_url: spreadsheetUrl(), tables: meta })
+      }
+      const table = url.searchParams.get('table') || id || 'jobs'
+      const valid = TABLES[table]
+      if (!valid) return err(`Unknown table: ${table}`, 400)
+      if (!action && method === 'GET') {
+        const q = (url.searchParams.get('q') || '').toLowerCase()
+        const rows = await tableList(table)
+        const filtered = q ? rows.filter(r => JSON.stringify(r).toLowerCase().includes(q)) : rows
+        return ok({ table, sheet: valid.sheet, count: rows.length, rows: filtered })
+      }
+      if (!action && method === 'POST') {
+        const body = await request.json()
+        return ok(await tableInsert(table, body))
+      }
+      if (action && method === 'PUT') {
+        return ok(await tableUpdate(table, action, await request.json()))
+      }
+      if (action && method === 'DELETE') {
+        await tableRemove(table, action)
+        return ok({ deleted: true })
+      }
+      return err('Unknown sheets action', 400)
     }
 
     // --- Providers ----------------------------------------------------------
@@ -1482,6 +1515,92 @@ JSON only, no markdown fences.`
         timezone: settings.timezone,
         last_tick_at: settings.last_tick_at,
       })
+    }
+
+    // --- LinkedIn Engagement Assistant ----------------------------------
+    if (resource === 'linkedin-intel') {
+      const intel = await import('@/lib/linkedin-intel')
+      const { tableGet, tableUpdate } = await import('@/lib/table')
+      const { sendMessage } = await import('@/lib/telegram/client')
+      const { formatLinkedInIntelCard, buildLinkedInIntelKeyboard } = await import('@/lib/telegram/formatter')
+
+      if (!id && method === 'GET') {
+        const status = url.searchParams.get('status')
+        return ok(await intel.listOpportunities(status))
+      }
+      if (id === 'check' && method === 'POST') {
+        const a = await automation.get()
+        const provided = request.headers.get('x-automation-secret')
+        if (a.tick_secret && provided !== a.tick_secret) return err('Forbidden', 403)
+        const s = await storage.settings.get()
+        const tgChat = s.telegram_admin_chat_id || process.env.TELEGRAM_ADMIN_CHAT_ID
+        let resent = 0
+        if (tgChat) {
+          const { tableList: tl } = await import('@/lib/table')
+          const existing = (await tl('linkedinIntel')).filter(r => r.status === 'pending')
+          for (const item of existing) {
+            try {
+              await sendMessage({ chatId: tgChat, text: formatLinkedInIntelCard(item), replyMarkup: buildLinkedInIntelKeyboard(item.id) })
+              resent++
+            } catch {}
+          }
+        }
+        const lastCheck = await storage.appState.get('li_intel_last_check', null)
+        const last = lastCheck?.at ? new Date(lastCheck.at).getTime() : 0
+        if (Date.now() - last < 30 * 60 * 1000) return ok({ skipped: 'throttled (30m)', resent })
+        const body = await request.json().catch(() => ({}))
+        const r = await intel.checkOpportunities({ limit: body.limit || 3 })
+        await storage.appState.set('li_intel_last_check', { at: new Date().toISOString() })
+        if (s.telegram_bot_token && s.telegram_admin_chat_id && r.items?.length) {
+          for (const item of r.items.slice(0, 5)) {
+            await sendMessage({ chatId: s.telegram_admin_chat_id, text: formatLinkedInIntelCard(item), replyMarkup: buildLinkedInIntelKeyboard(item.id) }).catch(() => {})
+          }
+        }
+        return ok({ ...r, resent })
+      }
+      if (id === 'manual' && method === 'POST') {
+        const body = await request.json()
+        const item = await intel.addManualOpportunity(body)
+        const s = await storage.settings.get()
+        if (s.telegram_bot_token && s.telegram_admin_chat_id) {
+          await sendMessage({ chatId: s.telegram_admin_chat_id, text: formatLinkedInIntelCard(item), replyMarkup: buildLinkedInIntelKeyboard(item.id) }).catch(() => {})
+        }
+        return ok(item)
+      }
+      if (id && action === 'approve' && method === 'POST') {
+        await intel.recordDecision(id, 'approve')
+        const r = await intel.postComment(id)
+        return ok(r)
+      }
+      if (id && action === 'reject' && method === 'POST') {
+        return ok(await intel.recordDecision(id, 'reject'))
+      }
+      if (id && action === 'save' && method === 'POST') {
+        const { tableUpdate: upd } = await import('@/lib/table')
+        await upd('linkedinIntel', id, { status: 'saved', updated_at: new Date().toISOString() })
+        return ok({ saved: true })
+      }
+      if (id && action === 'regenerate' && method === 'POST') {
+        const item = await tableGet('linkedinIntel', id)
+        if (!item) return err('Opportunity not found', 404)
+        const fresh = await intel.generateComment({ ...item, topic: item.topic })
+        await tableUpdate('linkedinIntel', id, { comment: fresh.comment, quality: fresh.quality, visibility: fresh.visibility, why: fresh.why, updated_at: new Date().toISOString() })
+        return ok({ ...item, ...fresh })
+      }
+      if (id && action === 'edit' && method === 'POST') {
+        const body = await request.json()
+        if (!body.comment) return err('comment required', 400)
+        await tableUpdate('linkedinIntel', id, { comment: body.comment, quality: 90, updated_at: new Date().toISOString() })
+        return ok({ edited: true })
+      }
+      if (id && action === 'post' && method === 'POST') {
+        return ok(await intel.postComment(id))
+      }
+      if (id && method === 'GET') {
+        const item = await tableGet('linkedinIntel', id)
+        return item ? ok(item) : err('Opportunity not found', 404)
+      }
+      return err('Unknown linkedin-intel action', 400)
     }
 
     return err(`No route for ${method} /${parts.join('/')}`, 404)

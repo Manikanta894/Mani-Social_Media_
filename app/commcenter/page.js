@@ -197,7 +197,7 @@ export default function CommCenterPage() {
           <div><h1 className="text-xl font-bold text-[#16161D] tracking-tight">Communication Center</h1><p className="text-sm text-[#8A8A96]">Every AI event in one inbox — Telegram & WhatsApp are just delivery channels now.</p></div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold px-3 py-2 rounded-xl bg-[#7C3AED]/8 text-[#7C3AED] border border-[#D8C8FB]"><Bell className="h-3.5 w-3.5" /> Delivery: {rules.channel === 'dashboard' ? 'Dashboard only' : rules.channel === 'telegram' ? 'Telegram + Dashboard' : rules.channel === 'whatsapp' ? 'WhatsApp + Dashboard' : 'Email (future)'}</span>
+          <span className="flex items-center gap-1.5 text-[0.85rem] font-semibold px-3 py-2 rounded-xl bg-[#7C3AED]/8 text-[#7C3AED] border border-[#D8C8FB]"><Bell className="h-3.5 w-3.5" /> Delivery: {rules.channel === 'dashboard' ? 'Dashboard only' : rules.channel === 'telegram' ? 'Telegram + Dashboard' : rules.channel === 'whatsapp' ? 'WhatsApp + Dashboard' : 'Email (future)'}</span>
           <button onClick={refresh} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-[#F8F9FC] border border-[#EBECF2] hover:border-[#D8C8FB]"><RefreshCw className="h-4 w-4 text-[#8A8A96]" /></button>
         </div>
       </motion.div>
@@ -206,7 +206,7 @@ export default function CommCenterPage() {
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
           <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer`} onClick={() => { if (k.l === 'Unread') setFilter(f => f === 'unread' ? 'all' : 'unread'); if (k.l === 'Approvals Pending') setTab('approvals'); if (k.l === 'News Alerts') setTab('news'); if (k.l === 'Seasonal Campaigns') setTab('seasonal'); if (k.l === 'Failed / Errors') setTab('error'); if (k.l === 'Social Posts') setTab('social'); if (k.l === 'Blogs') setTab('blog'); if (k.l === 'System Events') setTab('system') }}>
-            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>
         ))}
@@ -230,13 +230,13 @@ export default function CommCenterPage() {
             <select value={filter} onChange={e => setFilter(e.target.value)} className="rounded-xl border border-[#EBECF2] px-2.5 py-2 text-xs bg-white">
               <option value="all">All items</option><option value="high">High priority</option><option value="unread">Unread</option><option value="today">Today</option>
             </select>
-            {unread > 0 && <button onClick={() => { const r = {}; sorted.forEach(i => r[i.id] = true); setReadState(r); localStorage.setItem('sf_comm_read', JSON.stringify(r)) }} className="text-[0.6rem] font-bold px-3 py-2 rounded-xl bg-[#F4F5F9] text-[#8A8A96] hover:text-[#7C3AED]">Mark all read</button>}
+            {unread > 0 && <button onClick={() => { const r = {}; sorted.forEach(i => r[i.id] = true); setReadState(r); localStorage.setItem('sf_comm_read', JSON.stringify(r)) }} className="text-[0.95rem] font-bold px-3 py-2 rounded-xl bg-[#F4F5F9] text-[#8A8A96] hover:text-[#7C3AED]">Mark all read</button>}
           </motion.div>
 
           {filtered.length === 0 ? <EmptyInbox /> : (
             <div className="space-y-3">
               {filtered.slice(0, 40).map(item => <CommCard key={item.id} item={item} onAction={doAction} busy={busy === item.id} />)}
-              {filtered.length > 40 && <div className="text-center text-[0.7rem] text-[#8A8A96] py-3">Showing 40 of {filtered.length} — refine filters to narrow down</div>}
+              {filtered.length > 40 && <div className="text-center text-[0.875rem] text-[#8A8A96] py-3">Showing 40 of {filtered.length} — refine filters to narrow down</div>}
             </div>
           )}
         </div>

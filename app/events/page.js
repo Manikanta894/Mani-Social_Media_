@@ -84,7 +84,7 @@ export default function EventsPage() {
       <motion.div variants={{ animate: { transition: { staggerChildren: 0.04 } } }} initial="initial" animate="animate" className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map(k => (
           <motion.div key={k.l} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${C} p-3.5 hover:-translate-y-0.5 hover:shadow-md transition-all`}>
-            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
+            <div className="text-[0.78rem] font-semibold uppercase tracking-wider text-[#8A8A96]">{k.l}</div>
             <div className="text-xl font-bold mt-1" style={{ color: k.c }}>{k.v}</div>
           </motion.div>
         ))}
@@ -96,8 +96,8 @@ export default function EventsPage() {
         <div className="flex items-center gap-1.5 flex-wrap">
           {['Incoming Webhook', 'Verification', 'Auth', 'Validation', 'Normalization', 'Queue', 'Processing', 'AI Analysis', 'Notification', 'Database', 'Dashboard'].map((s, i) => (
             <div key={s} className="flex items-center gap-1.5">
-              <span className={`text-[0.6rem] font-bold px-2.5 py-1.5 rounded-lg ${i < 8 ? 'bg-gradient-to-r from-[#3B82F6]/10 to-[#EC4899]/10 text-[#3B82F6] border border-[#3B82F6]/20' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{s}</span>
-              {i < 10 && <span className="text-[#C4C5CE] text-[0.6rem]">→</span>}
+              <span className={`text-[0.95rem] font-bold px-2.5 py-1.5 rounded-lg ${i < 8 ? 'bg-gradient-to-r from-[#3B82F6]/10 to-[#EC4899]/10 text-[#3B82F6] border border-[#3B82F6]/20' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{s}</span>
+              {i < 10 && <span className="text-[#C4C5CE] text-[0.95rem]">→</span>}
             </div>
           ))}
         </div>
@@ -116,7 +116,7 @@ export default function EventsPage() {
             <div className="flex-1 min-w-[150px] flex items-center gap-2 rounded-xl bg-[#F8F9FC] border border-[#EBECF2] px-3 py-2">
               <Search className="h-3.5 w-3.5 text-[#8A8A96]" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search events…" className="flex-1 bg-transparent text-xs focus:outline-none" />
             </div>
-            <span className="text-[0.6rem] font-semibold text-[#0EA37A] flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#0EA37A] animate-pulse" /> Live</span>
+            <span className="text-[0.95rem] font-semibold text-[#0EA37A] flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#0EA37A] animate-pulse" /> Live</span>
           </motion.div>
 
           {filtered.length === 0 ? (
@@ -133,14 +133,14 @@ export default function EventsPage() {
                   <motion.div key={e.event_id || i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 15) * 0.03 }} className={`${C} p-3.5 hover:shadow-[0_8px_24px_rgba(124,58,237,0.08)] transition-all ${e.priority === 'high' ? 'border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}>
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: c + '15', color: c }}><Bot className="h-3 w-3" /></span>
-                      <span className="text-[0.65rem] font-bold uppercase tracking-wider" style={{ color: c }}>{e.type}</span>
-                      <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{e.source || 'system'}</span>
-                      {e.platform && <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{e.platform}</span>}
-                      <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${e.priority === 'high' ? 'bg-red-50 text-red-500' : e.priority === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{e.priority}</span>
-                      <span className="ml-auto text-[0.55rem] font-mono text-[#8A8A96]">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}</span>
-                      <button onClick={() => retry(e.event_id)} className="text-[0.55rem] font-bold text-[#7C3AED] hover:underline flex items-center gap-0.5"><RotateCcw className="h-2.5 w-2.5" />Retry</button>
+                      <span className="text-[0.85rem] font-bold uppercase tracking-wider" style={{ color: c }}>{e.type}</span>
+                      <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#F4F5F9] text-[#8A8A96]">{e.source || 'system'}</span>
+                      {e.platform && <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{e.platform}</span>}
+                      <span className={`text-[0.9rem] font-bold px-2 py-0.5 rounded-full ${e.priority === 'high' ? 'bg-red-50 text-red-500' : e.priority === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{e.priority}</span>
+                      <span className="ml-auto text-[0.9rem] font-mono text-[#8A8A96]">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}</span>
+                      <button onClick={() => retry(e.event_id)} className="text-[0.9rem] font-bold text-[#7C3AED] hover:underline flex items-center gap-0.5"><RotateCcw className="h-2.5 w-2.5" />Retry</button>
                     </div>
-                    {Object.keys(e.payload || {}).length > 0 && <div className="text-[0.65rem] text-[#8A8A96] leading-relaxed truncate">{JSON.stringify(e.payload).slice(0, 160)}</div>}
+                    {Object.keys(e.payload || {}).length > 0 && <div className="text-[0.85rem] text-[#8A8A96] leading-relaxed truncate">{JSON.stringify(e.payload).slice(0, 160)}</div>}
                   </motion.div>
                 )
               })}
@@ -153,7 +153,7 @@ export default function EventsPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${C} p-4`}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-bold text-[#16161D] flex items-center gap-2"><Globe className="h-4 w-4 text-[#3B82F6]" /> Webhook Management</h4>
-              <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1 text-[0.65rem] font-bold px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#3B82F6] to-[#EC4899] text-white"><Plus className="h-3 w-3" /> Add</button>
+              <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1 text-[0.85rem] font-bold px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#3B82F6] to-[#EC4899] text-white"><Plus className="h-3 w-3" /> Add</button>
             </div>
             <AnimatePresence>
               {showAdd && (
@@ -170,20 +170,20 @@ export default function EventsPage() {
               )}
             </AnimatePresence>
             <div className="space-y-2">
-              {webhooks.length === 0 && <div className="text-[0.7rem] text-[#8A8A96] text-center py-4">No webhooks registered — add one to receive external events.</div>}
+              {webhooks.length === 0 && <div className="text-[0.875rem] text-[#8A8A96] text-center py-4">No webhooks registered — add one to receive external events.</div>}
               {webhooks.map(h => (
                 <div key={h.id} className="rounded-xl border border-[#EBECF2] p-2.5 bg-[#FAFAFD]">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className={`h-5 w-5 rounded-full flex items-center justify-center ${h.enabled ? 'bg-[#0EA37A]/15 text-[#0EA37A]' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}><Power className="h-3 w-3" /></span>
-                    <span className="text-[0.7rem] font-bold text-[#16161D] capitalize">{h.provider}</span>
-                    <span className={`text-[0.55rem] font-bold px-2 py-0.5 rounded-full ${h.enabled ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{h.enabled ? 'ENABLED' : 'DISABLED'}</span>
-                    <span className="ml-auto text-[0.55rem] font-mono text-[#8A8A96]">{h.success_rate ?? 100}% success</span>
+                    <span className="text-[0.875rem] font-bold text-[#16161D] capitalize">{h.provider}</span>
+                    <span className={`text-[0.9rem] font-bold px-2 py-0.5 rounded-full ${h.enabled ? 'bg-emerald-50 text-[#0EA37A]' : 'bg-[#F4F5F9] text-[#8A8A96]'}`}>{h.enabled ? 'ENABLED' : 'DISABLED'}</span>
+                    <span className="ml-auto text-[0.9rem] font-mono text-[#8A8A96]">{h.success_rate ?? 100}% success</span>
                   </div>
-                  <div className="text-[0.55rem] text-[#8A8A96] truncate mb-1.5">{h.endpoint || `/api/events/webhook/${h.provider}`} · {(h.deliveries || 0)} deliveries · retries 1/5/15/30/60m</div>
+                  <div className="text-[0.9rem] text-[#8A8A96] truncate mb-1.5">{h.endpoint || `/api/events/webhook/${h.provider}`} · {(h.deliveries || 0)} deliveries · retries 1/5/15/30/60m</div>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => toggleHook(h)} className={`text-[0.6rem] font-bold px-2 py-1 rounded-lg ${h.enabled ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-[#0EA37A]'}`}>{h.enabled ? 'Disable' : 'Enable'}</button>
-                    <button onClick={() => testHook(h)} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-[#F4F5F9] text-[#8A8A96]">Test</button>
-                    <button onClick={() => delHook(h.id)} className="text-[0.6rem] font-bold px-2 py-1 rounded-lg bg-red-50 text-red-500"><Trash2 className="h-3 w-3 inline" /></button>
+                    <button onClick={() => toggleHook(h)} className={`text-[0.95rem] font-bold px-2 py-1 rounded-lg ${h.enabled ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-[#0EA37A]'}`}>{h.enabled ? 'Disable' : 'Enable'}</button>
+                    <button onClick={() => testHook(h)} className="text-[0.95rem] font-bold px-2 py-1 rounded-lg bg-[#F4F5F9] text-[#8A8A96]">Test</button>
+                    <button onClick={() => delHook(h.id)} className="text-[0.95rem] font-bold px-2 py-1 rounded-lg bg-red-50 text-red-500"><Trash2 className="h-3 w-3 inline" /></button>
                   </div>
                 </div>
               ))}
@@ -198,13 +198,13 @@ export default function EventsPage() {
                 const col = TYPE_COLORS[t] || '#7C3AED'
                 return (
                   <div key={t} className="flex items-center gap-2">
-                    <span className="text-[0.6rem] font-semibold text-[#16161D] w-32 truncate">{t}</span>
+                    <span className="text-[0.95rem] font-semibold text-[#16161D] w-32 truncate">{t}</span>
                     <div className="flex-1 h-1.5 bg-[#F0F1F5] rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${(c / max) * 100}%`, backgroundColor: col }} /></div>
-                    <span className="text-[0.6rem] font-mono text-[#8A8A96] w-6 text-right">{c}</span>
+                    <span className="text-[0.95rem] font-mono text-[#8A8A96] w-6 text-right">{c}</span>
                   </div>
                 )
               })}
-              {topTypes.length === 0 && <div className="text-[0.7rem] text-[#8A8A96] text-center py-3">Event volume appears as events flow in.</div>}
+              {topTypes.length === 0 && <div className="text-[0.875rem] text-[#8A8A96] text-center py-3">Event volume appears as events flow in.</div>}
             </div>
           </motion.div>
 
@@ -213,8 +213,8 @@ export default function EventsPage() {
             <div className="space-y-1.5">
               {[['Webhook intake', 'active'], ['Verification & auth', 'active'], ['Normalization', 'active'], ['AI routing', 'active'], ['Telegram notifications', 'active'], ['Dashboard feed', 'active']].map(([l, s]) => (
                 <div key={l} className="flex items-center justify-between rounded-lg bg-[#F8F9FC] border border-[#EBECF2] px-3 py-2">
-                  <span className="text-[0.7rem] font-medium text-[#16161D]">{l}</span>
-                  <span className="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A]">{s}</span>
+                  <span className="text-[0.875rem] font-medium text-[#16161D]">{l}</span>
+                  <span className="text-[0.9rem] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0EA37A]">{s}</span>
                 </div>
               ))}
             </div>
