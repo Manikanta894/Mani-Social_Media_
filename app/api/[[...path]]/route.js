@@ -27,7 +27,7 @@ const err = (message, status = 400, extra = {}) =>
 // Verify Discord Ed25519 signature. Discord signs every interaction request
 // with the app's private key; we verify using DISCORD_PUBLIC_KEY.
 // Returns true if valid, false otherwise.
-async function verifyDiscordSignature(request) {
+function verifyDiscordSignature(request, rawBody) {
   const publicKey = process.env.DISCORD_PUBLIC_KEY
   if (!publicKey) {
     console.warn('[discord] DISCORD_PUBLIC_KEY not set — skipping verification')
@@ -36,13 +36,15 @@ async function verifyDiscordSignature(request) {
   const signature = request.headers.get('X-Signature-Ed25519')
   const timestamp = request.headers.get('X-Signature-Timestamp')
   if (!signature || !timestamp) return false
-  const body = await request.text()
-  const isValid = nacl.sign.detached.verify(
-    new TextEncoder().encode(timestamp + body),
-    Buffer.from(signature, 'hex'),
-    Buffer.from(publicKey, 'hex'),
-  )
-  return isValid
+  try {
+    return nacl.sign.detached.verify(
+      new TextEncoder().encode(timestamp + rawBody),
+      Buffer.from(signature, 'hex'),
+      Buffer.from(publicKey, 'hex'),
+    )
+  } catch {
+    return false
+  }
 }
 
 async function route(request, method) {
@@ -325,11 +327,14 @@ async function route(request, method) {
 
       // Webhook: POST /api/discord/webhook
       if (sub === 'webhook' && method === 'POST') {
-        const isValid = await verifyDiscordSignature(request)
-        if (!isValid) {
+        // Read the raw body ONCE — it's needed for signature verification AND
+        // for parsing the interaction (a request body can only be read once).
+        const rawBody = await request.text().catch(() => '')
+        if (!verifyDiscordSignature(request, rawBody)) {
           return err('Invalid signature', 401)
         }
-        const body = await request.json().catch(() => ({}))
+        let body = {}
+        try { body = JSON.parse(rawBody) } catch { body = {} }
         // Discord PING (type 1): must respond with {"type":1} immediately
         if (body.type === 1) {
           return NextResponse.json({ type: 1 })
