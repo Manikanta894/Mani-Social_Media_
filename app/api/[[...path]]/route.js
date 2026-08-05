@@ -1650,34 +1650,35 @@ JSON only, no markdown fences.`
         const s = await storage.settings.get()
         const tgChat = s.telegram_admin_chat_id || process.env.TELEGRAM_ADMIN_CHAT_ID
         let resent = 0
-        // ALWAYS re-notify pending opportunities to Discord (primary channel),
-        // even when the 30-min discovery throttle is active — items that were
-        // discovered but never notified (e.g. a quota error mid-run) get sent.
+        const { tableList: tl, tableUpdate: tlUpd } = await import('@/lib/table')
+        const { notifyLinkedInOpportunity } = await import('@/lib/discord/notify')
+        const lastCheck = await storage.appState.get('li_intel_last_check', null)
+        const last = lastCheck?.at ? new Date(lastCheck.at).getTime() : 0
+        const throttled = Date.now() - last < 30 * 60 * 1000
+        const body = await request.json().catch(() => ({}))
+        const r = await intel.checkOpportunities({ limit: body.limit || 3 })
+        await storage.appState.set('li_intel_last_check', { at: new Date().toISOString() })
+        // 1) Send NEWLY discovered items FIRST (new engine cards)
+        if (r.items?.length) {
+          for (const item of r.items.slice(0, 5)) {
+            try {
+              await notifyLinkedInOpportunity(item)
+              await tlUpd('linkedinIntel', item.id, { notified: 'yes', updated_at: new Date().toISOString() }).catch(() => {})
+            } catch (e) { console.warn('[li] new item notify failed:', e.message) }
+          }
+        }
+        // 2) Re-notify only pending items that were never notified (quota-safe recovery)
         try {
-          const { tableList: tl } = await import('@/lib/table')
-          const { notifyLinkedInOpportunity } = await import('@/lib/discord/notify')
-          const existing = (await tl('linkedinIntel')).filter(r => r.status === 'pending')
+          const existing = (await tl('linkedinIntel')).filter(x => x.status === 'pending' && x.notified !== 'yes')
           for (const item of existing.slice(0, 8)) {
             try {
               await notifyLinkedInOpportunity(item)
+              await tlUpd('linkedinIntel', item.id, { notified: 'yes', updated_at: new Date().toISOString() }).catch(() => {})
               resent++
             } catch {}
           }
         } catch {}
-        const lastCheck = await storage.appState.get('li_intel_last_check', null)
-        const last = lastCheck?.at ? new Date(lastCheck.at).getTime() : 0
-        if (Date.now() - last < 30 * 60 * 1000) return ok({ skipped: 'throttled (30m)', resent })
-        const body = await request.json().catch(() => ({}))
-        const r = await intel.checkOpportunities({ limit: body.limit || 3 })
-        await storage.appState.set('li_intel_last_check', { at: new Date().toISOString() })
-        // Newly discovered items → Discord (primary)
-        if (r.items?.length) {
-          const { notifyLinkedInOpportunity } = await import('@/lib/discord/notify')
-          for (const item of r.items.slice(0, 5)) {
-            await notifyLinkedInOpportunity(item).catch(() => {})
-          }
-        }
-        return ok({ ...r, resent })
+        return ok({ ...r, resent, throttled })
       }
       if (id === 'manual' && method === 'POST') {
         const body = await request.json()
