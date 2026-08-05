@@ -339,9 +339,11 @@ async function route(request, method) {
         if (body.type === 1) {
           return NextResponse.json({ type: 1 })
         }
-        // Fire-and-forget: Discord expects an HTTP 204 ack within 3s; the
-        // handler responds to the interaction via the Interactions API.
-        handleInteraction(body).catch(e => console.error('[discord] handler:', e))
+        // CRITICAL: AWAIT the handler — Vercel freezes serverless functions the
+        // moment the response is sent, which killed the interaction ack before
+        // it reached Discord ("didn't respond in time"). The handler acks via
+        // the Interactions API within ~1s; the 204 is sent once it completes.
+        await handleInteraction(body).catch(e => console.error('[discord] handler:', e))
         return new NextResponse(null, { status: 204 })
       }
 
