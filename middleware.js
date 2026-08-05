@@ -14,7 +14,7 @@ const COOKIE_NAME = 'sf_session'
 const PUBLIC_PATHS = ['/login', '/approve', '/bio']
 const PUBLIC_API_PREFIXES = ['/api/auth/', '/api/telegram/webhook', '/api/discord/webhook', '/api/health', '/api/events/webhook', '/api/media/']
 // Secret-authenticated endpoints — middleware must NOT block them; route handler verifies the secret
-const SECRET_API_PREFIXES = ['/api/automation/tick', '/api/blog/tick', '/api/automation/news', '/api/automation/news-publish', '/api/news/brief', '/api/linkedin-intel']
+const SECRET_API_PREFIXES = ['/api/automation/tick', '/api/blog/tick', '/api/automation/news', '/api/automation/news-publish', '/api/news/brief', '/api/linkedin-intel', '/api/cron']
 
 function secret() {
   return process.env.APP_SESSION_SECRET || 'dev-session-secret-change-me'
