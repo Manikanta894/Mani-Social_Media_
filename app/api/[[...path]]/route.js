@@ -1,0 +1,1709 @@
+import { NextResponse } from 'next/server'
+import { storage } from '@/lib/storage'
+import { generateFromImage, regeneratePlatform, generateBulk, generateBlogPost } from '@/lib/ai/generate'
+import { testProvider } from '@/lib/ai/providers'
+import { handleUpdate, sendDraftToAdmin } from '@/lib/telegram/handler'
+import { setWebhook, deleteWebhook, getWebhookInfo, getMe, sendMessage } from '@/lib/telegram/client'
+import { publishJob, SUPPORTED_PLATFORMS } from '@/lib/publishers'
+import { publishSweep } from '@/lib/scheduler'
+import { fetchAllStats, getAggregatedStats, getPostAnalytics, getHashtagAnalytics, getCoachInsights, generateReport } from '@/lib/analytics'
+import { fetchAllComments, replyToComment } from '@/lib/comments/fetchers'
+import { uploadBase64Image } from '@/lib/media'
+import { modules as aiModules, runModule, platformPrompts, DEFAULT_PLATFORM_PROMPTS } from '@/lib/ai/modules'
+
+import { automation, runTick, retryFailed, bulkAction, reorderQueue, getActivityFeed } from '@/lib/automation'
+import { syncIntakeToQueue, uploadIntakeImage, listIntakeFiles, listQueue, queueStats } from '@/lib/intake'
+import { runNewsCheck, generateAndSave, detectConflicts, findNextSlot } from '@/lib/news'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 300
+
+const ok = (data) => NextResponse.json({ ok: true, data })
+const err = (message, status = 400, extra = {}) =>
+  NextResponse.json({ ok: false, error: message, ...extra }, { status })
+
+async function route(request, method) {
+  const url = new URL(request.url)
+  const parts = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean)
+  const [resource, id, action] = parts
+
+  // Defense-in-depth session check (middleware also checks).
+  // Public routes: auth flow, telegram webhook, health, automation ticks (secret-authed), blog tick, approve.
+  const PUBLIC_API = ['auth', 'health', 'telegram', 'discord', 'approve']
+  const PUBLIC_RESOURCES = ['health', 'telegram', 'discord', 'approve']
+  const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
+  const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief' || resource === 'automation' && id === 'news-publish' || resource === 'linkedin-intel'
+  if (!isPublic && !isTick) {
+    // Single-user session cookie (lib/auth) — defense in depth alongside middleware
+    const { verifySession, COOKIE_NAME } = await import('@/lib/auth')
+    const cookie = request.cookies.get(COOKIE_NAME)?.value
+    if (!verifySession(cookie)) return err('Unauthorized', 401)
+  }
+
+  try {
+    // --- Health -------------------------------------------------------------
+    if (!resource || resource === 'health') {
+      if (id === 'last-run' && method === 'GET') {
+        const [recentAudit, recentJobs] = await Promise.all([
+          storage.audit.list(50),
+          storage.jobs.list({}),
+        ])
+        const lastPublish = recentAudit.find(a => a.action === 'publish' || a.action === 'publish_sweep')
+        const lastGenerate = recentAudit.find(a => a.action === 'generate')
+        const lastFetch = recentAudit.find(a => a.action === 'fetch_stats')
+        const failedJobs = recentJobs.filter(j => j.status === 'failed').slice(0, 3)
+        return ok({
+          last_publish_at: lastPublish?.performed_at || null,
+          last_generate_at: lastGenerate?.performed_at || null,
+          last_fetch_at: lastFetch?.performed_at || null,
+          recent_failures: failedJobs.map(j => ({ id: j.id, topic: j.topic, error: j.warnings?.[0] })),
+        })
+      }
+      return ok({ status: 'ok', ts: new Date().toISOString(), storage: 'google_sheets', sheets_configured: !!(process.env.GOOGLE_SPREADSHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) })
+    }
+
+    // --- Auth (single-user, env password + signed cookie) ----------------
+    if (resource === 'auth') {
+      const { verifyPassword, createSession, verifySession, COOKIE_NAME } = await import('@/lib/auth')
+      if (id === 'signin' && method === 'POST') {
+        const body = await request.json()
+        if (!verifyPassword(body.password)) return err('Invalid password', 401)
+        const cookie = createSession()
+        const res = NextResponse.json({ ok: true, data: { session: true } })
+        res.cookies.set(COOKIE_NAME, cookie, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 30 })
+        return res
+      }
+      if (id === 'signout' && method === 'POST') {
+        const res = NextResponse.json({ ok: true, data: {} })
+        res.cookies.set(COOKIE_NAME, '', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 0 })
+        return res
+      }
+      if (id === 'session' && method === 'GET') {
+        const cookie = request.cookies.get(COOKIE_NAME)?.value
+        return ok({ session: verifySession(cookie) })
+      }
+      if (id === 'login' && method === 'POST') return ok({}) // legacy audit ping
+      return err('Unknown auth action', 400)
+    }
+
+    // --- One-shot migration: Supabase → Google Sheets --------------------
+    if (resource === 'migration' && id === 'run' && method === 'POST') {
+      const { migrateAllToSheets } = await import('@/lib/migration')
+      const r = await migrateAllToSheets()
+      if (!r.ok) return ok(r)
+      return ok({ total_migrated: r.total_migrated, results: r.results.map(x => ({ table: x.table, migrated: x.migrated, error: x.error })) })
+    }
+
+    // --- Sheets OS — universal CRUD over every sheet in the spreadsheet ---
+    if (resource === 'sheets') {
+      const { listTableMeta } = await import('@/lib/table')
+      const { tableList, tableGet, tableInsert, tableUpdate, tableRemove, TABLES } = await import('@/lib/table')
+      const { spreadsheetUrl } = await import('@/lib/gsheets')
+
+      if (id === 'meta' && method === 'GET') {
+        const meta = await listTableMeta()
+        return ok({ spreadsheet_url: spreadsheetUrl(), tables: meta })
+      }
+      const table = url.searchParams.get('table') || id || 'jobs'
+      const valid = TABLES[table]
+      if (!valid) return err(`Unknown table: ${table}`, 400)
+      if (!action && method === 'GET') {
+        const q = (url.searchParams.get('q') || '').toLowerCase()
+        const rows = await tableList(table)
+        const filtered = q ? rows.filter(r => JSON.stringify(r).toLowerCase().includes(q)) : rows
+        return ok({ table, sheet: valid.sheet, count: rows.length, rows: filtered })
+      }
+      if (!action && method === 'POST') {
+        const body = await request.json()
+        return ok(await tableInsert(table, body))
+      }
+      if (action && method === 'PUT') {
+        return ok(await tableUpdate(table, action, await request.json()))
+      }
+      if (action && method === 'DELETE') {
+        await tableRemove(table, action)
+        return ok({ deleted: true })
+      }
+      return err('Unknown sheets action', 400)
+    }
+
+    // --- Providers ----------------------------------------------------------
+    if (resource === 'providers') {
+      if (method === 'GET' && !id) {
+        const providers = await storage.providers.list()
+        // Never send raw api_key to client; send a masked variant.
+        return ok(providers.map(p => ({
+          ...p,
+          api_key: p.api_key ? maskKey(p.api_key) : '',
+          api_key_set: !!p.api_key,
+        })))
+      }
+      if (method === 'POST' && !id) {
+        const body = await request.json()
+        const created = await storage.providers.create(body)
+        return ok(sanitize(created))
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        // If api_key is empty string, don't overwrite existing key
+        if (body.api_key === '' || body.api_key === undefined) delete body.api_key
+        const updated = await storage.providers.update(id, body)
+        return ok(sanitize(updated))
+      }
+      if (method === 'DELETE' && id) {
+        await storage.providers.remove(id)
+        return ok(true)
+      }
+      if (method === 'POST' && id === 'set-active') {
+        const body = await request.json()
+        await storage.providers.setActive(body.role, body.providerId)
+        return ok(true)
+      }
+      if (method === 'POST' && id && action === 'test') {
+        const provider = await storage.providers.get(id)
+        if (!provider) return err('Provider not found', 404)
+        try {
+          const result = await testProvider(provider)
+          return ok(result)
+        } catch (e) {
+          return err(e.message || 'Test failed', 400)
+        }
+      }
+      if (method === 'GET' && id === 'usage') {
+        const providerId = url.searchParams.get('provider_id')
+        return ok(await storage.providers.usage.list(providerId))
+      }
+    }
+
+    // --- Prompt Styles ------------------------------------------------------
+    if (resource === 'prompt-styles') {
+      if (method === 'GET' && !id) return ok(await storage.promptStyles.list())
+      if (method === 'POST' && !id) {
+        const body = await request.json()
+        return ok(await storage.promptStyles.create(body))
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        return ok(await storage.promptStyles.update(id, body))
+      }
+      if (method === 'DELETE' && id) {
+        await storage.promptStyles.remove(id)
+        return ok(true)
+      }
+      if (method === 'POST' && id === 'set-active') {
+        const body = await request.json()
+        await storage.promptStyles.setActive(body.id)
+        return ok(true)
+      }
+      if (method === 'POST' && id === 'preview') {
+        const body = await request.json()
+        const { callAi } = await import('@/lib/ai/providers')
+        const provider = await storage.providers.getActive('text')
+        if (!provider) return err('No active text provider', 400)
+        const style = await storage.promptStyles.get(body.styleId)
+        const prompt = `Write a short social media post about a new software launch. Keep it under 100 words.\n\nWriting style:\n${style ? style.instructions : 'Professional, clear tone.'}`
+        const result = await callAi({ provider, prompt })
+        return ok({ preview: result })
+      }
+    }
+
+    // --- Generate -----------------------------------------------------------
+    if (resource === 'generate' && method === 'POST') {
+      const body = await request.json()
+      const result = await generateFromImage(body)
+      return ok(result)
+    }
+
+    // --- Recycle (evergreen candidates) ------------------------------------
+    if (resource === 'recycle' && method === 'POST') {
+      const { findEvergreenCandidates } = await import('@/lib/evergreen')
+      return ok(await findEvergreenCandidates())
+    }
+
+    // --- Regenerate a single platform --------------------------------------
+    if (resource === 'regenerate' && method === 'POST') {
+      const body = await request.json()
+      const post = await regeneratePlatform(body)
+      return ok(post)
+    }
+
+    // --- URL content extraction --------------------------------------------
+    if (resource === 'extract' && method === 'POST') {
+      const body = await request.json()
+      if (!body.url) return err('Missing url')
+      try {
+        const res = await fetch(body.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(10000) })
+        const html = await res.text()
+        const title = html.match(/<title[^>]*>([^<]+)/i)?.[1] || ''
+        const desc = html.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i)?.[1] ||
+                     html.match(/<meta[^>]+content="([^"]+)"[^>]+name="description"/i)?.[1] || ''
+        const bodyText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 3000)
+        return ok({ title, description: desc, body: bodyText })
+      } catch (e) {
+        return err('Failed to extract: ' + e.message)
+      }
+    }
+
+    // --- Jobs (drafts) ------------------------------------------------------
+    if (resource === 'jobs') {
+      if (method === 'GET' && !id) {
+        const campaign_id = url.searchParams.get('campaign_id')
+        const source = url.searchParams.get('source')
+        return ok(await storage.jobs.list({ campaign_id, source }))
+      }
+      if (method === 'GET' && id) {
+        const j = await storage.jobs.get(id)
+        return j ? ok(j) : err('Not found', 404)
+      }
+      if (method === 'POST' && !id) {
+        const body = await request.json()
+        // If base64 image is included, upload to Storage and use its URL
+        if (body.image_base64) {
+          try {
+            const up = await uploadBase64Image(body.image_base64, body.image_mime || 'image/jpeg')
+            body.image_ref = up.url
+          } catch (e) {
+            console.warn('[jobs] image upload failed:', e.message)
+          }
+          delete body.image_base64
+          delete body.image_mime
+        }
+        return ok(await storage.jobs.create(body))
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        const job = await storage.jobs.update(id, body)
+        // Approving in the app should publish (respects auto_publish_after_approve setting)
+        if (body.status === 'approved') {
+          try {
+            const { onApprove } = await import('@/lib/automation')
+            await onApprove(job)
+          } catch (e) { console.warn('[approve] auto-publish failed:', e.message) }
+        }
+        return ok(job)
+      }
+      if (method === 'POST' && id && action === 'retry') {
+        const job = await storage.jobs.get(id)
+        if (!job) return err('Job not found', 404)
+        if (job.status !== 'failed') return err('Only failed jobs can be retried', 400)
+        await storage.jobs.update(id, { status: 'approved', warnings: [] })
+        return ok({ retried: true })
+      }
+    }
+
+    // --- Discord Command Center -------------------------------------------
+    if (resource === 'discord') {
+      const sub = id
+      const { handleInteraction } = await import('@/lib/discord/handler')
+      const { registerCommands, getMe: getDiscordMe } = await import('@/lib/discord/client')
+      const { SLASH_COMMANDS } = await import('@/lib/discord/handler')
+      const { setupServer, ensureServer } = await import('@/lib/discord/channels')
+      const { updateDashboard } = await import('@/lib/discord/dashboard')
+
+      // Webhook: POST /api/discord/webhook
+      if (sub === 'webhook' && method === 'POST') {
+        const body = await request.json().catch(() => ({}))
+        // Fire-and-forget: Discord expects fast response
+        handleInteraction(body).catch(e => console.error('[discord] handler:', e))
+        return ok(true)
+      }
+
+      // Status: GET /api/discord/status
+      if (sub === 'status' && method === 'GET') {
+        const s = await storage.settings.get()
+        let botInfo = null
+        try { if (s.discord_bot_token) botInfo = await getDiscordMe() } catch (e) { botInfo = { error: e.message } }
+        return ok({
+          bot_token_set: !!s.discord_bot_token,
+          guild_id: s.discord_guild_id || '',
+          channel_ids_set: !!s.discord_channel_ids && Object.keys(s.discord_channel_ids || {}).length > 0,
+          bot: botInfo,
+        })
+      }
+
+      // Settings: PUT /api/discord/settings
+      if (sub === 'settings' && method === 'PUT') {
+        const body = await request.json()
+        const patch = {}
+        if (body.bot_token && body.bot_token.trim()) patch.discord_bot_token = body.bot_token.trim()
+        if (body.guild_id !== undefined) patch.discord_guild_id = String(body.guild_id || '').trim()
+        await storage.settings.patch(patch)
+        return ok(true)
+      }
+
+      // Register slash commands: POST /api/discord/register
+      if (sub === 'register' && method === 'POST') {
+        const s = await storage.settings.get()
+        const reqBody = await request.json().catch(() => ({}))
+        const guildId = reqBody?.guild_id || s.discord_guild_id
+        if (!s.discord_bot_token) return err('Bot token not set. Save in Settings first.')
+        if (!guildId) return err('Guild ID not set. Provide guild_id or save in Settings.')
+        const result = await registerCommands(guildId, SLASH_COMMANDS)
+        return ok({ registered: result.length, commands: result.map(c => c.name) })
+      }
+
+      // Setup server structure: POST /api/discord/setup
+      if (sub === 'setup' && method === 'POST') {
+        const s = await storage.settings.get()
+        const reqBody = await request.json().catch(() => ({}))
+        const guildId = reqBody?.guild_id || s.discord_guild_id
+        if (!guildId) return err('Guild ID not set')
+        const result = await setupServer(guildId)
+        return ok(result)
+      }
+
+      // Update dashboard: POST /api/discord/dashboard
+      if (sub === 'dashboard' && method === 'POST') {
+        const r = await updateDashboard()
+        return ok(r)
+      }
+
+      // Send test: POST /api/discord/test
+      if (sub === 'test' && method === 'POST') {
+        const s = await storage.settings.get()
+        if (!s.discord_bot_token) return err('Bot token not set')
+        const guildId = s.discord_guild_id
+        if (!guildId) return err('Guild ID not set')
+        const { ensureServer } = await import('@/lib/discord/channels')
+        const r = await ensureServer()
+        return ok(r)
+      }
+    }
+
+    // --- Telegram -----------------------------------------------------------
+    if (resource === 'telegram') {
+      const sub = id  // second path segment
+
+      if (sub === 'webhook' && method === 'POST') {
+        const settings = await storage.settings.get()
+        const secretHeader = request.headers.get('x-telegram-bot-api-secret-token')
+        if (settings.telegram_webhook_secret && secretHeader !== settings.telegram_webhook_secret) {
+          console.warn('[telegram] bad secret header:', secretHeader)
+          return err('Forbidden', 403)
+        }
+        const update = await request.json().catch(() => ({}))
+        // Fire-and-log: Telegram expects fast 200
+        handleUpdate(update).catch(e => console.error('[telegram] handler:', e))
+        return ok(true)
+      }
+
+      if (sub === 'status' && method === 'GET') {
+        const settings = await storage.settings.get()
+        let botInfo = null
+        let webhookInfo = null
+        try { if (settings.telegram_bot_token) botInfo = await getMe() } catch (e) { botInfo = { error: e.message } }
+        try { if (settings.telegram_bot_token) webhookInfo = await getWebhookInfo() } catch (e) { webhookInfo = { error: e.message } }
+        return ok({
+          bot_token_set: !!settings.telegram_bot_token,
+          bot_token_masked: settings.telegram_bot_token ? maskKey(settings.telegram_bot_token) : '',
+          admin_chat_id: settings.telegram_admin_chat_id || '',
+          webhook_secret_set: !!settings.telegram_webhook_secret,
+          webhook_registered_at: settings.webhook_registered_at || null,
+          expected_webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/telegram/webhook`,
+          bot: botInfo,
+          webhook: webhookInfo,
+        })
+      }
+
+      if (sub === 'settings' && method === 'PUT') {
+        const body = await request.json()
+        const patch = {}
+        if (body.bot_token && body.bot_token.trim()) patch.telegram_bot_token = body.bot_token.trim()
+        if (body.admin_chat_id !== undefined) patch.telegram_admin_chat_id = String(body.admin_chat_id || '').trim()
+        await storage.settings.patch(patch)
+        return ok(true)
+      }
+
+      if (sub === 'register' && method === 'POST') {
+        const settings = await storage.settings.get()
+        if (!settings.telegram_bot_token) return err('Bot token not set. Save token in Settings first.')
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/telegram/webhook`
+        const result = await setWebhook({ url, secret: settings.telegram_webhook_secret })
+        await storage.settings.patch({ webhook_registered_at: new Date().toISOString() })
+        return ok({ url, result })
+      }
+
+      if (sub === 'unregister' && method === 'POST') {
+        const result = await deleteWebhook()
+        await storage.settings.patch({ webhook_registered_at: null })
+        return ok(result)
+      }
+
+      if (sub === 'test' && method === 'POST') {
+        const s = await storage.settings.get()
+        if (!s.telegram_admin_chat_id) return err('Admin chat id not set. Send /start to your bot first, or set it in Settings.')
+        const sent = await sendMessage({
+          chatId: s.telegram_admin_chat_id,
+          text: '\u2705 SocialForge is connected. Send /help to see commands.',
+        })
+        return ok({ message_id: sent.message_id })
+      }
+
+      if (sub === 'send-draft' && method === 'POST') {
+        const body = await request.json()
+        const job = await storage.jobs.get(body.jobId)
+        if (!job) return err('Job not found', 404)
+        const sent = await sendDraftToAdmin(job)
+        return ok({ message_id: sent.message_id })
+      }
+    }
+
+    // --- Upload image (Supabase Storage public bucket) ---------------------
+    if (resource === 'upload' && method === 'POST') {
+      const body = await request.json()
+      if (!body.base64) return err('Missing base64')
+      const r = await uploadBase64Image(body.base64, body.mime_type || 'image/jpeg')
+      return ok(r)
+    }
+
+    // --- Publish (real) ----------------------------------------------------
+    if (resource === 'publish') {
+      if (method === 'POST' && id === 'sweep') {
+        const settings = await storage.settings.get()
+        if (settings.kill_switch) return ok({ skipped: 'kill_switch_active' })
+        const r = await publishSweep()
+        await storage.audit.log('publish_sweep', 'automation', 'tick', null, r.status || 'completed')
+        return ok(r)
+      }
+      if (method === 'POST' && id) {
+        const settings = await storage.settings.get()
+        if (settings.kill_switch) return err('Global kill switch is active')
+        const job = await storage.jobs.get(id)
+        if (!job) return err('Job not found', 404)
+        const body = await request.json().catch(() => ({}))
+        const r = await publishJob(job, { platforms: body.platforms, dryRun: body.dry_run === true })
+        return ok(r)
+      }
+      if (method === 'GET' && id === 'platforms') {
+        return ok({ supported: SUPPORTED_PLATFORMS })
+      }
+    }
+
+    // --- Automation modules ------------------------------------------------
+    if (resource === 'automation') {
+      if (id === 'modules' && method === 'GET') {
+        return ok(await aiModules.list())
+      }
+      // /api/automation/module/:key
+      if (id === 'module' && action && method === 'PUT') {
+        const body = await request.json()
+        return ok(await aiModules.update(action, body))
+      }
+      if (id === 'module' && action && method === 'POST') {
+        // /api/automation/module/:key/run
+        const nextSeg = parts[3]
+        if (nextSeg === 'run') {
+          const body = await request.json()
+          const out = await runModule(action, body)
+          return ok({ result: out })
+        }
+      }
+    }
+
+    // --- Platform prompts --------------------------------------------------
+    if (resource === 'platform-prompts') {
+      if (method === 'GET' && !id) {
+        const list = await platformPrompts.list()
+        const map = Object.fromEntries(list.map(r => [r.platform, r]))
+        // Seed defaults for any missing platform
+        const out = {}
+        for (const [platform, tpl] of Object.entries(DEFAULT_PLATFORM_PROMPTS)) {
+          out[platform] = map[platform] || { platform, prompt_template: tpl, settings: {} }
+        }
+        return ok(out)
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        await platformPrompts.upsert(id, {
+          prompt_template: body.prompt_template || '',
+          settings: body.settings || {},
+        })
+        return ok(true)
+      }
+    }
+
+    // --- Intake (Supabase Storage bucket + media queue) ------------------
+    if (resource === 'intake') {
+      if (id === 'upload' && method === 'POST') {
+        const body = await request.json()
+        if (!body.base64) return err('Missing base64')
+        const r = await uploadIntakeImage(body.base64, body.mime_type || 'image/jpeg', body.file_name)
+        return ok(r)
+      }
+      if (id === 'sync' && method === 'POST') {
+        return ok(await syncIntakeToQueue())
+      }
+      if (id === 'list' && method === 'GET') {
+        return ok(await listIntakeFiles())
+      }
+      if (id === 'queue' && method === 'GET') {
+        const status = url.searchParams.get('status')
+        return ok(await listQueue(status))
+      }
+      if (id === 'stats' && method === 'GET') {
+        return ok(await queueStats())
+      }
+      if (id === 'signed-url' && method === 'GET') {
+        const path = url.searchParams.get('path')
+        if (!path) return err('Missing path')
+        const { getSignedIntakeUrl } = await import('@/lib/intake')
+        const signedUrl = await getSignedIntakeUrl(path, 60 * 60)
+        return ok({ url: signedUrl })
+      }
+    }
+
+    // --- Analytics --------------------------------------------------------
+    if (resource === 'analytics') {
+      if (id === 'fetch' && method === 'POST') {
+        return ok(await fetchAllStats())
+      }
+      if (id === 'stats' && method === 'GET') {
+        return ok(await getAggregatedStats())
+      }
+      if (id === 'digest' && method === 'POST') {
+        const a = await automation.get()
+        const provided = request.headers.get('x-analytics-secret')
+        if (a.tick_secret && provided !== a.tick_secret) return err('Forbidden', 403)
+        return ok(await generateReport('daily'))
+      }
+      if (id === 'posts' && method === 'GET') {
+        return ok(await getPostAnalytics())
+      }
+      if (id === 'hashtags' && method === 'GET') {
+        return ok(await getHashtagAnalytics())
+      }
+      if (id === 'coach' && method === 'GET') {
+        return ok(await getCoachInsights())
+      }
+      if (id === 'report' && method === 'POST') {
+        const body = await request.json().catch(() => ({}))
+        return ok(await generateReport(body.type || 'daily'))
+      }
+      if (id === 'library' && method === 'GET') {
+        const { getLibrary } = await import('@/lib/content-library')
+        return ok(await getLibrary({ platform: url.searchParams.get('platform') || null }))
+      }
+      if (id === 'library' && method === 'DELETE') {
+        const body = await request.json().catch(() => ({}))
+        if (!body?.id) return err('Missing id')
+        const { storage: st } = await import('@/lib/storage')
+        return ok(await st.contentLibrary.remove(body.id))
+      }
+      if (id === 'sync' && method === 'POST') {
+        const { syncLibrary, getLibraryStats } = await import('@/lib/content-library')
+        const body = await request.json().catch(() => ({}))
+        const result = await syncLibrary({ limit: body.limit || 25, budgetMs: body.budgetMs || 40000 })
+        const stats = await getLibraryStats()
+        return ok({ ...result, library: stats })
+      }
+    }
+
+    // --- UTM analytics -----------------------------------------------
+    if (resource === 'analytics' && id === 'utm' && method === 'GET') {
+      const details = await storage.postDetails.list()
+      const results = details
+        .filter(d => String(d.caption || '').includes('utm_source=socialforge'))
+        .slice(0, 100)
+        .map(d => {
+          const match = d.caption?.match(/utm_source=socialforge&utm_medium=([^&]+)&utm_campaign=([^&\s]+)/)
+          return {
+            job_id: d.job_id, platform: d.platform,
+            utm_medium: match?.[1] || '', utm_campaign: match?.[2] || '',
+            impressions: d.impressions, likes: d.likes, comments: d.comments, shares: d.shares,
+          }
+        })
+      return ok(results)
+    }
+
+    // --- News (Breaking News Radar) --------------------------------------
+    if (resource === 'news') {
+      // Sources
+      if (id === 'sources' && method === 'GET') {
+        return ok(await storage.newsSources.list())
+      }
+      if (id === 'sources' && method === 'POST') {
+        const body = await request.json()
+        return ok(await storage.newsSources.create(body))
+      }
+      if (id && action === 'source') {
+        if (method === 'PUT') return ok(await storage.newsSources.update(id, await request.json()))
+        if (method === 'DELETE') { await storage.newsSources.remove(id); return ok({}) }
+      }
+      if (id === 'check' && method === 'POST') {
+        return ok(await runNewsCheck())
+      }
+      if (id === 'seed' && method === 'POST') {
+        const { seedNewsSources } = await import('@/lib/news/seed')
+        return ok(await seedNewsSources())
+      }
+      // Posts
+      if (!action && (!id || id === 'all' || id === 'posts')) {
+        if (method === 'GET') {
+          const status = request.nextUrl.searchParams.get('status')
+          return ok(await storage.newsPosts.list(status))
+        }
+      }
+      if (id && !action && method === 'GET') {
+        return ok(await storage.newsPosts.get(id))
+      }
+      if (id && !action && method === 'PUT') {
+        return ok(await storage.newsPosts.update(id, await request.json()))
+      }
+      if (id && !action && method === 'DELETE') {
+        await storage.newsPosts.remove(id); return ok({})
+      }
+      if (id === 'generate' && method === 'POST') {
+        const body = await request.json()
+        return ok(await generateAndSave(body.news_id))
+      }
+      if (id === 'conflicts' && method === 'POST') {
+        const body = await request.json()
+        return ok(await detectConflicts({ platform: body.platform, scheduledFor: body.scheduled_for, excludeNewsId: body.exclude_id }))
+      }
+      if (id === 'next-slot' && method === 'POST') {
+        const body = await request.json()
+        return ok(await findNextSlot({ platform: body.platform, after: body.after }))
+      }
+      if (id === 'publish' && method === 'POST') {
+        const body = await request.json()
+        const newsItem = await storage.newsPosts.get(body.news_id)
+        if (!newsItem) return err('News post not found', 404)
+        if (!newsItem.generated_posts) return err('No AI-generated posts — run generate first', 400)
+        const { publishJob } = await import('@/lib/publishers')
+        // Build a temporary content_job shape and publish
+        const tempJob = {
+          id: `news_${newsItem.id}`,
+          platform_posts: newsItem.generated_posts,
+          image_ref: newsItem.image_url,
+          publish_results: {},
+          warnings: [],
+        }
+        const r = await publishJob(tempJob, { platforms: body.platforms || Object.keys(newsItem.generated_posts) })
+        await storage.newsPosts.update(newsItem.id, {
+          status: r.results.some(rr => rr.ok) ? 'published' : 'failed',
+          published_at_actual: new Date().toISOString(),
+          publish_results: tempJob.publish_results,
+          conflict_warning: null,
+        })
+        return ok(r)
+      }
+      // --- News Campaign Engine (generate-all + per-platform control) ---
+      if (id === 'campaign') {
+        const sub = parts[3]
+        const sub2 = parts[4]
+        const { startOrContinueCampaign, getCampaignState, regenerateCampaignAsset, updateCampaignAsset, scheduleCampaignAssets, publishCampaignAssets } = await import('@/lib/news/campaign')
+        if (!action && method === 'POST') {
+          const body = await request.json()
+          return ok(await startOrContinueCampaign(body.news_id, { platforms: body.platforms, chat: body.chat || null, force: body.force || false }))
+        }
+        if (action && !sub && method === 'GET') {
+          return ok(await getCampaignState(action))
+        }
+        if (action && sub === 'continue' && method === 'POST') {
+          return ok(await startOrContinueCampaign(action))
+        }
+        if (action && sub === 'regenerate' && method === 'POST') {
+          const body = await request.json()
+          return ok(await regenerateCampaignAsset(action, body.platform))
+        }
+        if (action && sub === 'asset' && sub2 && method === 'PUT') {
+          return ok(await updateCampaignAsset(action, sub2, await request.json()))
+        }
+        if (action && sub === 'schedule' && method === 'POST') {
+          const body = await request.json()
+          return ok(await scheduleCampaignAssets(action, body.platforms, body.when))
+        }
+        if (action && sub === 'publish' && method === 'POST') {
+          const body = await request.json()
+          return ok(await publishCampaignAssets(action, body.platforms))
+        }
+        return err('Unknown campaign action', 400)
+      }
+    }
+
+    // --- Event Engine -------------------------------------------------------
+    if (resource === 'events') {
+      if (id === 'webhook' && action && method === 'POST') {
+        const { handleWebhook } = await import('@/lib/event-engine')
+        const body = await request.json().catch(() => ({}))
+        return ok(await handleWebhook(action, body, request.headers, url.searchParams))
+      }
+      if (!id && method === 'GET') {
+        const { listEvents } = await import('@/lib/event-engine')
+        return ok(await listEvents({
+          limit: parseInt(url.searchParams.get('limit') || '100', 10),
+          type: url.searchParams.get('type') || null,
+          source: url.searchParams.get('source') || null,
+        }))
+      }
+      if (id === 'stats' && method === 'GET') {
+        const { eventStats } = await import('@/lib/event-engine')
+        return ok(await eventStats())
+      }
+      if (id === 'webhooks' && method === 'GET') {
+        const { listWebhooks } = await import('@/lib/event-engine')
+        return ok(await listWebhooks())
+      }
+      if (id === 'webhooks' && method === 'POST') {
+        const { saveWebhook } = await import('@/lib/event-engine')
+        return ok(await saveWebhook(await request.json()))
+      }
+      if (id === 'webhooks' && action && method === 'PUT') {
+        const { saveWebhook } = await import('@/lib/event-engine')
+        return ok(await saveWebhook({ id: action, ...(await request.json()) }))
+      }
+      if (id === 'webhooks' && action && method === 'DELETE') {
+        const { removeWebhook } = await import('@/lib/event-engine')
+        return ok(await removeWebhook(action))
+      }
+      if (id === 'retry' && action && method === 'POST') {
+        const { retryWebhookEvent } = await import('@/lib/event-engine')
+        return ok(await retryWebhookEvent(action))
+      }
+    }
+
+    // --- Comments ---------------------------------------------------------
+    if (resource === 'comments') {
+      if (method === 'GET' && !id) {
+        return ok(await storage.comments.list())
+      }
+      if (method === 'POST' && id === 'fetch') {
+        return ok(await fetchAllComments())
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        return ok(await storage.comments.update(id, body))
+      }
+      if (method === 'POST' && id && action === 'reply') {
+        const body = await request.json()
+        if (!body.reply_text) return err('Missing reply_text')
+        return ok(await replyToComment(id, body.reply_text))
+      }
+      if (method === 'POST' && id && action === 'to-idea') {
+        const comment = await storage.comments.get(id)
+        if (!comment) return err('Comment not found', 404)
+        return ok({ text: comment.comment_text || comment.dm_content || '', platform: comment.platform })
+      }
+      if (method === 'POST' && id && action === 'auto-reply') {
+        const comment = await storage.comments.get(id)
+        if (!comment) return err('Comment not found', 404)
+        const providers = await storage.providers.list()
+        const tp = providers.find(p => p.active_for_text)
+        if (!tp) return err('No text provider active')
+        const { callAi } = await import('@/lib/ai/providers')
+        const prompt = `Write a short, friendly reply to this social media comment. Keep it under 100 characters. Be natural and human.\n\nComment: "${comment.comment_text || comment.dm_content || ''}"\n\nReply:`
+        const raw = await callAi({ provider: tp, prompt }).catch(() => 'Thanks for your comment! 🙏')
+        const draft = raw.trim().replace(/^["']|["']$/g, '').slice(0, 300)
+        await storage.comments.update(id, { draft_reply: draft, ai_generated_draft: true })
+        return ok({ draft_reply: draft })
+      }
+    }
+
+    // --- Blog (long-form articles for Hashnode) -------------------------
+    if (resource === 'blog') {
+      if (id === 'generate' && method === 'POST') {
+        const body = await request.json()
+        return ok(await generateBlogPost({
+          imageBase64: body.image_base64,
+          mimeType: body.mime_type,
+          context: body.context,
+          styleId: body.style_id,
+        }))
+      }
+      if (id === 'posts' && !action && method === 'GET') {
+        const status = url.searchParams.get('status')
+        return ok(await storage.blogPosts.list(status))
+      }
+      if (id === 'posts' && !action && method === 'POST') {
+        return ok(await storage.blogPosts.create(await request.json()))
+      }
+      if (id === 'posts' && action && method === 'GET') {
+        return ok(await storage.blogPosts.get(action))
+      }
+      if (id === 'posts' && action && method === 'PUT') {
+        return ok(await storage.blogPosts.update(action, await request.json()))
+      }
+      if (id === 'posts' && action && method === 'DELETE') {
+        await storage.blogPosts.remove(action); return ok({})
+      }
+      if (id === 'publish' && action && method === 'POST') {
+        const body = await request.json()
+        const { publishBlogPost } = await import('@/lib/publishers')
+        const blog = await storage.blogPosts.get(action)
+        if (!blog) return err('Blog post not found', 404)
+        const dryRun = body.dry_run === true
+        try {
+          const result = await publishBlogPost(blog, { dryRun })
+          if (!dryRun) {
+            await storage.blogPosts.update(blog.id, {
+              status: 'published', published_url: result.url, published_at: new Date().toISOString(),
+            })
+            try {
+              const { emitEvent } = await import('@/lib/event-engine')
+              emitEvent({ type: 'blog_published', source: 'blog', payload: { id: blog.id, title: (blog.title || '').slice(0, 100) }, notify: true }).catch(() => {})
+            } catch {}
+          }
+          return ok(result)
+        } catch (e) {
+          await storage.blogPosts.update(blog.id, { status: 'failed', publish_error: e.message })
+          try {
+            const { emitEvent } = await import('@/lib/event-engine')
+            emitEvent({ type: 'ai_generation_failed', source: 'blog', payload: { id: blog.id, error: e.message.slice(0, 200) }, notify: true }).catch(() => {})
+          } catch {}
+          return err(e.message, 400)
+        }
+      }
+    }
+
+    // --- Campaigns (Bulk Post Creator) -----------------------------------
+    if (resource === 'campaigns') {
+      if (method === 'GET' && !id) return ok(await storage.campaigns.list())
+      if (method === 'GET' && id) {
+        const c = await storage.campaigns.get(id)
+        return c ? ok(c) : err('Not found', 404)
+      }
+      if (method === 'POST' && !id) return ok(await storage.campaigns.create(await request.json()))
+      if (method === 'PUT' && id) return ok(await storage.campaigns.update(id, await request.json()))
+      if (method === 'DELETE' && id) { await storage.campaigns.remove(id); return ok({}) }
+    }
+
+    // --- Generate (AI content generation) --------------------------------
+    if (resource === 'generate') {
+      if (id === 'bulk' && method === 'POST') {
+        const body = await request.json()
+        return ok(await generateBulk(body))
+      }
+    }
+
+    // --- Automation settings + tick ---------------------------------------
+    if (resource === 'automation') {
+      if (id === 'settings' && method === 'GET') {
+        return ok(await automation.get())
+      }
+      if (id === 'settings' && method === 'PUT') {
+        const body = await request.json()
+        // Never let client change tick_secret via this API
+        delete body.tick_secret
+        return ok(await automation.patch(body))
+      }
+      if (id === 'tick' && (method === 'POST' || method === 'GET')) {
+        // Verify shared secret (header or query param for GET-based monitors)
+        const s = await automation.get()
+        const provided = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
+        if (s.tick_secret && provided !== s.tick_secret) {
+          return err('Forbidden', 403)
+        }
+        const r = await runTick()
+        return ok(r)
+      }
+      // Queue management endpoints
+      if (id === 'queue' && method === 'GET') {
+        const status = url.searchParams.get('status')
+        const { listQueue } = await import('@/lib/intake')
+        return ok(await listQueue(status))
+      }
+      if (id === 'retry' && action && method === 'POST') {
+        return ok(await retryFailed(action))
+      }
+      if (id === 'bulk' && method === 'POST') {
+        const body = await request.json()
+        return ok(await bulkAction(body.fileIds || [], body.action))
+      }
+      if (id === 'reorder' && method === 'POST') {
+        const body = await request.json()
+        return ok(await reorderQueue(body.fileIds || []))
+      }
+      if (id === 'activity' && method === 'GET') {
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+        return ok(await getActivityFeed(limit))
+      }
+      if (id === 'news' && (method === 'POST' || method === 'GET')) {
+        // Dedicated news check job (called by the scheduler) — throttled to once per 5 min
+        const sNews = await automation.get()
+        const newsSecret = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
+        if (sNews.tick_secret && newsSecret !== sNews.tick_secret) return err('Forbidden', 403)
+        const lastCheck = await storage.appState.get('news_last_check', null)
+        const last = lastCheck?.at ? new Date(lastCheck.at).getTime() : 0
+        if (Date.now() - last < 5 * 60 * 1000) return ok({ skipped: 'throttled' })
+        const { runNewsCheck } = await import('@/lib/news')
+        const r = await runNewsCheck(20000)
+        await storage.appState.set('news_last_check', { at: new Date().toISOString() })
+        // AI Decision Engine — analyze BEFORE notifying; only high-value items reach Telegram
+        const { runNewsDecisionPipeline } = await import('@/lib/news/ai-decision')
+        const decision = await runNewsDecisionPipeline(6)
+        // Background resume: finish any running Telegram/dashboard campaigns (small budget)
+        try {
+          const { resumeRunningCampaigns } = await import('@/lib/news/campaign')
+          await resumeRunningCampaigns(9000)
+        } catch {}
+        storage.audit.log('news', 'news_ai', 'job', null, `checked ${r.checked || 0}, analyzed ${decision.analyzed || 0}, notified ${decision.notified || 0}`).catch(() => {})
+        return ok({ ...r, decision })
+      }
+      if (id === 'analyze' && action && method === 'POST') {
+        const item = await storage.newsPosts.get(action)
+        if (!item) return err('News item not found', 404)
+        const { analyzeNewsItem, getNewsTopics, getLearning, buildNewsCard } = await import('@/lib/news/ai-decision')
+        const analysis = await analyzeNewsItem(item, await getNewsTopics(), await getLearning())
+        await storage.newsPosts.update(action, { ai_analysis: analysis })
+        return ok({ analysis })
+      }
+      if (id === 'feedback' && action && method === 'POST') {
+        const body = await request.json()
+        const { recordFeedback } = await import('@/lib/news/ai-decision')
+        const learning = await recordFeedback(action, body.action || 'approve')
+        return ok({ learning })
+      }
+      if (id === 'topics' && method === 'GET') {
+        const { getNewsTopics } = await import('@/lib/news/ai-decision')
+        return ok(await getNewsTopics())
+      }
+      if (id === 'topics' && method === 'PUT') {
+        const { saveNewsTopics } = await import('@/lib/news/ai-decision')
+        return ok(await saveNewsTopics((await request.json()).topics || []))
+      }
+      if (id === 'brief' && method === 'POST') {
+        const body = await request.json().catch(() => ({}))
+        const { sendEditorialBrief } = await import('@/lib/news/ai-decision')
+        return ok(await sendEditorialBrief(body.type || 'morning'))
+      }
+      if (id === 'queue-settings' && method === 'PUT') {
+        const body = await request.json()
+        return ok(await automation.patch(body))
+      }
+      if (id === 'sync' && method === 'POST') {
+        const { syncIntakeToQueue } = await import('@/lib/intake')
+        return ok(await syncIntakeToQueue())
+      }
+      if (id === 'news-publish' && method === 'POST') {
+        // One-shot: publish the top news opportunity to blog + all social platforms
+        const { runNewsPublishAll } = await import('@/lib/news/publish-all')
+        return ok(await runNewsPublishAll())
+      }
+    }
+
+    // --- Hashtag sets ----------------------------------------------------
+    if (resource === 'hashtag-sets') {
+      if (method === 'GET' && !id) return ok(await storage.hashtagSets.list())
+      if (method === 'POST' && !id) return ok(await storage.hashtagSets.create(await request.json()))
+      if (method === 'GET' && id) { const h = await storage.hashtagSets.get(id); return h ? ok(h) : err('Not found', 404) }
+      if (method === 'PUT' && id) return ok(await storage.hashtagSets.update(id, await request.json()))
+      if (method === 'DELETE' && id) { await storage.hashtagSets.remove(id); return ok({}) }
+    }
+
+    // --- Channel groups --------------------------------------------------
+    if (resource === 'channel-groups') {
+      if (method === 'GET' && !id) return ok(await storage.channelGroups.list())
+      if (method === 'POST' && !id) return ok(await storage.channelGroups.create(await request.json()))
+      if (method === 'GET' && id) { const c = await storage.channelGroups.get(id); return c ? ok(c) : err('Not found', 404) }
+      if (method === 'PUT' && id) return ok(await storage.channelGroups.update(id, await request.json()))
+      if (method === 'DELETE' && id) { await storage.channelGroups.remove(id); return ok({}) }
+    }
+
+    // --- Calendar (aggregated scheduled items) ---------------------------
+    if (resource === 'calendar' && method === 'GET') {
+      const [jobs, blogs] = await Promise.all([
+        storage.jobs.list({ status: 'scheduled' }),
+        storage.blogPosts.list('published'),
+      ])
+      const items = [
+        ...jobs.filter(j => j.scheduled_for).map(j => ({
+          id: j.id, type: 'content_job', title: j.topic || 'Untitled',
+          scheduled_for: j.scheduled_for, platform_posts: j.platform_posts,
+          image_ref: j.image_ref, status: j.status,
+        })),
+        ...blogs.filter(b => b.published_at).map(b => ({
+          id: b.id, type: 'blog_post', title: b.title || 'Untitled',
+          scheduled_for: b.published_at, platform_posts: { hashnode: { caption: b.seo_description || '' } },
+          image_ref: b.cover_image_url, status: b.status,
+        })),
+      ].sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for))
+      return ok(items)
+    }
+
+    // --- Best-time-to-post -----------------------------------------------
+    if (resource === 'best-times') {
+      if (id === 'compute' && method === 'POST') return ok(await storage.bestTimes.compute())
+      if (id && method === 'GET') {
+        const times = await storage.bestTimes.getByPlatform(id)
+        return ok(times.length > 0 ? times : { fallback: true, slots: ['09:00', '12:00', '17:00'] })
+      }
+    }
+
+    // --- Bulk jobs -------------------------------------------------------
+    if (resource === 'jobs' && id === 'bulk' && method === 'POST') {
+      const body = await request.json()
+      if (!Array.isArray(body.jobs)) return err('jobs must be an array')
+      const results = []
+      for (const item of body.jobs) {
+        try {
+          if (item.image_base64) {
+            try {
+              const up = await uploadBase64Image(item.image_base64, item.image_mime || 'image/jpeg')
+              item.image_ref = up.url
+            } catch (e) { console.warn('[bulk] upload failed:', e.message) }
+            delete item.image_base64; delete item.image_mime
+          }
+          const created = await storage.jobs.create({
+            source: item.source || 'bulk', topic: item.topic || '',
+            platform_posts: item.platform_posts || {}, status: item.status || 'draft',
+            scheduled_for: item.scheduled_for || null, image_ref: item.image_ref || null,
+            campaign_id: item.campaign_id || null,
+          })
+          results.push({ ok: true, id: created.id })
+        } catch (e) { results.push({ ok: false, error: e.message }) }
+      }
+      return ok({ total: body.jobs.length, succeeded: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length, results })
+    }
+
+    // --- Reports export --------------------------------------------------
+    if (resource === 'reports' && id === 'export' && method === 'GET') {
+      const from = url.searchParams.get('from')
+      const to = url.searchParams.get('to')
+      if (!from || !to) return err('from and to params required')
+      // Aggregate data
+      const [stats, hashtags, details, posts] = await Promise.all([
+        (await storage.postStats.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.hashtagStats.list()).slice(0, 10),
+        (await storage.postDetails.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.jobs.list({ status: 'published' })).filter(r => r.published_at_actual && r.published_at_actual >= from && r.published_at_actual <= to),
+      ])
+      // Compute top by engagement
+      const topPosts = [...posts].sort((a, b) => {
+        const aEng = Object.values(a.publish_results || {}).reduce((s, r) => s + (r.impressions || 0), 0)
+        const bEng = Object.values(b.publish_results || {}).reduce((s, r) => s + (r.impressions || 0), 0)
+        return bEng - aEng
+      }).slice(0, 5)
+      // Engagement by platform
+      const byPlatform = {}
+      for (const d of details) {
+        if (!byPlatform[d.platform]) byPlatform[d.platform] = { impressions: 0, likes: 0, comments: 0, shares: 0 }
+        byPlatform[d.platform].impressions += d.impressions || 0
+        byPlatform[d.platform].likes += d.likes || 0
+        byPlatform[d.platform].comments += d.comments || 0
+        byPlatform[d.platform].shares += d.shares || 0
+      }
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SocialForge Report</title>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:auto;padding:40px 20px;color:#1c1917}h1{font-size:24px;margin-bottom:4px}h2{font-size:18px;margin-top:32px;margin-bottom:12px;border-bottom:2px solid #e7e5e4;padding-bottom:6px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}.card{background:#f5f5f4;border-radius:8px;padding:12px}.num{font-size:20px;font-weight:700;color:#7c3aed}.label{font-size:11px;color:#78716c;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;padding:6px 8px;background:#f5f5f4;border-bottom:2px solid #e7e5e4}td{padding:6px 8px;border-bottom:1px solid #e7e5e4}.footer{margin-top:40px;font-size:10px;color:#a8a29e;text-align:center}</style></head><body>
+<h1>SocialForge — Performance Report</h1>
+<p style="color:#78716c;font-size:13px">${from} → ${to}</p>
+<div class="grid"><div class="card"><div class="num">${posts.length}</div><div class="label">Posts Published</div></div>
+<div class="card"><div class="num">${stats.reduce((s, r) => s + (r.impressions || 0), 0).toLocaleString()}</div><div class="label">Total Impressions</div></div>
+<div class="card"><div class="num">${stats.reduce((s, r) => s + (r.likes || 0) + (r.comments || 0) + (r.shares || 0), 0).toLocaleString()}</div><div class="label">Total Engagement</div></div>
+<div class="card"><div class="num">${hashtags.length}</div><div class="label">Tracked Hashtags</div></div></div>
+<h2>Top Posts</h2>${topPosts.length === 0 ? '<p style="color:#a8a29e;font-size:13px">No published posts in this period.</p>' : '<table><tr><th>Post</th><th>Published</th></tr>' + topPosts.map(p => '<tr><td>' + (p.topic || 'Untitled') + '</td><td>' + (p.published_at ? new Date(p.published_at).toLocaleDateString() : '—') + '</td></tr>').join('') + '</table>'}
+<h2>Top Hashtags</h2>${hashtags.length === 0 ? '<p style="color:#a8a29e;font-size:13px">No hashtag data yet.</p>' : '<table><tr><th>Tag</th><th>Impressions</th><th>Engagement</th></tr>' + hashtags.map(h => '<tr><td>' + h.tag + '</td><td>' + (h.total_impressions || 0).toLocaleString() + '</td><td>' + (h.total_engagement || 0).toLocaleString() + '</td></tr>').join('') + '</table>'}
+<h2>Engagement by Platform</h2>${Object.keys(byPlatform).length === 0 ? '<p style="color:#a8a29e;font-size:13px">No platform data yet.</p>' : '<table><tr><th>Platform</th><th>Impressions</th><th>Likes</th><th>Comments</th><th>Shares</th></tr>' + Object.entries(byPlatform).map(([p, d]) => '<tr><td>' + p + '</td><td>' + d.impressions.toLocaleString() + '</td><td>' + d.likes.toLocaleString() + '</td><td>' + d.comments.toLocaleString() + '</td><td>' + d.shares.toLocaleString() + '</td></tr>').join('') + '</table>'}
+<div class="footer">Generated by SocialForge on ${new Date().toISOString()}</div></body></html>`
+      return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+    }
+
+    // --- Engagement inbox (unified comments + DMs + reactions) -----------
+    if (resource === 'engagement') {
+      if (method === 'GET' && !id) {
+        const status = url.searchParams.get('status')
+        const type = url.searchParams.get('type')
+        return ok(await storage.engagement.list({ status, type }))
+      }
+      if (method === 'POST' && id === 'fetch') {
+        return ok(await storage.engagement.fetchAll())
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        return ok(await storage.engagement.update(id, body))
+      }
+      if (method === 'POST' && id === 'auto-reply' && action) {
+        // Auto-generate draft reply using rewriter module
+        const item = await storage.engagement.get(action)
+        if (!item) return err('Engagement item not found', 404)
+        const { runModule } = await import('@/lib/ai/modules')
+        const reply = await runModule('rewriter', {
+          mode: 'reply', target: 'professional response',
+          context: item.comment_text || item.dm_content || '',
+        }).catch(() => null)
+        if (reply) {
+          await storage.engagement.update(item.id, { draft_reply: reply })
+          return ok({ draft_reply: reply })
+        }
+        return err('Could not generate reply', 400)
+      }
+    }
+
+    // --- App settings (main) -----------------------------------------------
+    if (resource === 'settings') {
+      if (method === 'GET') return ok(await storage.settings.get())
+      if (method === 'PATCH') {
+        const body = await request.json()
+        return ok(await storage.settings.patch(body))
+      }
+    }
+
+    // --- Audit log ---------------------------------------------------------
+    if (resource === 'audit' && method === 'GET') {
+      const limit = parseInt(url.searchParams.get('limit') || '100', 10)
+      return ok(await storage.audit.list(limit))
+    }
+
+    // --- Seasonal Intelligence Engine (replaces observance) ----------------
+    if (resource === 'seasonal') {
+      if (method === 'GET' && !id) return ok(await storage.seasonal.list(url.searchParams.get('status')))
+      if (method === 'GET' && id === 'settings') {
+        const { getSeasonalSettings } = await import('@/lib/seasonal-engine')
+        return ok(await getSeasonalSettings())
+      }
+      if (method === 'GET' && id) {
+        const item = await storage.seasonal.get(id)
+        return item ? ok(item) : err('Not found', 404)
+      }
+      if (method === 'POST' && id === 'detect') {
+        const { detectUpcomingEvents } = await import('@/lib/seasonal-engine')
+        const body = await request.json().catch(() => ({}))
+        return ok(await detectUpcomingEvents(body.daysAhead || 14, body.userSettings || {}))
+      }
+      if (method === 'GET' && id === 'discovery') {
+        const { detectEventWindows } = await import('@/lib/seasonal-engine')
+        const days = parseInt(url.searchParams.get('days') || '90', 10)
+        const { getSeasonalSettings } = await import('@/lib/seasonal-engine')
+        const settings = await getSeasonalSettings().catch(() => ({}))
+        return ok(await detectEventWindows(days, settings))
+      }
+      if (method === 'POST' && id === 'generate') {
+        const body = await request.json()
+        const { generateSeasonalDraft } = await import('@/lib/seasonal-engine')
+        const created = await generateSeasonalDraft(body.event, body.context || {})
+        try {
+          const { emitEvent } = await import('@/lib/event-engine')
+          emitEvent({ type: 'campaign_generated', source: 'seasonal', payload: { event: body.event?.name || 'event', id: created?.id } }).catch(() => {})
+        } catch {}
+        return ok(created)
+      }
+      if (method === 'POST' && id === 'settings') {
+        const body = await request.json()
+        const { saveSeasonalSettings } = await import('@/lib/seasonal-engine')
+        return ok(await saveSeasonalSettings(body))
+      }
+      if (method === 'PUT' && id) {
+        const body = await request.json()
+        return ok(await storage.seasonal.update(id, body))
+      }
+      if (method === 'DELETE' && id) {
+        await storage.seasonal.remove(id)
+        return ok({})
+      }
+    }
+
+    // --- Blog drip mode (one-asset-into-many) --------------------
+    if (resource === 'blog' && id === 'drip' && method === 'POST') {
+      const body = await request.json()
+      const { generateDripPosts } = await import('@/lib/ai/drip')
+      const result = await generateDripPosts(body.blog_id, body.count || 4, body.spread_days || 5)
+      return ok(result)
+    }
+
+    // --- Branded PDF report (print-to-PDF) ----------------------
+    if (resource === 'reports' && id === 'export-pdf' && method === 'GET') {
+      const from = url.searchParams.get('from')
+      const to = url.searchParams.get('to')
+      if (!from || !to) return err('from and to params required')
+      const [stats, hashtags, details, posts] = await Promise.all([
+        (await storage.postStats.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.hashtagStats.list()).slice(0, 10),
+        (await storage.postDetails.list()).filter(r => r.checked_at && r.checked_at >= from && r.checked_at <= to),
+        (await storage.jobs.list({ status: 'published' })).filter(r => r.published_at_actual && r.published_at_actual >= from && r.published_at_actual <= to),
+      ])
+
+      const totalImpressions = stats.reduce((s, r) => s + (r.impressions || 0), 0)
+      const totalLikes = stats.reduce((s, r) => s + (r.likes || 0), 0)
+      const totalComments = stats.reduce((s, r) => s + (r.comments || 0), 0)
+      const totalShares = stats.reduce((s, r) => s + (r.shares || 0), 0)
+
+      const byPlatform = {}
+      for (const d of details) {
+        if (!byPlatform[d.platform]) byPlatform[d.platform] = { impressions: 0, likes: 0, comments: 0, shares: 0 }
+        byPlatform[d.platform].impressions += d.impressions || 0
+        byPlatform[d.platform].likes += d.likes || 0
+        byPlatform[d.platform].comments += d.comments || 0
+        byPlatform[d.platform].shares += d.shares || 0
+      }
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SocialForge — Performance Report</title>
+<style>
+  @page { size: A4; margin: 20mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; color: #1C1A17; background: #fff; padding: 40px; max-width: 800px; margin: 0 auto; }
+  .header { border-bottom: 3px solid #2E5339; padding-bottom: 16px; margin-bottom: 24px; }
+  .header h1 { font-family: Georgia, serif; font-size: 28px; color: #2E5339; }
+  .header .subtitle { font-size: 12px; color: #8A8477; margin-top: 4px; }
+  .logo { font-family: Georgia, serif; font-size: 18px; font-weight: bold; color: #2E5339; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: #FAF7F0; border-radius: 6px; padding: 12px; text-align: center; }
+  .stat .num { font-size: 24px; font-weight: 700; color: #2E5339; }
+  .stat .label { font-size: 10px; color: #8A8477; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  h2 { font-family: Georgia, serif; font-size: 16px; margin: 20px 0 10px; color: #2E5339; border-bottom: 1px solid #e7e5e4; padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+  th { text-align: left; padding: 6px 8px; background: #FAF7F0; border-bottom: 2px solid #e7e5e4; font-size: 10px; text-transform: uppercase; color: #8A8477; }
+  td { padding: 6px 8px; border-bottom: 1px solid #f0ebe3; }
+  .footer { margin-top: 32px; font-size: 9px; color: #a8a29e; text-align: center; border-top: 1px solid #e7e5e4; padding-top: 12px; }
+  @media print { body { padding: 0; } }
+</style></head><body>
+<div class="header">
+  <div class="logo">SocialForge</div>
+  <h1>Performance Report</h1>
+  <div class="subtitle">${from} to ${to}</div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="num">${posts.length}</div><div class="label">Posts Published</div></div>
+  <div class="stat"><div class="num">${totalImpressions.toLocaleString()}</div><div class="label">Impressions</div></div>
+  <div class="stat"><div class="num">${(totalLikes + totalComments + totalShares).toLocaleString()}</div><div class="label">Total Engagement</div></div>
+  <div class="stat"><div class="num">${hashtags.length}</div><div class="label">Tracked Hashtags</div></div>
+</div>
+<h2>Engagement by Platform</h2>
+<table><tr><th>Platform</th><th>Impressions</th><th>Likes</th><th>Comments</th><th>Shares</th></tr>
+${Object.entries(byPlatform).map(([p, d]) => `<tr><td>${p}</td><td>${d.impressions.toLocaleString()}</td><td>${d.likes.toLocaleString()}</td><td>${d.comments.toLocaleString()}</td><td>${d.shares.toLocaleString()}</td></tr>`).join('')}
+</table>
+<h2>Top Hashtags</h2>
+<table><tr><th>Tag</th><th>Impressions</th><th>Engagement</th></tr>
+${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLocaleString()}</td><td>${(h.total_engagement || 0).toLocaleString()}</td></tr>`).join('')}
+</table>
+<div class="footer">Generated by SocialForge on ${new Date().toLocaleDateString()} — Confidential</div>
+<script>window.onload = () => { window.print(); }</script>
+</body></html>`
+      return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+    }
+
+    // --- Social listening mentions ---------------------------
+    if (resource === 'mentions') {
+      if (method === 'GET') {
+        const { listMentions } = await import('@/lib/mentions')
+        return ok(await listMentions())
+      }
+      if (method === 'POST' && id === 'check') {
+        const { checkMentions } = await import('@/lib/mentions')
+        return ok(await checkMentions())
+      }
+    }
+
+    // --- Blog Automation Engine (independent from social) ---
+    if (resource === 'blog') {
+      if (id === 'tick' && method === 'POST') {
+        const { blogAutomation, runBlogTick } = await import('@/lib/blog/automation')
+        const s = await blogAutomation.get()
+        const provided = request.headers.get('x-automation-secret')
+        if (s.tick_secret && provided !== s.tick_secret) return err('Forbidden', 403)
+        return ok(await runBlogTick())
+      }
+      if (id === 'settings' && method === 'GET') {
+        const { blogAutomation } = await import('@/lib/blog/automation')
+        return ok(await blogAutomation.get())
+      }
+      if (id === 'settings' && method === 'PUT') {
+        const { blogAutomation } = await import('@/lib/blog/automation')
+        const body = await request.json()
+        delete body.tick_secret
+        return ok(await blogAutomation.patch(body))
+      }
+      if (id === 'sync' && method === 'POST') {
+        const { syncBlogToQueue } = await import('@/lib/blog/intake')
+        return ok(await syncBlogToQueue())
+      }
+      if (id === 'upload' && method === 'POST') {
+        const body = await request.json()
+        if (!body.base64) return err('Missing base64')
+        const { uploadBlogImage } = await import('@/lib/blog/intake')
+        return ok(await uploadBlogImage(body.base64, body.mime_type || 'image/jpeg', body.file_name))
+      }
+      if (id === 'queue' && method === 'GET') {
+        const status = url.searchParams.get('status')
+        const { listBlogQueue } = await import('@/lib/blog/intake')
+        return ok(await listBlogQueue(status))
+      }
+      if (id === 'stats' && method === 'GET') {
+        const { blogQueueStats } = await import('@/lib/blog/intake')
+        return ok(await blogQueueStats())
+      }
+      if (id === 'signed-url' && method === 'GET') {
+        const path = url.searchParams.get('path')
+        if (!path) return err('Missing path')
+        const { getSignedBlogUrl } = await import('@/lib/blog/intake')
+        const signedUrl = await getSignedBlogUrl(path, 60 * 60)
+        return ok({ url: signedUrl })
+      }
+      if (id === 'activity' && method === 'GET') {
+        const { getBlogActivity } = await import('@/lib/blog/automation')
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+        return ok(await getBlogActivity(limit))
+      }
+      if (id === 'bulk' && method === 'POST') {
+        const { blogBulkAction } = await import('@/lib/blog/automation')
+        const body = await request.json()
+        return ok(await blogBulkAction(body.fileIds || [], body.action))
+      }
+      if (id === 'reorder' && method === 'POST') {
+        const { blogReorderQueue } = await import('@/lib/blog/automation')
+        const body = await request.json()
+        return ok(await blogReorderQueue(body.fileIds || []))
+      }
+    }
+
+    // --- Backup export -----------------------------------------
+    if (resource === 'backup') {
+      if (id === 'export' && method === 'GET') {
+        const { exportAllData } = await import('@/lib/backup')
+        const data = await exportAllData()
+        return new NextResponse(JSON.stringify(data, null, 2), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Disposition': `attachment; filename="socialforge-backup-${new Date().toISOString().split('T')[0]}.json"`,
+          },
+        })
+      }
+    }
+
+    // --- Benchmarking -------------------------------------------
+    if (resource === 'benchmarking') {
+      if (id === 'peers' && method === 'GET') {
+        const { checkPeers } = await import('@/lib/benchmarking')
+        return ok(await checkPeers())
+      }
+      if (id === 'gap' && method === 'GET') {
+        const { getPostingGap } = await import('@/lib/benchmarking')
+        return ok(await getPostingGap())
+      }
+    }
+
+    // --- Public approval (no auth required) --------------------
+    if (resource === 'approve' && method === 'GET') {
+      const jobId = url.searchParams.get('job')
+      if (!jobId) return err('Missing job parameter')
+      const job = await storage.jobs.get(jobId)
+      if (!job) return err('Job not found', 404)
+      return ok({ id: job.id, topic: job.topic, status: job.status, platform_posts: job.platform_posts })
+    }
+    if (resource === 'approve' && method === 'POST') {
+      const body = await request.json()
+      if (!body.job_id || !body.action) return err('Missing job_id or action')
+      const job = await storage.jobs.get(body.job_id)
+      if (!job) return err('Job not found', 404)
+      if (body.action === 'approve') {
+        const job = await storage.jobs.update(body.job_id, { status: 'approved' })
+        try {
+          const { emitEvent } = await import('@/lib/event-engine')
+          emitEvent({ type: 'dashboard_approved', source: 'approval', payload: { job_id: body.job_id, topic: (job?.topic || '').slice(0, 100) } }).catch(() => {})
+        } catch {}
+        try {
+          const { onApprove } = await import('@/lib/automation')
+          await onApprove(job)
+        } catch (e) { console.warn('[approve] auto-publish failed:', e.message) }
+        return ok({ approved: true })
+      }
+      if (body.action === 'reject') {
+        await storage.jobs.update(body.job_id, { status: 'rejected' })
+        return ok({ rejected: true })
+      }
+      return err('Invalid action')
+    }
+
+    // --- Compose templates ---
+    if (resource === 'templates' && method === 'GET') return ok(await storage.composeTemplates.list())
+    if (resource === 'templates' && method === 'POST') return ok(await storage.composeTemplates.create(await request.json()))
+    if (resource === 'templates' && method === 'PUT' && id) return ok(await storage.composeTemplates.update(id, await request.json()))
+    if (resource === 'templates' && method === 'DELETE' && id) { await storage.composeTemplates.remove(id); return ok({}) }
+
+    // --- Cost estimate ---
+    if (resource === 'cost-estimate' && method === 'GET') {
+      const providers = await storage.providers.list()
+      const tp = providers.find(p => p.active_for_text)
+      if (!tp) return ok({ estimated: '0.00', currency: 'USD', note: 'No active text provider' })
+      const costPer1K = { gemini: 0.0005, openai: 0.002, anthropic: 0.003, groq: 0.0002 }[tp.type] || 0.001
+      const estimated = (tp.model?.includes('pro') ? 0.002 : costPer1K) * 5
+      return ok({ estimated: estimated.toFixed(4), currency: 'USD', provider: tp.name, note: `~$${estimated.toFixed(4)} with ${tp.name}` })
+    }
+
+    // --- Blog related posts (internal-linking) ---
+    if (resource === 'blog-related' && id && method === 'GET') {
+      const target = await storage.jobs.get(id)
+      if (!target) return err('Not found', 404)
+      const all = await storage.jobs.list({})
+      const topicWords = (target.topic || '').toLowerCase().split(/\s+/).filter(w => w.length > 3)
+      const scored = all.filter(j => j.id !== id && j.platform_posts).map(j => {
+        const overlap = topicWords.filter(w => (j.topic || '').toLowerCase().includes(w)).length
+        return { id: j.id, topic: j.topic, score: overlap / topicWords.length }
+      }).filter(x => x.score > 0.1).sort((a, b) => b.score - a.score).slice(0, 3)
+      return ok(scored)
+    }
+
+    // --- Blog drip decomposition ---
+    if (resource === 'blog-drip' && id && method === 'POST') {
+      const body = await request.json()
+      const count = body.count || 4; const spreadDays = body.spread_days || 5
+      const { generateDripPosts } = await import('@/lib/ai/drip')
+      const results = await generateDripPosts({ blogJobId: id, count, spreadDays })
+      return ok(results)
+    }
+
+    // --- Follower snapshots ---
+    if (resource === 'follower-snapshots' && method === 'GET') return ok(await storage.followerSnapshots.list())
+    if (resource === 'follower-snapshots' && method === 'POST') {
+      const body = await request.json()
+      return ok(await storage.followerSnapshots.create(body))
+    }
+
+    // --- Hashtag suggestions ---
+    if (resource === 'hashtag-suggestions' && method === 'GET') return ok(await storage.pendingHashtagSuggestions.list())
+    if (resource === 'hashtag-suggestions' && method === 'POST') {
+      const body = await request.json()
+      if (body.action === 'accept' && id) { await storage.pendingHashtagSuggestions.update(id, { status: 'accepted' }); return ok({}) }
+      if (body.action === 'reject' && id) { await storage.pendingHashtagSuggestions.update(id, { status: 'rejected' }); return ok({}) }
+      return ok(await storage.pendingHashtagSuggestions.create(body))
+    }
+    if (resource === 'hashtag-suggestions' && method === 'DELETE' && id) { await storage.pendingHashtagSuggestions.remove(id); return ok({}) }
+
+    // --- Bio links ---
+    if (resource === 'bio-links' && method === 'GET') return ok(await storage.bioLinks.list())
+    if (resource === 'bio-links' && method === 'POST') return ok(await storage.bioLinks.create(await request.json()))
+    if (resource === 'bio-links' && method === 'PUT' && id) return ok(await storage.bioLinks.update(id, await request.json()))
+    if (resource === 'bio-links' && method === 'DELETE' && id) { await storage.bioLinks.remove(id); return ok({}) }
+
+    // --- Topic queue (blog topics) ---
+    if (resource === 'topic-queue') {
+      if (method === 'GET') return ok(await storage.topicQueue.list())
+      if (method === 'POST' && !id) { const body = await request.json(); if (body.bulk) return ok(await storage.topicQueue.bulkCreate(body.topics)); return ok(await storage.topicQueue.create(body)) }
+      if (method === 'PUT' && id) return ok(await storage.topicQueue.update(parseInt(id), await request.json()))
+      if (method === 'DELETE' && id) { await storage.topicQueue.remove(parseInt(id)); return ok({}) }
+      if (id === 'next-pending' && method === 'GET') return ok(await storage.topicQueue.nextPending())
+      if (id === 'count' && method === 'GET') return ok({ count: await storage.topicQueue.count() })
+      if (id === 'generate-next' && method === 'POST') {
+        const next = await storage.topicQueue.nextPending()
+        if (!next) return err('No pending topics')
+        const { generateBlogPost } = await import('@/lib/ai/generate')
+        const result = await generateBlogPost({ context: next.topic })
+        const bp = await storage.blogPosts.create({ title: result.title, body_markdown: result.body_markdown, seo_description: result.seo_description, status: 'draft' })
+        await storage.topicQueue.update(next.id, { status: 'used', used_at: new Date().toISOString() })
+        await storage.audit.log('blog_generate', 'topic_queue', next.id, 'pending', 'used', { topic: next.topic, blog_id: bp.id })
+        const { publishToInsights } = await import('@/lib/blog/generate')
+        const s = await storage.settings.get()
+        if (s.telegram_bot_token && s.telegram_admin_chat_id) {
+          const { sendPhoto } = await import('@/lib/telegram/client')
+          const { formatBlogMessage, buildBlogKeyboard } = await import('@/lib/blog/formatter')
+          try { await sendPhoto({ chatId: s.telegram_admin_chat_id, photoUrl: '', caption: formatBlogMessage(result, { file_name: next.topic }, 'pending_approval'), replyMarkup: buildBlogKeyboard(bp.id, result, 'pending_approval') }) } catch {}
+        }
+        return ok({ generated: true, title: result.title, blog_id: bp.id })
+      }
+    }
+
+    // --- Notification settings ---
+    if (resource === 'notification-settings' && method === 'GET') {
+      const lvl = await storage.appState.get('notification_level', null)
+      return ok({ level: lvl?.level || 'failures_only' })
+    }
+    if (resource === 'notification-settings' && method === 'PUT') {
+      const body = await request.json()
+      await storage.appState.set('notification_level', { level: body.level || 'failures_only' })
+      return ok({ saved: true })
+    }
+
+    // --- CSV Topics ---
+    if (resource === 'csv-topics') {
+      if (method === 'GET') return ok(await storage.csvTopics.list())
+      if (method === 'POST' && id === 'bulk') { const body = await request.json(); return ok(await storage.csvTopics.bulkCreate(body.rows)) }
+      if (method === 'POST') return ok(await storage.csvTopics.create(await request.json()))
+      if (method === 'PUT' && id) return ok(await storage.csvTopics.update(parseInt(id), await request.json()))
+      if (method === 'DELETE' && id) { await storage.csvTopics.remove(parseInt(id)); return ok({}) }
+      if (id === 'next-unused' && method === 'GET') return ok(await storage.csvTopics.nextUnused())
+      if (id === 'count' && method === 'GET') return ok({ count: await storage.csvTopics.countPending() })
+      if (id === 'generate' && method === 'POST') {
+        const body = await request.json()
+        const count = Math.min(Math.max(body.count || 10, 1), 30)
+        const niche = body.niche || ''
+        const providers = await storage.providers.list()
+        const tp = providers.find(p => p.active_for_text)
+        if (!tp) return err('No active text provider')
+        const { callAi } = await import('@/lib/ai/providers')
+        const prompt = `Generate ${count} unique blog topic ideas${niche ? ` for the niche: ${niche}` : ''} in AI, technology, business, productivity, and thought leadership. Each topic must be specific, original, and compelling for a premium publication.
+Respond with a JSON array of objects: [{"topic": "...", "category": "ai|tech|business|essays|productivity", "keywords": "kw1, kw2, kw3", "search_intent": "informational|educational|comparison|how-to", "target_audience": "..."}]
+JSON only, no markdown fences.`
+        let raw = ''
+        try { raw = await callAi({ provider: tp, prompt, json: true, maxTokens: 4000 }) } catch (e) { return err(e.message, 400) }
+        let parsed = []
+        try { parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()) } catch {}
+        if (!Array.isArray(parsed)) return err('AI returned invalid format')
+        const rows = parsed.slice(0, count).map(t => ({
+          topic: t.topic || t.Topic || '', category: t.category || 'tech',
+          keywords: t.keywords || '', audience: t.target_audience || '',
+        })).filter(t => t.topic)
+        if (rows.length === 0) return err('No topics generated')
+        const saved = await storage.csvTopics.bulkCreate(rows)
+        return ok({ generated: rows.length, saved: (saved || []).length, topics: rows })
+      }
+    }
+
+    // --- Unscheduled jobs (for calendar sidebar) ---
+    if (resource === 'unscheduled-jobs' && method === 'GET') {
+      const all = await storage.jobs.list({})
+      return ok(all.filter(j => j.status === 'approved' && !j.scheduled_for).slice(0, 50))
+    }
+
+    // --- Campaign rollup ---
+    if (resource === 'campaign-rollup' && id && method === 'GET') {
+      const posts = await storage.jobs.list({ campaign_id: id })
+      const totalImp = posts.reduce((s, p) => s + (p.platform_posts?.stats?.impressions || 0), 0)
+      const totalEng = posts.reduce((s, p) => s + (p.platform_posts?.stats?.engagement || 0), 0)
+      return ok({ campaign_id: id, total_posts: posts.length, total_impressions: totalImp, total_engagement: totalEng, posts })
+    }
+
+    // --- Pipeline status (automation visual) ---
+    if (resource === 'pipeline-status' && method === 'GET') {
+      const jobs = await storage.jobs.list({})
+      const stages = { fetch: 0, generate: 0, validate: 0, approve: 0, publish: 0 }
+      jobs.forEach(j => {
+        if (j.status === 'draft' || j.status === 'processing') stages.generate++
+        else if (j.status === 'pending_approval') stages.approve++
+        else if (j.status === 'approved' || j.status === 'scheduled') stages.validate++
+        else if (j.status === 'published') stages.publish++
+        else stages.fetch++
+      })
+      return ok(stages)
+    }
+
+    // --- Live automation stats (social + blog dashboards) ---
+    if (resource === 'automation-stats' && method === 'GET') {
+      const today = new Date().toISOString().slice(0, 10)
+      const [settings, dqRows, jobs, blogRows] = await Promise.all([
+        automation.get().catch(() => ({})),
+        storage.driveQueue.list({}).catch(() => []),
+        storage.jobs.list({}).catch(() => []),
+        storage.blogQueue.list().catch(() => []),
+      ])
+      const dqStats = { queued: dqRows.filter(r => r.status === 'queued').length, pending_approval: dqRows.filter(r => r.status === 'pending_approval').length, failed: dqRows.filter(r => r.status === 'failed').length, published: dqRows.filter(r => r.status === 'published').length }
+      const blogStats = { pending_approval: blogRows.filter(r => r.status === 'pending_approval').length, published: blogRows.filter(r => r.status === 'published').length }
+      const totalJobs = jobs.length
+      const published = jobs.filter(j => j.status === 'published').length
+      const failedJobs = jobs.filter(j => j.status === 'failed').length
+      const successRate = totalJobs > 0 ? Math.round(((totalJobs - failedJobs) / totalJobs) * 100) : 0
+      return ok({
+        status: settings.kill_switch ? 'Stopped' : settings.pause_queue ? 'Paused' : settings.enabled ? 'Running' : 'Disabled',
+        queue_size: dqStats.queued,
+        waiting_approval: dqStats.pending_approval,
+        failed: dqStats.failed + failedJobs,
+        posts_generated_today: jobs.filter(j => j.created_at?.startsWith(today)).length,
+        posts_published_today: dqStats.published,
+        success_rate: successRate,
+        blog_waiting_approval: blogStats.pending_approval,
+        blogs_published_today: blogStats.published,
+        next_slot: settings.posting_times?.find(t => t >= (new Date().toISOString().slice(11, 16))) || settings.posting_times?.[0] || null,
+        timezone: settings.timezone,
+        last_tick_at: settings.last_tick_at,
+      })
+    }
+
+    // --- LinkedIn Engagement Assistant ----------------------------------
+    if (resource === 'linkedin-intel') {
+      const intel = await import('@/lib/linkedin-intel')
+      const { tableGet, tableUpdate } = await import('@/lib/table')
+      const { sendMessage } = await import('@/lib/telegram/client')
+      const { formatLinkedInIntelCard, buildLinkedInIntelKeyboard } = await import('@/lib/telegram/formatter')
+
+      if (!id && method === 'GET') {
+        const status = url.searchParams.get('status')
+        return ok(await intel.listOpportunities(status))
+      }
+      if (id === 'check' && method === 'POST') {
+        const a = await automation.get()
+        const provided = request.headers.get('x-automation-secret')
+        if (a.tick_secret && provided !== a.tick_secret) return err('Forbidden', 403)
+        const s = await storage.settings.get()
+        const tgChat = s.telegram_admin_chat_id || process.env.TELEGRAM_ADMIN_CHAT_ID
+        let resent = 0
+        if (tgChat) {
+          const { tableList: tl } = await import('@/lib/table')
+          const existing = (await tl('linkedinIntel')).filter(r => r.status === 'pending')
+          for (const item of existing) {
+            try {
+              await sendMessage({ chatId: tgChat, text: formatLinkedInIntelCard(item), replyMarkup: buildLinkedInIntelKeyboard(item.id) })
+              resent++
+            } catch {}
+          }
+        }
+        const lastCheck = await storage.appState.get('li_intel_last_check', null)
+        const last = lastCheck?.at ? new Date(lastCheck.at).getTime() : 0
+        if (Date.now() - last < 30 * 60 * 1000) return ok({ skipped: 'throttled (30m)', resent })
+        const body = await request.json().catch(() => ({}))
+        const r = await intel.checkOpportunities({ limit: body.limit || 3 })
+        await storage.appState.set('li_intel_last_check', { at: new Date().toISOString() })
+        // Send to Discord (primary) and Telegram (legacy fallback)
+        if (r.items?.length) {
+          const { notifyLinkedInOpportunity } = await import('@/lib/discord/notify')
+          for (const item of r.items.slice(0, 5)) {
+            await notifyLinkedInOpportunity(item).catch(() => {})
+          }
+        }
+        return ok({ ...r, resent })
+      }
+      if (id === 'manual' && method === 'POST') {
+        const body = await request.json()
+        const item = await intel.addManualOpportunity(body)
+        const s = await storage.settings.get()
+        if (s.telegram_bot_token && s.telegram_admin_chat_id) {
+          await sendMessage({ chatId: s.telegram_admin_chat_id, text: formatLinkedInIntelCard(item), replyMarkup: buildLinkedInIntelKeyboard(item.id) }).catch(() => {})
+        }
+        return ok(item)
+      }
+      if (id && action === 'approve' && method === 'POST') {
+        await intel.recordDecision(id, 'approve')
+        const r = await intel.postComment(id)
+        return ok(r)
+      }
+      if (id && action === 'reject' && method === 'POST') {
+        return ok(await intel.recordDecision(id, 'reject'))
+      }
+      if (id && action === 'save' && method === 'POST') {
+        const { tableUpdate: upd } = await import('@/lib/table')
+        await upd('linkedinIntel', id, { status: 'saved', updated_at: new Date().toISOString() })
+        return ok({ saved: true })
+      }
+      if (id && action === 'regenerate' && method === 'POST') {
+        const item = await tableGet('linkedinIntel', id)
+        if (!item) return err('Opportunity not found', 404)
+        const fresh = await intel.generateComment({ ...item, topic: item.topic })
+        await tableUpdate('linkedinIntel', id, { comment: fresh.comment, quality: fresh.quality, visibility: fresh.visibility, why: fresh.why, updated_at: new Date().toISOString() })
+        return ok({ ...item, ...fresh })
+      }
+      if (id && action === 'edit' && method === 'POST') {
+        const body = await request.json()
+        if (!body.comment) return err('comment required', 400)
+        await tableUpdate('linkedinIntel', id, { comment: body.comment, quality: 90, updated_at: new Date().toISOString() })
+        return ok({ edited: true })
+      }
+      if (id && action === 'post' && method === 'POST') {
+        return ok(await intel.postComment(id))
+      }
+      if (id && method === 'GET') {
+        const item = await tableGet('linkedinIntel', id)
+        return item ? ok(item) : err('Opportunity not found', 404)
+      }
+      return err('Unknown linkedin-intel action', 400)
+    }
+
+    return err(`No route for ${method} /${parts.join('/')}`, 404)
+
+  } catch (e) {
+    console.error('[api] error:', e)
+    return err(e?.message || 'Server error', 500)
+  }
+}
+
+function sanitize(p) {
+  if (!p) return p
+  return { ...p, api_key: p.api_key ? maskKey(p.api_key) : '', api_key_set: !!p.api_key }
+}
+function maskKey(k) {
+  if (!k) return ''
+  if (k.length <= 8) return '*'.repeat(k.length)
+  return k.slice(0, 4) + '•'.repeat(Math.max(4, k.length - 8)) + k.slice(-4)
+}
+
+export const GET    = (req) => route(req, 'GET')
+export const POST   = (req) => route(req, 'POST')
+export const PUT    = (req) => route(req, 'PUT')
+export const DELETE = (req) => route(req, 'DELETE')
+export const PATCH  = (req) => route(req, 'PATCH')

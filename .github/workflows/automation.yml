@@ -1,0 +1,57 @@
+# ============================================================================
+# SocialForge Automation Scheduler
+# Runs the automation + blog ticks every 5 minutes, 24/7, free via GitHub
+# Actions. No pg_cron or external cron needed.
+#
+# SECURITY: the tick secret below is DERIVED from APP_SESSION_SECRET
+# (HMAC-SHA256) — automation keeps working with zero stored secrets.
+# To rotate: change APP_SESSION_SECRET in Vercel, then update the fallbacks.
+# ============================================================================
+name: SocialForge Automation
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # every 5 minutes
+  workflow_dispatch: {}     # manual "Run workflow" button
+
+jobs:
+  run-ticks:
+    name: Run automation ticks
+    runs-on: ubuntu-latest
+    env:
+      AUTOMATION_SECRET: ${{ secrets.AUTOMATION_SECRET }}
+      BLOG_SECRET: ${{ secrets.BLOG_SECRET }}
+    steps:
+      - name: Social automation tick
+        run: |
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
+          curl -sS -o /tmp/social_tick.json -w "social: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/automation/tick" \
+            -H "x-automation-secret: ${SECRET}" || true
+          cat /tmp/social_tick.json || true
+
+      - name: Blog automation tick
+        run: |
+          SECRET="${BLOG_SECRET:-3c9e3ddcdfd5e427262a8fd2ee5f2bd383254b743072a86ecbffcf0b46e57f48}"
+          curl -sS -o /tmp/blog_tick.json -w "blog: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/blog/tick" \
+            -H "x-automation-secret: ${SECRET}" || true
+          cat /tmp/blog_tick.json || true
+
+      - name: News Radar scan (throttled to 5 min server-side)
+        run: |
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
+          curl -sS -o /tmp/news_tick.json -w "news: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/automation/news" \
+            -H "x-automation-secret: ${SECRET}" || true
+          cat /tmp/news_tick.json || true
+
+      - name: LinkedIn engagement discovery (every 30 min via server-side throttle)
+        run: |
+          SECRET="${AUTOMATION_SECRET:-b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a}"
+          curl -sS -o /tmp/li_intel.json -w "linkedin-intel: %{http_code}\n" \
+            -X POST "https://social.manikantar.in/api/linkedin-intel/check" \
+            -H "x-automation-secret: ${SECRET}" \
+            -H "Content-Type: application/json" \
+            -d '{"limit":3}' || true
+          cat /tmp/li_intel.json || true
