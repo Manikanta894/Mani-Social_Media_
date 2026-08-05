@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import nacl from 'tweetnacl'
 import { storage } from '@/lib/storage'
 import { generateFromImage, regeneratePlatform, generateBulk, generateBlogPost } from '@/lib/ai/generate'
 import { testProvider } from '@/lib/ai/providers'
@@ -23,6 +24,27 @@ const ok = (data) => NextResponse.json({ ok: true, data })
 const err = (message, status = 400, extra = {}) =>
   NextResponse.json({ ok: false, error: message, ...extra }, { status })
 
+// Verify Discord Ed25519 signature. Discord signs every interaction request
+// with the app's private key; we verify using DISCORD_PUBLIC_KEY.
+// Returns true if valid, false otherwise.
+async function verifyDiscordSignature(request) {
+  const publicKey = process.env.DISCORD_PUBLIC_KEY
+  if (!publicKey) {
+    console.warn('[discord] DISCORD_PUBLIC_KEY not set — skipping verification')
+    return true
+  }
+  const signature = request.headers.get('X-Signature-Ed25519')
+  const timestamp = request.headers.get('X-Signature-Timestamp')
+  if (!signature || !timestamp) return false
+  const body = await request.text()
+  const isValid = nacl.sign.detached.verify(
+    new TextEncoder().encode(timestamp + body),
+    Buffer.from(signature, 'hex'),
+    Buffer.from(publicKey, 'hex'),
+  )
+  return isValid
+}
+
 async function route(request, method) {
   const url = new URL(request.url)
   const parts = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean)
@@ -30,8 +52,8 @@ async function route(request, method) {
 
   // Defense-in-depth session check (middleware also checks).
   // Public routes: auth flow, telegram webhook, health, automation ticks (secret-authed), blog tick, approve.
-  const PUBLIC_API = ['auth', 'health', 'telegram', 'approve']
-  const PUBLIC_RESOURCES = ['health', 'telegram', 'approve']
+  const PUBLIC_API = ['auth', 'health', 'telegram', 'discord', 'approve']
+  const PUBLIC_RESOURCES = ['health', 'telegram', 'discord', 'approve']
   const isPublic = !resource || PUBLIC_RESOURCES.includes(resource) || resource === 'auth'
   const isTick = resource === 'automation' && id === 'tick' || resource === 'blog' && id === 'tick' || resource === 'automation' && id === 'news' || resource === 'events' && id === 'webhook' || resource === 'news' && id === 'brief' || resource === 'automation' && id === 'news-publish' || resource === 'linkedin-intel'
   if (!isPublic && !isTick) {
@@ -289,6 +311,93 @@ async function route(request, method) {
         if (job.status !== 'failed') return err('Only failed jobs can be retried', 400)
         await storage.jobs.update(id, { status: 'approved', warnings: [] })
         return ok({ retried: true })
+      }
+    }
+
+    // --- Discord Command Center -------------------------------------------
+    if (resource === 'discord') {
+      const sub = id
+      const { handleInteraction } = await import('@/lib/discord/handler')
+      const { registerCommands, getMe: getDiscordMe } = await import('@/lib/discord/client')
+      const { SLASH_COMMANDS } = await import('@/lib/discord/handler')
+      const { setupServer, ensureServer } = await import('@/lib/discord/channels')
+      const { updateDashboard } = await import('@/lib/discord/dashboard')
+
+      // Webhook: POST /api/discord/webhook
+      if (sub === 'webhook' && method === 'POST') {
+        const isValid = await verifyDiscordSignature(request)
+        if (!isValid) {
+          return err('Invalid signature', 401)
+        }
+        const body = await request.json().catch(() => ({}))
+        // Discord PING (type 1): must respond with {"type":1} immediately
+        if (body.type === 1) {
+          return NextResponse.json({ type: 1 })
+        }
+        // Fire-and-forget: Discord expects fast response within 3s
+        handleInteraction(body).catch(e => console.error('[discord] handler:', e))
+        return ok(true)
+      }
+
+      // Status: GET /api/discord/status
+      if (sub === 'status' && method === 'GET') {
+        const s = await storage.settings.get()
+        let botInfo = null
+        try { if (s.discord_bot_token) botInfo = await getDiscordMe() } catch (e) { botInfo = { error: e.message } }
+        return ok({
+          bot_token_set: !!s.discord_bot_token,
+          guild_id: s.discord_guild_id || '',
+          channel_ids_set: !!s.discord_channel_ids && Object.keys(s.discord_channel_ids || {}).length > 0,
+          bot: botInfo,
+        })
+      }
+
+      // Settings: PUT /api/discord/settings
+      if (sub === 'settings' && method === 'PUT') {
+        const body = await request.json()
+        const patch = {}
+        if (body.bot_token && body.bot_token.trim()) patch.discord_bot_token = body.bot_token.trim()
+        if (body.guild_id !== undefined) patch.discord_guild_id = String(body.guild_id || '').trim()
+        await storage.settings.patch(patch)
+        return ok(true)
+      }
+
+      // Register slash commands: POST /api/discord/register
+      if (sub === 'register' && method === 'POST') {
+        const s = await storage.settings.get()
+        const reqBody = await request.json().catch(() => ({}))
+        const guildId = reqBody?.guild_id || s.discord_guild_id
+        if (!s.discord_bot_token) return err('Bot token not set. Save in Settings first.')
+        if (!guildId) return err('Guild ID not set. Provide guild_id or save in Settings.')
+        const result = await registerCommands(guildId, SLASH_COMMANDS)
+        return ok({ registered: result.length, commands: result.map(c => c.name) })
+      }
+
+      // Setup server structure: POST /api/discord/setup
+      if (sub === 'setup' && method === 'POST') {
+        const s = await storage.settings.get()
+        const reqBody = await request.json().catch(() => ({}))
+        const guildId = reqBody?.guild_id || s.discord_guild_id
+        if (!guildId) return err('Guild ID not set')
+        const result = await setupServer(guildId)
+        return ok(result)
+      }
+
+      // Update dashboard: POST /api/discord/dashboard
+      if (sub === 'dashboard' && method === 'POST') {
+        const r = await updateDashboard()
+        return ok(r)
+      }
+
+      // Send test: POST /api/discord/test
+      if (sub === 'test' && method === 'POST') {
+        const s = await storage.settings.get()
+        if (!s.discord_bot_token) return err('Bot token not set')
+        const guildId = s.discord_guild_id
+        if (!guildId) return err('Guild ID not set')
+        const { ensureServer } = await import('@/lib/discord/channels')
+        const r = await ensureServer()
+        return ok(r)
       }
     }
 
@@ -1551,9 +1660,11 @@ JSON only, no markdown fences.`
         const body = await request.json().catch(() => ({}))
         const r = await intel.checkOpportunities({ limit: body.limit || 3 })
         await storage.appState.set('li_intel_last_check', { at: new Date().toISOString() })
-        if (s.telegram_bot_token && s.telegram_admin_chat_id && r.items?.length) {
+        // Send to Discord (primary) and Telegram (legacy fallback)
+        if (r.items?.length) {
+          const { notifyLinkedInOpportunity } = await import('@/lib/discord/notify')
           for (const item of r.items.slice(0, 5)) {
-            await sendMessage({ chatId: s.telegram_admin_chat_id, text: formatLinkedInIntelCard(item), replyMarkup: buildLinkedInIntelKeyboard(item.id) }).catch(() => {})
+            await notifyLinkedInOpportunity(item).catch(() => {})
           }
         }
         return ok({ ...r, resent })

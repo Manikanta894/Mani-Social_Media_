@@ -47,6 +47,7 @@ function SettingsPage() {
         <TabsTrigger value="styles"     className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><Sliders className="h-4 w-4 mr-2" /> Prompt Styles</TabsTrigger>
         <TabsTrigger value="automation" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><Wand2 className="h-4 w-4 mr-2" /> Automation</TabsTrigger>
         <TabsTrigger value="telegram"   className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><MessageSquare className="h-4 w-4 mr-2" /> Telegram</TabsTrigger>
+        <TabsTrigger value="discord"    className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><MessageSquare className="h-4 w-4 mr-2" /> Discord</TabsTrigger>
         <TabsTrigger value="security"   className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><KeyRound className="h-4 w-4 mr-2" /> Security</TabsTrigger>
         <TabsTrigger value="bio-links" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><LinkIcon className="h-4 w-4 mr-2" /> Bio Links</TabsTrigger>
         <TabsTrigger value="danger-zone" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"><AlertTriangle className="h-4 w-4 mr-2" /> Danger Zone</TabsTrigger>
@@ -62,6 +63,9 @@ function SettingsPage() {
       </TabsContent>
       <TabsContent value="telegram">
         <TelegramTab />
+      </TabsContent>
+      <TabsContent value="discord">
+        <DiscordTab />
       </TabsContent>
       <TabsContent value="security">
         <SecurityTab />
@@ -487,6 +491,167 @@ function PromptStylesTab({ styles, onRefresh }) {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function DiscordTab() {
+  const [status, setStatus] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [settingUp, setSettingUp] = useState(false)
+  const [form, setForm] = useState({ bot_token: '', guild_id: '' })
+
+  const refresh = async () => {
+    setLoading(true)
+    try {
+      const s = await api('/discord/status')
+      setStatus(s)
+      setForm({ bot_token: '', guild_id: s.guild_id || '' })
+    } catch (e) { toast.error(e.message) } finally { setLoading(false) }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  const saveSettings = async () => {
+    setSaving(true)
+    try {
+      await api('/discord/settings', { method: 'PUT', body: form })
+      toast.success('Saved')
+      await refresh()
+    } catch (e) { toast.error(e.message) } finally { setSaving(false) }
+  }
+
+  const registerCommands = async () => {
+    try {
+      await api('/discord/register', { method: 'POST', body: {} })
+      toast.success('Slash commands registered')
+    } catch (e) { toast.error(e.message) }
+  }
+
+  const setupServer = async () => {
+    setSettingUp(true)
+    try {
+      const r = await api('/discord/setup', { method: 'POST', body: { guild_id: form.guild_id || status?.guild_id } })
+      toast.success(`Created/verified ${Object.keys(r.channelIds).length} channels`)
+      await refresh()
+    } catch (e) { toast.error(e.message) } finally { setSettingUp(false) }
+  }
+
+  const updateDashboard = async () => {
+    try {
+      await api('/discord/dashboard', { method: 'POST' })
+      toast.success('Dashboard updated')
+    } catch (e) { toast.error(e.message) }
+  }
+
+  if (loading) return <div className="text-muted-foreground flex items-center gap-2 py-6"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+
+  const botInfo = status?.bot
+  const isConnected = status?.bot_token_set && botInfo && !botInfo.error
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-serif font-semibold text-lg">Discord AI Operations Center</h3>
+        <p className="text-sm text-muted-foreground">Your private Discord server becomes the real-time command center — monitor, approve, generate, publish and analyze everything.</p>
+      </div>
+
+      <Card className="bg-card border-border shadow-sm">
+        <CardContent className="pt-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-sm border border-border bg-secondary/30 p-3">
+              <div className="editorial-eyebrow mb-1">Bot</div>
+              {isConnected ? (
+                <>
+                  <div className="text-sm font-medium">{botInfo.username}</div>
+                  <div className="editorial-mono text-[0.8125rem] text-muted-foreground">{botInfo.id}</div>
+                  <StatusStamp status="live" className="mt-2" />
+                </>
+              ) : (
+                <>
+                  <div className="text-sm text-muted-foreground">Not connected</div>
+                  <StatusStamp status="draft" className="mt-2" />
+                </>
+              )}
+            </div>
+            <div className="rounded-sm border border-border bg-secondary/30 p-3">
+              <div className="editorial-eyebrow mb-1">Server Setup</div>
+              {status?.channel_ids_set ? (
+                <>
+                  <div className="text-sm">Channels configured</div>
+                  <div className="editorial-mono text-[0.875rem] text-muted-foreground">Guild: {status.guild_id}</div>
+                  <StatusStamp status="live" className="mt-2" />
+                </>
+              ) : (
+                <>
+                  <div className="text-sm text-muted-foreground">Not configured</div>
+                  <StatusStamp status="pending" className="mt-2" />
+                </>
+              )}
+            </div>
+          </div>
+
+          <Separator className="bg-border" />
+
+          <div>
+            <Label className="editorial-eyebrow mb-1.5 block">Bot token {status?.bot_token_set && <span className="text-muted-foreground">(current set)</span>}</Label>
+            <div className="relative">
+              <Input
+                type="password"
+                value={form.bot_token}
+                onChange={e => setForm({ ...form, bot_token: e.target.value })}
+                placeholder={status?.bot_token_set ? 'leave blank to keep existing' : 'paste from Discord Developer Portal'}
+                className="bg-secondary/50 border-border pr-9 editorial-mono text-sm"
+              />
+            </div>
+            <div className="editorial-mono text-[0.875rem] text-muted-foreground mt-1">
+              Tip: create a bot at discord.com/developers/applications → Bot → Copy Token
+            </div>
+          </div>
+
+          <div>
+            <Label className="editorial-eyebrow mb-1.5 block">Guild (Server) ID</Label>
+            <Input
+              value={form.guild_id}
+              onChange={e => setForm({ ...form, guild_id: e.target.value })}
+              placeholder="Right-click your server → Copy Server ID"
+              className="bg-secondary/50 border-border editorial-mono text-sm"
+            />
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={saveSettings} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save
+            </Button>
+            <Button onClick={setupServer} variant="outline" className="border-border" disabled={settingUp || !isConnected}>
+              {settingUp ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Layers className="h-4 w-4 mr-2" />}
+              Setup Server
+            </Button>
+            <Button onClick={registerCommands} variant="outline" className="border-border" disabled={!isConnected}>
+              <Zap className="h-4 w-4 mr-2" /> Register Commands
+            </Button>
+            <Button onClick={updateDashboard} variant="outline" className="border-border" disabled={!isConnected}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Update Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card border-border shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-serif">Setup Instructions</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-2">
+          <div>1. Create a bot in the <b>Discord Developer Portal</b> and copy its token.</div>
+          <div>2. Invite the bot to your server with <code>applications.commands</code> + <code>bot</code> scopes.</div>
+          <div>3. Get your Server ID (right-click server → Copy Server ID).</div>
+          <div>4. Save the token + guild ID, then click <b>Setup Server</b> to auto-create all channels.</div>
+          <div>5. Click <b>Register Commands</b> to enable <code>/setup</code>, <code>/dashboard</code>, <code>/news</code>, <code>/approvals</code>, <code>/analytics</code>, <code>/publish</code>, <code>/status</code>.</div>
+          <div className="editorial-mono text-[0.875rem] text-muted-foreground pt-2">The server will feel like a professional AI Operations Center — not a chat app.</div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
