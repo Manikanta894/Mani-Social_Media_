@@ -343,7 +343,11 @@ async function route(request, method) {
         // moment the response is sent, which killed the interaction ack before
         // it reached Discord ("didn't respond in time"). The handler acks via
         // the Interactions API within ~1s; the 204 is sent once it completes.
-        await handleInteraction(body).catch(e => console.error('[discord] handler:', e))
+        try {
+          await handleInteraction(body)
+        } catch (e) {
+          console.error('[discord] handler error:', e)
+        }
         return new NextResponse(null, { status: 204 })
       }
 
