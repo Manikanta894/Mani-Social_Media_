@@ -334,9 +334,10 @@ async function route(request, method) {
         if (body.type === 1) {
           return NextResponse.json({ type: 1 })
         }
-        // Fire-and-forget: Discord expects fast response within 3s
+        // Fire-and-forget: Discord expects an HTTP 204 ack within 3s; the
+        // handler responds to the interaction via the Interactions API.
         handleInteraction(body).catch(e => console.error('[discord] handler:', e))
-        return ok(true)
+        return new NextResponse(null, { status: 204 })
       }
 
       // Status: GET /api/discord/status
