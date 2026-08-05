@@ -1662,8 +1662,10 @@ JSON only, no markdown fences.`
         if (r.items?.length) {
           for (const item of r.items.slice(0, 5)) {
             try {
-              await notifyLinkedInOpportunity(item)
-              await tlUpd('linkedinIntel', item.id, { notified: 'yes', updated_at: new Date().toISOString() }).catch(() => {})
+              const sent = await notifyLinkedInOpportunity(item)
+              if (sent?.discord) {
+                await tlUpd('linkedinIntel', item.id, { notified: 'yes', updated_at: new Date().toISOString() }).catch(() => {})
+              }
             } catch (e) { console.warn('[li] new item notify failed:', e.message) }
           }
         }
@@ -1672,9 +1674,11 @@ JSON only, no markdown fences.`
           const existing = (await tl('linkedinIntel')).filter(x => x.status === 'pending' && x.notified !== 'yes')
           for (const item of existing.slice(0, 8)) {
             try {
-              await notifyLinkedInOpportunity(item)
-              await tlUpd('linkedinIntel', item.id, { notified: 'yes', updated_at: new Date().toISOString() }).catch(() => {})
-              resent++
+              const sent = await notifyLinkedInOpportunity(item)
+              if (sent?.discord) {
+                await tlUpd('linkedinIntel', item.id, { notified: 'yes', updated_at: new Date().toISOString() }).catch(() => {})
+                resent++
+              }
             } catch {}
           }
         } catch {}
