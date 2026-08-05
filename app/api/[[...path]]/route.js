@@ -1324,7 +1324,7 @@ ${hashtags.map(h => `<tr><td>${h.tag}</td><td>${(h.total_impressions || 0).toLoc
       if (id === 'tick' && method === 'POST') {
         const { blogAutomation, runBlogTick } = await import('@/lib/blog/automation')
         const s = await blogAutomation.get()
-        const provided = request.headers.get('x-automation-secret')
+        const provided = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
         if (s.tick_secret && provided !== s.tick_secret) return err('Forbidden', 403)
         return ok(await runBlogTick())
       }
@@ -1645,7 +1645,7 @@ JSON only, no markdown fences.`
       }
       if (id === 'check' && method === 'POST') {
         const a = await automation.get()
-        const provided = request.headers.get('x-automation-secret')
+        const provided = request.headers.get('x-automation-secret') || url.searchParams.get('secret')
         if (a.tick_secret && provided !== a.tick_secret) return err('Forbidden', 403)
         const s = await storage.settings.get()
         const tgChat = s.telegram_admin_chat_id || process.env.TELEGRAM_ADMIN_CHAT_ID

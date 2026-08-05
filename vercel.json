@@ -1,0 +1,8 @@
+{
+  "crons": [
+    { "path": "/api/automation/tick?secret=b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a", "schedule": "*/5 * * * *" },
+    { "path": "/api/blog/tick?secret=3c9e3ddcdfd5e427262a8fd2ee5f2bd383254b743072a86ecbffcf0b46e57f48", "schedule": "*/5 * * * *" },
+    { "path": "/api/automation/news?secret=b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a", "schedule": "*/15 * * * *" },
+    { "path": "/api/linkedin-intel/check?secret=b6b8baeca0444dc5c23068254b9239c80b2d1f83fbf576e7276aaa50d281371a", "schedule": "*/30 * * * *" }
+  ]
+}
