@@ -1704,9 +1704,22 @@ JSON only, no markdown fences.`
       if (id && action === 'regenerate' && method === 'POST') {
         const item = await tableGet('linkedinIntel', id)
         if (!item) return err('Opportunity not found', 404)
-        const fresh = await intel.generateComment({ ...item, topic: item.topic })
-        await tableUpdate('linkedinIntel', id, { comment: fresh.comment, quality: fresh.quality, visibility: fresh.visibility, why: fresh.why, updated_at: new Date().toISOString() })
+        const fresh = await intel.generateHumanComment({
+          ...item,
+          analysis: {
+            industry: item.industry, topic: item.topic, intent: item.intent,
+            main_argument: item.main_argument, tone: item.tone, question_asked: item.question_asked,
+            cta: item.cta, target_audience: item.target_audience, pain_point: item.pain_point,
+            takeaway: item.takeaway, classification: item.classification,
+          },
+          strategy: item.strategy,
+        })
+        await tableUpdate('linkedinIntel', id, { comment: fresh.comment, quality: fresh.quality, visibility: fresh.visibility, why: fresh.why, strategy: fresh.strategy, similarity: fresh.similarity, updated_at: new Date().toISOString() })
         return ok({ ...item, ...fresh })
+      }
+      if (id && action === 'outcome' && method === 'POST') {
+        const body = await request.json().catch(() => ({}))
+        return ok(await intel.recordEngagementOutcome(id, body))
       }
       if (id && action === 'edit' && method === 'POST') {
         const body = await request.json()
